@@ -61,6 +61,18 @@ test('Actions: malformed JSON, 404, rate-limits and upstream 503 fail closed', a
   }
 });
 
+test('Actions: GitHub 403 exhausted quota is 429, while ordinary 403 stays restricted', async () => {
+  const quota = await loadPublicActions(repo, async () => ({
+    ...answer(403, null), headers: { get: key => key === 'x-ratelimit-remaining' ? '0' : null },
+  }));
+  assert.equal(quota.status, 429);
+  assert.match(quota.body.error, /rate limit/i);
+  const forbidden = await loadPublicActions(repo, async () => ({
+    ...answer(403, null), headers: { get: () => '25' },
+  }));
+  assert.equal(forbidden.status, 503);
+});
+
 test('Actions: network and timeout errors are explicit', async () => {
   const network = await loadPublicActions(repo, async () => { throw Error('offline'); });
   assert.equal(network.status, 503);
