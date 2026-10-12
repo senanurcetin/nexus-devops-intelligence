@@ -12,6 +12,11 @@
 - Upgraded Next.js to 15.5.27, overrode PostCSS 8.5.30 and Sharp 0.35.5, and committed the exact npm-generated lockfile.
 - Clean `npm ci` and `npm audit --omit=dev --json` passed; **zero production audit findings** on 13 October 2026.
 - Resolved security tracking issue #2 in PR #3.
+- Migrated dashboard to Tailwind CSS 4.3.3 and `@tailwindcss/postcss`, removed legacy Tailwind 3 config and Autoprefixer.
+- Full npm audit (production + development) found zero vulnerabilities at time checked; 33 tests, typecheck and build passed with the committed lockfile.
+- Raised secondary-text contrast: axe-core WCAG 2/2.1 A/AA automated checks reported zero violations at 375px and 1440px after correction; Chromium mobile/tablet/desktop responsive checks passed.
+- Manually checked rapid repository switching, stale responses, independent API error panels, keyboard search focus and the public read-only HTTP endpoints.
+- **Remaining release gates:** platform-wide rate limiting via Vercel WAF and final preview/manual accessibility review. This repository has not been publicly deployed.
 - No GitHub Actions or CircleCI jobs were configured or run.
 
-**Not yet released:** Interactive browser accessibility checks, shared endpoint abuse controls and public deployment remain pending.
+**Not yet released:** Platform-wide rate limiting, final manual cross-browser/screen-reader review and public preview deployment remain pending.
