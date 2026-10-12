@@ -3,12 +3,14 @@
 An independent, read-only dashboard for inspecting recent GitHub Actions workflow runs
 and pull request merge state. **This is not part of Ops-Copilot.**
 
-> **Security update (13 October 2026):** [PR #3](https://github.com/senanurcetin/nexus-devops-intelligence/pull/3)
-> upgraded Next.js to 15.5.27 and pinned patched PostCSS/Sharp dependencies.
-> A fresh manual cloud checkout passed `npm ci`, 33 tests, full typecheck,
-> production build, and `npm audit --omit=dev` with **zero reported findings**.
-> **Public release is still pending interactive browser QA and platform-wide abuse protection.**
-> No GitHub Actions or CircleCI were used.
+> **Verified MVP development build (13 October 2026):** [PR #3](https://github.com/senanurcetin/nexus-devops-intelligence/pull/3)
+> upgraded Next.js; [PR #6](https://github.com/senanurcetin/nexus-devops-intelligence/pull/6)
+> migrated Tailwind to 4.3.3 and fixed secondary-text contrast. Clean cloud `npm ci`,
+> **33/33 tests**, full TypeScript and production build passed. Full `npm audit`
+> (including development dependencies) reported **zero findings at the time checked**.
+> Chromium 375/768/1440 responsive checks and automated axe-core A/AA tests passed.
+> **No public deployment:** Vercel WAF cross-instance rate limiting and final manual
+> release QA remain pending. No GitHub Actions or CircleCI were run.
 
 ## Current scope (MVP)
 
@@ -43,6 +45,18 @@ npm run build
 short-lived cloud sandbox, without GitHub Actions or CircleCI. The current
 `npm test` command uses the locked `tsx` development dependency and requires
 `npm ci` first. There is no requirement to install anything on the user's PC.
+
+## CI-free browser verification
+
+The [manual Tailwind 4 browser/a11y report](docs/tailwind4-browser-audit-2026-10-13.md)
+covers Chromium screen widths, invalid repository validation, rapid repo switching,
+and an axe-core WCAG 2/2.1 A/AA scan. These manual checks are separate from the
+33 automated Node.js tests and require no GitHub Actions or CircleCI.
+
+**Release gate:** Before serving broad public traffic, configure a platform-wide
+rate limit covering both APIs ([issue #7](https://github.com/senanurcetin/nexus-devops-intelligence/issues/7)).
+The current request gate is per Node process only. Vercel Hobby WAF configuration,
+its usage terms, manual preview and remaining accessibility checks are not complete.
 
 ## HTTP API
 
