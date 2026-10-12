@@ -4,6 +4,14 @@
 **Çalışma modeli:** GitHub üzerinde sürüm kontrollü geliştirme; kısa süreli bulut sandbox'larında manuel doğrulama. Kullanıcının bilgisayarına kurulum yok.  
 **İlk sürüm hedefi:** Public GitHub repository'lerinde CI geçmişi, açık PR durumları ve kanıta dayalı öncelikli inceleme önerilerini güvenilir biçimde sunan, halka açık, salt okunur MVP.
 
+## Kritik yayın engeli — 13 Ekim 2026
+
+**<a href="https://github.com/senanurcetin/nexus-devops-intelligence/issues/2">Issue #2</a> açık.** Manuel üretim bağımlılığı taraması `main` dalındaki Next.js 15.5.9 ve ilişkili PostCSS/Sharp sürümleri için **1 kritik + 2 yüksek** bulgu verdi. Geçici Vercel Sandbox'ta Next.js `15.5.27` ve `overrides: { next: { postcss: "8.5.30" }, sharp: "0.35.5" }` ile **sıfır üretim bağımlılığı bulgusu**, **33/33 test**, başarılı typecheck ve build görüldü. Ancak geçici ortam kilit dosyası gönderilmeden kapandı. **Düzeltme GitHub'a aktarılmış değildir.**
+
+- [ ] **P0:** `fix/secure-next-dependencies` dalına hem yeni `package.json` hem de yeni `package-lock.json` aktar.
+- [ ] **P0:** Temiz `npm ci`, `npm audit --omit=dev`, test, typecheck ve build'i yeni commit üzerinde doğrula.
+- [ ] **P0:** Güvenlik bulguları giderilmeden ve tarayıcı testleri bitmeden herkese açık yayın yapma.
+
 ## 0. Doğrulanmış mevcut durum
 
 | Bileşen | Durum | Kanıt |
