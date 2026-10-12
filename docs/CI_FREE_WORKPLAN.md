@@ -10,8 +10,8 @@
 - [x] Next.js `15.5.27`, PostCSS `8.5.30` ve Sharp `0.35.5`; `package.json` ile npm'in oluşturduğu `package-lock.json` birlikte commit edildi.
 - [x] Yeni dalın commit'inden temiz `npm ci --no-audit --no-fund`, `npm test` (**33/33**), `npm run typecheck` ve `npm run build` başarılı.
 - [x] `npm audit --omit=dev --json`: doğrulama anında **0 üretim bağımlılığı bulgusu** (önce 1 kritik + 2 yüksek).
-- [ ] **Yayın engelleri devam ediyor:** tarayıcı/a11y doğrulaması, uygulama ve Vercel seviyesinde kötüye kullanım kontrolleri, manuel preview uçtan uca testi.
-- [ ] **Geliştirme bağımlılıkları:** tam `npm audit` 5 yüksek + 2 orta bulgu gösteriyor; Tailwind CSS 4 geçişi ve tarayıcı görsel karşılaştırmaları [issue #4](https://github.com/senanurcetin/nexus-devops-intelligence/issues/4) üzerinden izleniyor. `npm audit --omit=dev` sonuçlarıyla karıştırma.
+- [ ] **Yayın engelleri devam ediyor:** Vercel genelinde API hız sınırı ([issue #7](https://github.com/senanurcetin/nexus-devops-intelligence/issues/7)), kapsamlı manuel ekran okuyucu/cross-browser kontrolü ve manuel preview uçtan uca doğrulaması.
+- [x] **Tailwind CSS 4.3.3 geçişi:** [PR #6](https://github.com/senanurcetin/nexus-devops-intelligence/pull/6) birleştirildi; [issue #4](https://github.com/senanurcetin/nexus-devops-intelligence/issues/4) kapatıldı. Tam `npm audit` (geliştirme bağımlılıkları dahil) kontrol anında **0 bulgu** verdi; 33/33 test, typecheck ve build başarılı.
 
 ## 0. Doğrulanmış mevcut durum
 
@@ -27,11 +27,17 @@
 | TypeScript + Next.js production build | BAŞARILI | Manuel `npm run typecheck` ve `npm run build` |
 | Gerçek HTTP smoke | BAŞARILI | Ana sayfa 200, hatalı input 400, 10 workflow ve 5 PR örneği |
 | GitHub Actions / CircleCI | KULLANILMADI | Depoda workflow config yok |
-| Route-handler entegrasyon testleri | EKSİK | Adapter testleri, gerçek route davranışının tamamını karşılamıyor |
-| Etkileşimli browser / erişilebilirlik testi | EKSİK | HTTP smoke testi browser QA değildir |
+| Route-handler entegrasyon testleri | TAMAM | Gerçek NextRequest/NextResponse kullanılarak mock yanıt testleri; 33 test başarılı |
+| Etkileşimli browser / erişilebilirlik testi | KISMİ TAMAM | Chromium 375/768/1440 responsive, repo değiştirme; axe WCAG 2/2.1 A/AA kontrolünde 375/1440 için 0 ihlal; manuel ekran okuyucu ve cross-browser bekliyor |
 | Halka açık yayın | EKSİK | Vercel NEXUS projesi henüz canlı değil |
 
-**Not:** 24 test ve build, en son uygulama değişiklikleri için cloud ortamında doğrulandı; README/plan gibi sonraki yalnızca belge değişiklikleri için CI çalıştırılmadı. Kanıtı olmayan güvenlik, tarayıcı veya dağıtım başarılarını tamamlandı olarak işaretleme.
+**Not:** Güncel Tailwind 4 kodu 33/33 test, tam TypeScript, production build, tam npm audit ve browser/axe kontrollerinden manuel bulut ortamında geçti. Ayrıntılar: [browser QA kaydı](tailwind4-browser-audit-2026-10-13.md). Bu bir public deploy veya tüm erişilebilirlik kriterlerinin manuel onayı değildir.
+
+## Kalan yayın öncesi güvenlik işleri
+
+- [ ] **Vercel WAF:** Hobby planda kullanılabilen tek bir rate-limit kuralıyla her iki public API endpoint'ini kapsa. Kuralı yayınlamadan önce Vercel fiyatlandırma koşullarını ve olası kullanım ücretlerini değerlendir. [Issue #7](https://github.com/senanurcetin/nexus-devops-intelligence/issues/7).
+- [ ] **Tarayıcı kapsamı:** Chromium responsive, form validasyonu, geçerli repo seçimi ve eski yanıt yarış durumu geçti; manuel ekran okuyucu, kapsamlı klavye ve cross-browser denetimi devam ediyor. [Issue #5](https://github.com/senanurcetin/nexus-devops-intelligence/issues/5).
+- [ ] **Manuel preview:** Gerekli kontrollerden sonra yalnızca ayrı NEXUS Vercel projesinden, Git auto-deploy olmadan paylaşılabilir önizleme üret; URL'yi gerçek browser ve HTTP testlerinden geçir.
 
 ## Değişmez kısıtlar
 
