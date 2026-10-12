@@ -9,8 +9,9 @@
     "build": "next build",
     "start": "next start",
     "typecheck": "tsc --noEmit",
-    "test": "node --disable-warning=ExperimentalWarning --experimental-strip-types --test tests/*.test.mjs",
-    "smoke:http": "node scripts/smoke-http.mjs"
+    "test": "node --import tsx --test tests/*.test.mjs",
+    "smoke:http": "node scripts/smoke-http.mjs",
+    "test:routes": "node --import tsx --test tests/next-routes.test.mjs"
   },
   "dependencies": {
     "lucide-react": "^0.475.0",
