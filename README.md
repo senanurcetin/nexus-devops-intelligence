@@ -3,11 +3,12 @@
 An independent, read-only dashboard for inspecting recent GitHub Actions workflow runs
 and pull request merge state. **This is not part of Ops-Copilot.**
 
-> **Release blocked (13 October 2026):** A manual npm audit found 1 critical and
-> 2 high-severity production dependency findings in the currently committed
-> dependency set. A patched dependency combination passed cloud tests and audit
-> but its lockfile is **not yet committed**. Do not publicly deploy this version.
-> See [P0 security tracking issue #2](https://github.com/senanurcetin/nexus-devops-intelligence/issues/2).
+> **Security update (13 October 2026):** [PR #3](https://github.com/senanurcetin/nexus-devops-intelligence/pull/3)
+> upgraded Next.js to 15.5.27 and pinned patched PostCSS/Sharp dependencies.
+> A fresh manual cloud checkout passed `npm ci`, 33 tests, full typecheck,
+> production build, and `npm audit --omit=dev` with **zero reported findings**.
+> **Public release is still pending interactive browser QA and platform-wide abuse protection.**
+> No GitHub Actions or CircleCI were used.
 
 ## Current scope (MVP)
 
