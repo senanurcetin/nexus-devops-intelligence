@@ -1,106 +1,99 @@
-# NEXUS DevOps Intelligence — CI-free delivery roadmap
+# NEXUS DevOps Intelligence — CI'sız ürün geliştirme planı
 
-**Updated:** 13 October 2026  
-**Repository:** https://github.com/senanurcetin/nexus-devops-intelligence  
-**Product boundary:** Standalone developer application; no dependency on Ops-Copilot.
+**Revizyon:** 13 Ekim 2026 · **Depo:** https://github.com/senanurcetin/nexus-devops-intelligence  
+**Çalışma modeli:** GitHub üzerinde sürüm kontrollü geliştirme; kısa süreli bulut sandbox'larında manuel doğrulama. Kullanıcının bilgisayarına kurulum yok.  
+**İlk sürüm hedefi:** Public GitHub repository'lerinde CI geçmişi, açık PR durumları ve kanıta dayalı öncelikli inceleme önerilerini güvenilir biçimde sunan, halka açık, salt okunur MVP.
 
-## Verified baseline
+## 0. Doğrulanmış mevcut durum
 
-- [x] Dedicated public GitHub repository with standalone Next.js 15.5.9 application.
-- [x] GitHub Actions activity viewer, PR merge-state triage, and source-linked investigation recommendations.
-- [x] Read-only anonymous REST API access, fixed GitHub host, bounded fan-out, repository and upstream-link validation.
-- [x] Documentation: README, architecture, contribution guidelines, security policy, MIT license.
-- [x] **24/24 Node.js unit tests passed** on a temporary Vercel cloud sandbox.
-- [x] **Full `npm run typecheck` passed**, and **`npm run build` passed** in that sandbox (Node 24 / npm 11).
-- [x] Production server manually returned **HTTP 200** for the homepage and API endpoints; malformed repo input returned HTTP 400.
-- [x] Live public API probes returned 10 Actions runs from `senanurcetin/ot-sentinel` and 5 PRs from `vercel/next.js`.
-- [x] Temporary Vercel Sandbox stopped after the checks.
-- [x] No GitHub Actions or CircleCI jobs were started; no CI workflow files exist.
-- [x] **`package-lock.json` committed** in `4b87e6d`, verified byte-for-byte against the generated lockfile and installed with `npm ci`.
-- [ ] Full interactive browser QA and production deployment are not complete.
-
-The latest complete unit tests, full typecheck and build were verified against commit `e51b38057dbc3be35fed4020e7b42434071c7783`, using the committed npm lockfile. Logs were observed in a temporary cloud sandbox, not a CI service.
-
-## Non-negotiable delivery constraints
-
-1. **Do not run, configure or trigger GitHub Actions, CircleCI, GitLab CI, or automatic CI workflows.** Do not add `.github/workflows/` or `.circleci/` configuration without explicit permission.
-2. The user cannot install software locally. **Do not make the user's PC a prerequisite.** Use connected GitHub, short-lived cloud sandboxes and available cloud testing services when permitted.
-3. Do not deploy automatically on every push. Keep deployment a separate, reviewed operation.
-4. Never expose GitHub tokens or installation secrets in browser code, examples, logs, or GitHub issues. Public MVP stays anonymous and GET-only.
-5. Report only observed test/build outcomes; do not conflate sampled run durations with billed GitHub Actions minutes or an exhaustive CI health score.
-6. Do not describe pending or unverified PR mergeability as safe to merge.
-7. Verify Vercel plan limits and resource consumption before repeating sandbox work. Stop sessions promptly.
-
-## Phase 1 — Reproducible foundation (P0)
-
-- [x] Regenerated and committed `package-lock.json` (commit `4b87e6d`); validated byte-for-byte against cloud-generated lockfile.
-- [x] After pulling committed lockfile, `npm ci --no-audit --no-fund` completed successfully (108 packages); the local snapshot matched GitHub's lockfile byte-for-byte.
-- [x] Repeated `npm test` (23/23), `npm run typecheck` (passed) and `npm run build` (passed, Next.js 15.5.9) using the committed lockfile in temporary Vercel Sandbox (Node 24, npm 11).
-- [ ] Review dependency scripts and the lockfile before committing. Avoid installing additional services or CI runners.
-
-**Acceptance:** Fresh cloud checkout reproduces all 23 tests, typecheck and production build using `npm ci` with no lockfile drift.
-
-## Phase 2 — API reliability and security (P0)
-
-A manually invoked HTTP smoke script is available as `npm run smoke:http` against a separately started `npm run start` server. It is not a CI job.
-
-- [ ] Add focused Next.js route-handler integration tests with mocked upstream failures; the manual HTTP smoke script checks actual Next.js HTTP endpoints, while 24 unit tests exercise domain models and fetch adapters.
-- [ ] Extend endpoint-level tests for 400, 404, 429, 502 and 503; the core adapter tests already cover these faults and GitHub's 403 exhausted-quota header.
-- [ ] Audit GitHub anonymous rate-limit handling, `Cache-Control` semantics and resource exhaustion risks under concurrent requests. Design safe limits and public endpoint abuse controls.
-- [ ] Verify unknown, blocked, dirty, behind, unstable and draft PR categorization using fixtures; never fabricate merge-check outcomes.
-- [ ] Validate any external hrefs and text display; keep auth tokens and response bodies out of logs.
-
-**Acceptance:** Both routes fail safely under mocked faults, cap upstream requests, and show bounded, truthful public data.
-
-## Phase 3 — Browser experience and accessibility (P1)
-
-- [ ] Manually inspect desktop, tablet and mobile viewports; verify layouts and card readability.
-- [ ] Test repository input, loading and empty states, API error banners, retry behavior, long repo names and result links.
-- [ ] Verify keyboard navigation, focus visibility, form labels, color contrast, and screen-reader status updates.
-- [ ] Check stale-request races when switching repos rapidly and ensure error states are independent across panels.
-- [ ] Run a production-server browser smoke test in a cloud environment **without triggering CI**.
-
-**Acceptance:** An independent user can paste a public repo, understand its sampled CI/PR status, and follow a traceable investigation recommendation on mobile or desktop.
-
-## Phase 4 — Manual preview and release (P1)
-
-- [ ] Review the already-created **separate Vercel project** for NEXUS; ensure it is not linked to Ops-Copilot, Git auto-deployment is off and current plan limits permit a preview.
-- [ ] Publish one manually initiated preview after Phases 1–3 pass; do not enable push-triggered deployment.
-- [ ] Confirm production-like API responses and client-side behavior at the actual preview URL.
-- [ ] Add `CHANGELOG.md`, a release checklist, verified screenshots, support contact and explicit data/usage limitations.
-- [ ] Tag an `v0.1.0` release only after source, verification and preview match.
-
-**Acceptance:** A manually reviewed, accessible public preview has working real-data APIs and no unrelated CI execution.
-
-## Phase 5 — Later capabilities (P2; exclude from initial MVP)
-
-- GitHub App registration and least-privilege access to selected private repositories.
-- Read-only CircleCI API data analysis **without running CircleCI builds**.
-- Historical metrics with explicit sample-coverage and retention definitions.
-- AI-assisted incident interpretation only with evidence links, redaction and user controls.
-- GitHub Marketplace feasibility, packaged CLI, and commercial features after real user feedback.
-
-## Current blockers and ownership
-
-| Item | Status | Resolution |
+| Bileşen | Durum | Kanıt |
 | --- | --- | --- |
-| npm lockfile | **Committed and verified** | GitHub commit `4b87e6d`; `npm ci` and production build passed |
-| Full application test/build | **Verified after committed lockfile** | 23/23 tests, full TypeScript check and Next.js build passed |
-| Interactive browser QA | Pending | Cloud browser / sandbox validation |
-| Public preview | Pending | Manual Vercel deployment after reviewing quotas |
-| CI minutes | **Not required** | No GitHub Actions or CircleCI |
-| Local user machine | **Not required** | Use cloud and connected GitHub |
+| Bağımsız açık kaynak repo | TAMAM | Ops-Copilot'dan ayrı GitHub deposu |
+| Next.js 15.5.9 dashboard | KODLANDI | `src/app/page.tsx` |
+| Actions + PR API | KODLANDI | `src/app/api/public-*/route.ts` |
+| Durum sınıflandırması ve öneriler | KODLANDI | `src/lib/` |
+| Bağımlılık kilidi | TAMAM | `package-lock.json`, commit `4b87e6d` |
+| Temiz kurulum | BAŞARILI | Bulutta `npm ci --no-audit --no-fund`, 108 paket |
+| Unit testler | BAŞARILI | Son cloud çalıştırmasında 24/24 |
+| TypeScript + Next.js production build | BAŞARILI | Manuel `npm run typecheck` ve `npm run build` |
+| Gerçek HTTP smoke | BAŞARILI | Ana sayfa 200, hatalı input 400, 10 workflow ve 5 PR örneği |
+| GitHub Actions / CircleCI | KULLANILMADI | Depoda workflow config yok |
+| Route-handler entegrasyon testleri | EKSİK | Adapter testleri, gerçek route davranışının tamamını karşılamıyor |
+| Etkileşimli browser / erişilebilirlik testi | EKSİK | HTTP smoke testi browser QA değildir |
+| Halka açık yayın | EKSİK | Vercel NEXUS projesi henüz canlı değil |
 
-## Useful manual commands (cloud sandbox, not CI)
+**Not:** 24 test ve build, en son uygulama değişiklikleri için cloud ortamında doğrulandı; README/plan gibi sonraki yalnızca belge değişiklikleri için CI çalıştırılmadı. Kanıtı olmayan güvenlik, tarayıcı veya dağıtım başarılarını tamamlandı olarak işaretleme.
 
-```bash
-npm ci --no-audit --no-fund
-npm test
-npm run typecheck
-npm run build
-npm run start
-```
+## Değişmez kısıtlar
 
-**Latest manual smoke test:** `npm run smoke:http` passed against a locally started production server: homepage 200, invalid repository requests 400 and no-store, public Actions sample 10 runs and PR endpoint sample 5 open PRs. No CI.
+1. **GitHub Actions, CircleCI, GitLab CI ve benzeri CI çalıştırılmayacak**; workflow config dosyası eklenmeyecek.
+2. Kullanıcının bilgisayarında terminal, npm kurulumu veya yerel çalışma talep edilmeyecek.
+3. Ops-Copilot'a yeni NEXUS ürün kodu eklenmeyecek.
+4. GitHub'a kod gönderilebilir; her değişiklikten sonra manuel cloud doğrulama yapılacak. Git tabanlı otomatik Vercel dağıtımı açılmayacak.
+5. Public MVP yalnızca anonim, sınırlandırılmış ve salt okunur GitHub REST API erişimi kullanacak. Tokenlar istemciye iletilmeyecek.
+6. GitHub PR mergeability belirsizliği, gerçek CI testi ve faturalandırma dakika bilgisi olduğu izlenimi oluşturulmayacak.
+7. Vercel sandbox saatleri ve olası ücretlendirme göz önünde tutulacak; kullanılmayan oturum kapatılacak.
 
-**MVP completion definition:** Independent repository, reproducible dependency lock, passing unit and route tests, full typecheck and production build, responsive browser QA, secure bounded public API access, and a manually verified public preview. Keep advanced integrations out of the first release.
+## Sprint 1 — API güvenilirliği ve güvenlik (P0, ilk sırada)
+
+| İş | Geliştirme | Doğrulama / tamamlanma koşulu |
+| --- | --- | --- |
+| API-01 | Next.js `/api/public-actions` ve `/api/public-prs` route-handler testleri | Mock GitHub yanıtları üzerinden 200/400/404/429/502/503/504 davranışları ve cache header'ları doğrulansın |
+| API-02 | GitHub erişim / kota / bağlantı / bozuk JSON senaryolarını endpoint düzeyinde ele alma | Rate-limit 403 ve 429 ayırt edilsin; 5xx veya zaman aşımında güvenli hata çıktısı üretilecek |
+| API-03 | PR listesi ve detay fan-out'ı, upstream kimlik/URL validasyonu | En fazla 1 Actions GET; PR için en fazla 1 liste + 5 detay GET; uyumsuz veri başarılı merge olarak görünmesin |
+| SEC-01 | Anonim endpoint kötüye kullanım ve eşzamanlı istek incelemesi | Trafik kısıtları, caching, kullanıcıya hata iletimi belgelensin; gerekiyorsa yayın öncesi platform düzeyinde koruma |
+| SEC-02 | Dependency, log ve secrets incelemesi | Tarayıcı bundle'ında token bulunmasın, `npm ci` tekrarlanabilir olsun; `npm audit` salt okunur biçimde değerlendirilsin |
+
+**Sprint geçiş kriteri:** Adapter + route testleri hatasız, TypeScript ve build başarılı, hata yanıtları veri sızıntısı yapmıyor. Geliştirme ortamı yalnızca manuel çalıştırılacak.
+
+## Sprint 2 — Ürün arayüzü ve UX (P1)
+
+| İş | Geliştirme | Doğrulama |
+| --- | --- | --- |
+| UX-01 | Desktop / tablet / mobil düzeni, metin ve kart taşmaları | 1440, 768 ve 375 px kontrolü |
+| UX-02 | Repo seçme, loading, retry, boş veri, API kesintisi ekranları | Actions ve PR panellerinin bağımsız hata durumları |
+| UX-03 | Hızlı repo değiştirmede stale response ve cancel yönetimi | Eski repo verileri yeni repo adıyla görüntülenmeyecek |
+| A11Y-01 | Form etiketleri, klavye, odak halkası, kontrast, ekran okuyucu mesajları | Klavye + erişilebilirlik incelemesi; kritik hata kalmasın |
+| UX-04 | GitHub'a giden linkler, tutarlı CI/PR terimleri, örneklem uyarısı | Her önerinin özgün kanıt linki var; gerçek dışı tasarruf veya AI teşhisi yok |
+
+**Sprint geçiş kriteri:** Manuel bulut tarayıcı kontrolünde temel kullanıcı akışı mobil ve masaüstünde tamamlanır.
+
+## Sprint 3 — Uçtan uca doğrulama (P1)
+
+- [ ] Temiz branch/checkout'ta **`npm ci --no-audit --no-fund`**.
+- [ ] **`npm test`**, **`npm run typecheck`**, **`npm run build`** çalıştır; gerçek sonuçları kaydet.
+- [ ] `npm run start` altında **`npm run smoke:http`**; canlı public API ve güvenli hatalı input kontrolü.
+- [ ] Tarayıcı üzerinden public repo/boş repo/hatalı repo/repo değişimi/PR linkleri testleri.
+- [ ] En az bir büyük ve bir küçük ekran boyutunda browser console kontrolü; kritik JS ve accessibility hataları çözülmüş olsun.
+- [ ] `git diff`, bağımlılık değişimleri ve sırların yanlışlıkla commit edilmediği kontrol edilsin.
+
+**Sprint geçiş kriteri:** Test + build + HTTP + browser kontrolleri raporlanabilir biçimde başarılı. Başarısız durumlar düzeltilmeden yayın yapılmayacak.
+
+## Sprint 4 — Yayın hazırlığı ve manuel preview (P1)
+
+- [ ] Ayrı Vercel NEXUS projesini kontrol et: `prj_sbU4ylt4OV4fLkcog3VpSr2fEXYe`. Proje Ops-Copilot'a bağlı olmayacak.
+- [ ] Mevcut Vercel Hobby kota ve maliyet koşullarını kontrol et. **Git push ile otomatik deploy kapalı kalacak.**
+- [ ] Kaynağı doğrulanan SHA'dan **tek seferlik manuel preview** dağıtımı oluştur.
+- [ ] Preview URL'sinde gerçek API ve browser kontrolünü yeniden yap.
+- [ ] `CHANGELOG.md`, `README.md`, `SECURITY.md` ve support bilgilerini son sürüme göre güncelle.
+- [ ] Sürüm onay kriterleri sağlanırsa `v0.1.0` tag/release oluştur; aksi halde preview veya kodu production-ready olarak ilan etme.
+
+**Sprint geçiş kriteri:** Çalışan paylaşılabilir preview, doğrulanan commit SHA ile eşleşiyor; son kullanıcı kendi bilgisayarına kurulum yapmadan deneyebiliyor.
+
+## Sprint 5 — MVP sonrası (P2; ilk yayın için engelleyici değil)
+
+- [ ] En az yetkiyle private repository desteği veren GitHub App.
+- [ ] CircleCI'nin **sadece API verilerini okuma** entegrasyonu; CircleCI pipeline'ı çalıştırma değil.
+- [ ] Depo bazında tarihsel hata eğilimleri, latency ve örneklem kapsamı.
+- [ ] Kanıta dayalı AI kök-neden önerisi; özel log redaksiyonu ve kullanıcı onayı.
+- [ ] GitHub Marketplace / CLI paketleme ve gerçek kullanım geri bildirimine dayalı fiyatlandırma.
+
+## İş sırası ve takip yöntemi
+
+**Şimdi yapılacak sıra:** API-01 → API-02 → API-03 → SEC-01 → SEC-02 → UX-01 → UX-02 → UX-03 → A11Y-01 → UX-04 → Sprint 3 doğrulaması → Sprint 4 manuel preview.
+
+Her iş için: kod değişikliği → ilgili test → kısa süreli Vercel Sandbox'ta manuel test/build → GitHub commit/PR → dokümantasyon. Mümkün olduğunda bağımsız feature branch + PR kullan; otomatik check gerektirme. Doğrulanmış değişiklikler gerekli incelemeden sonra manuel birleştirilebilir.
+
+## MVP tamamlanma tanımı
+
+**MVP tamamlandı** demek için: API route testleri ve güvenlik incelemesi, 24 mevcut test dahil tüm güncel testlerin geçmesi, temiz `npm ci`, tam typecheck ve build, mobil/masaüstü browser QA, hatasız manuel HTTP testi ve kamuya açık çalışan preview gerekir. Repo dosyalarının varlığı veya başarılı build tek başına ürünün yayına hazır olduğu anlamına gelmez.
