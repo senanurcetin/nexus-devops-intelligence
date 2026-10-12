@@ -48,3 +48,12 @@ tsc --noEmit --skipLibCheck --strict --lib es2022,dom --target es2022 \
   --module nodenext --moduleResolution nodenext --allowImportingTsExtensions \
   src/lib/github-public-actions.ts src/lib/nexus-public-prs.ts src/lib/github-public-client.ts
 ```
+
+## Prioritized investigations
+
+`src/lib/nexus-recommendations.ts` derives up to five links to source evidence
+from the already-validated sample. Confirmed conflicts or failed workflows
+precede restrictions and pending states. Draft PRs and successful or cancelled
+workflow runs do not become incidents. Missing upstream evidence yields an empty
+recommendation list; the UI explicitly says the sample cannot be verified.
+No AI diagnosis, workflow trigger or write permission is involved.

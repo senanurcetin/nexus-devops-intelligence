@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import type { PublicActionsSummary } from '@/lib/github-public-actions';
 import type { PublicPullSummary, PullAttention } from '@/lib/nexus-public-prs';
+import { recommendInvestigations } from '@/lib/nexus-recommendations';
 
 const DEFAULT_REPOSITORY = 'senanurcetin/ot-sentinel';
 
@@ -96,6 +97,7 @@ export default function NexusDeveloperPreview() {
   const successRatio = validRuns ? Math.round((actions.data!.successful_runs / validRuns) * 100) : null;
   const runs = actions.data?.runs ?? [];
   const prList = pulls.data?.pull_requests ?? [];
+  const recommendations = recommendInvestigations(actions.data, pulls.data);
 
   return (
     <main className="min-h-screen bg-slate-950 text-slate-100">
@@ -254,15 +256,13 @@ export default function NexusDeveloperPreview() {
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
               <h2 id="next-title" className="flex items-center gap-2 text-base font-semibold">
-                {pulls.data?.conflicts ? <TriangleAlert className="h-5 w-5 text-amber-300" /> :
+                {recommendations.some(r => r.severity === 'high') ?
+                  <TriangleAlert className="h-5 w-5 text-amber-300" /> :
                   <CheckCircle2 className="h-5 w-5 text-cyan-300" />}
-                What to investigate next
+                Suggested investigations
               </h2>
               <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-400">
-                {pulls.data?.conflicts ? `Investigate ${pulls.data.conflicts} GitHub-reported merge conflict(s) in the sampled PRs.` :
-                  pulls.data?.needs_attention ? `Review ${pulls.data.needs_attention} PR(s) with a reported restriction, outdated branch, or unstable merge state.` :
-                    'Open individual GitHub checks and review threads before deciding whether a change can merge.'}
-                {' '}This preview does not modify branches, diagnose logs, or submit pull requests.
+                Prioritized from the displayed GitHub sample only; these are not AI diagnoses or permission to merge.
               </p>
             </div>
             <a href="https://docs.github.com/en/rest/actions/workflow-runs"
@@ -271,6 +271,29 @@ export default function NexusDeveloperPreview() {
               GitHub API docs <ArrowRight className="h-4 w-4" />
             </a>
           </div>
+          {recommendations.length > 0 ? (
+            <ol className="mt-5 space-y-3">
+              {recommendations.map(item => (
+                <li key={item.key} className="flex flex-wrap items-start justify-between gap-3 rounded-xl border border-slate-800 bg-slate-950/70 p-4">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-semibold text-slate-200">{item.title}</p>
+                    <p className="mt-1 text-xs leading-5 text-slate-400">{item.explanation}</p>
+                  </div>
+                  <a href={item.url} target="_blank" rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-xs font-medium text-cyan-300 hover:text-cyan-100">
+                    Review <ArrowUpRight className="h-4 w-4" />
+                  </a>
+                </li>
+              ))}
+            </ol>
+          ) : (
+            <p className="mt-5 text-sm leading-6 text-slate-400">
+              {actions.data && pulls.data ?
+                'No confirmed failures or merge blockers in these samples. Other runs, checks and PRs may require attention.' :
+                'Not enough verified API data to make a recommendation. Check the source panels for errors.'}
+            </p>
+          )}
+          <p className="mt-4 text-xs text-slate-500">No repository changes are made by this preview.</p>
         </section>
 
         <footer className="mt-9 border-t border-slate-800 pt-6 text-xs leading-6 text-slate-500">

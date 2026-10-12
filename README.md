@@ -9,6 +9,8 @@ and pull request merge state. **This is not part of Ops-Copilot.**
 - Recent workflow history (up to 10 runs); sample metrics **are not billed minutes**.
 - Recent open pull requests (up to five), with GitHub-reported merge state.
 - Explicit `unknown` statuses when GitHub has not finished calculating mergeability.
+- Deterministic investigation suggestions linking to GitHub-confirmed workflow failures
+  and PR merge states; no speculative log analysis or automatic code changes.
 - URL validation, bounded requests, caching and request timeouts.
 - No AI root-cause diagnosis, CircleCI integration, private repo access or live product deployment yet.
 

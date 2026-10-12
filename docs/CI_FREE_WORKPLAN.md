@@ -16,7 +16,7 @@
 - [x] Add standalone Next.js source, two read-only API routes, responsive dashboard and shared validation models.
 - [x] Add license, `README.md`, `CONTRIBUTING.md`, `SECURITY.md` and architecture notes.
 - [x] Make Node.js 22 built-in TypeScript stripping usable for tests without project dependencies.
-- [x] Run `npm test` locally: **20 passed, 0 failed** (13 October 2026), including mocked GitHub REST behavior.
+- [x] Run `npm test` locally: **23 passed, 0 failed** (13 October 2026), including mocked GitHub REST behavior.
 - [x] Run focused dependency-free TypeScript check across both models and the API client with global `tsc`: **passed**.
 - [ ] Install pinned project dependencies and generate/commit a reproducible `package-lock.json`.
 - [ ] Run full `npm run typecheck` and `npm run build` **locally**. Current runtime cannot resolve npmjs.org (`EAI_AGAIN`); these checks are *not yet verified*.
@@ -25,7 +25,8 @@
 
 - [x] Add dependency-free mock-based **GitHub API client** tests: valid empty responses, 404, 429/503, malformed payload, timeouts and partial PR-detail failure. (20/20 Node tests passed.)
 - [ ] Add full Next.js route-handler integration tests when dependencies can be installed; existing tests exercise the adapter consumed by both routes, not the Next.js runtime itself.
-- [ ] Verify UI correctly distinguishes `unknown`, `blocked`, `dirty`, `behind`, `unstable` and draft PRs using real GitHub API sample data.
+- [x] Add offline-tested priority suggestions for GitHub-reported failures and PR merge states (no fabricated AI diagnosis).
+- [ ] Verify UI visually distinguishes `unknown`, `blocked`, `dirty`, `behind`, `unstable` and draft PRs in a real browser with live public GitHub data.
 - [x] Review anonymous rate-limit responses, bounded fan-out (1 Actions request or 1 PR list + at most 5 details), cache headers and forged upstream URL validation.
 - [ ] Evaluate runtime abuse prevention and global rate limiting before any broad public launch.
 - [ ] Confirm accessibility in a local browser: keyboard operation, loading and error states, narrow mobile viewport.
