@@ -66,3 +66,8 @@ test('handles zero PRs and does not invent merge status when not computed', () =
   assert.deepEqual(classifyPullRequest(false, { mergeable: null, mergeable_state: 'unknown' }).attention, 'unknown');
   assert.equal(classifyPullRequest(false, null).attention, 'unknown');
 });
+
+test('rejects repeated PR numbers in the same sample', () => {
+  assert.throws(() => summarizePublicPullRequests(repo, [pr(4), pr(4)], [null, null]),
+    /Duplicate GitHub pull request number/);
+});

@@ -84,6 +84,7 @@ export function summarizePublicPullRequests(
   if (detailPayloads.length !== selected.length) {
     throw new Error('Missing PR detail slots.');
   }
+  const seenNumbers = new Set<number>();
   const pull_requests = selected.map((entry, i) => {
     if (!entry || typeof entry !== 'object') throw new Error('Invalid GitHub pull request.');
     const pr = entry as Partial<GithubPullListItem>;
@@ -94,6 +95,8 @@ export function summarizePublicPullRequests(
       throw new Error('Invalid GitHub pull request.');
     }
     const number = pr.number as number;
+    if (seenNumbers.has(number)) throw new Error('Duplicate GitHub pull request number.');
+    seenNumbers.add(number);
     const html_url = `https://github.com/${repository}/pull/${number}`;
     if (pr.html_url !== html_url) throw new Error('Unexpected GitHub pull request URL.');
     const raw = detailPayloads[i];

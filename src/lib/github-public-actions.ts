@@ -41,15 +41,23 @@ export function summarizePublicActions(repository: string, payload: unknown): Pu
       !Array.isArray(data.workflow_runs)) {
     throw new Error('Unexpected GitHub API response.');
   }
-  const runs: PublicWorkflowRun[] = data.workflow_runs.slice(0, 10).map((item: unknown) => {
+  const sampled = data.workflow_runs.slice(0, 10);
+  if (data.total_count < sampled.length) {
+    throw new Error('GitHub returned inconsistent workflow counts.');
+  }
+  const runIds = new Set<number>();
+  const runs: PublicWorkflowRun[] = sampled.map((item: unknown) => {
     if (!item || typeof item !== 'object') throw new Error('Invalid workflow run.');
     const run = item as Partial<PublicWorkflowRun>;
-    if (typeof run.id !== 'number' || !Number.isSafeInteger(run.id) || typeof run.name !== 'string' ||
+    if (typeof run.id !== 'number' || !Number.isSafeInteger(run.id) || run.id < 1 ||
+        runIds.has(run.id) || typeof run.name !== 'string' ||
         typeof run.status !== 'string' || typeof run.event !== 'string' ||
         (run.conclusion !== null && typeof run.conclusion !== 'string') ||
-        typeof run.created_at !== 'string' || typeof run.html_url !== 'string') {
+        typeof run.created_at !== 'string' || !Number.isFinite(Date.parse(run.created_at)) ||
+        typeof run.html_url !== 'string') {
       throw new Error('Invalid workflow run.');
     }
+    runIds.add(run.id);
     const expected = 'https://github.com/' + repository + '/actions/runs/' + run.id;
     if (run.html_url !== expected) throw new Error('Unexpected run URL.');
     return {

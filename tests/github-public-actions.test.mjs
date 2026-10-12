@@ -39,3 +39,12 @@ test('rejects forged run URLs and corrupt payloads', () => {
     assert.throws(() => summarizePublicActions(repo, payload));
   }
 });
+
+test('rejects inconsistent totals, duplicate run IDs and invalid timestamps', () => {
+  for (const data of [
+    { total_count: 0, workflow_runs: [workflow(1)] },
+    { total_count: 2, workflow_runs: [workflow(1), workflow(1)] },
+    { total_count: 1, workflow_runs: [{ ...workflow(1), created_at: 'not-a-date' }] },
+    { total_count: 1, workflow_runs: [workflow(0)] },
+  ]) assert.throws(() => summarizePublicActions(repo, data));
+});

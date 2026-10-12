@@ -25,7 +25,7 @@ npm run dev
 ## Validate
 
 ```bash
-npm run test
+npm test
 npm run typecheck
 npm run build
 ```
@@ -41,13 +41,27 @@ does not contain any GitHub Actions or CircleCI workflow files. Tests use Node.j
 
 Both API routes call fixed `api.github.com` endpoints only. Results are anonymous,
 cached for up to two minutes and subject to GitHub's public API rate limits.
-The PR endpoint sends at most six upstream GET requests per cache miss.
+The PR endpoint sends at most six upstream GET requests per cache miss;
+draft PRs skip their detail request. Upstream 404, rate limits and timeouts are
+handled explicitly, and failed PR-detail responses produce an unknown state.
 
 ## Independence from Ops-Copilot
 
 The initial prototype was drafted in an Ops-Copilot feature branch but never merged
 into that repository's `main`. The product is extracted into this separate repository
 to keep the industrial AI assistant and developer tooling independent.
+
+## CI-free testing
+
+The GitHub API adapter can be tested with mocked REST responses using Node.js 22+
+without invoking any hosted CI job:
+
+```bash
+npm test
+```
+
+All mocks remain local; the tests do not call GitHub or CircleCI. A complete
+Next.js build still requires project dependencies and has not been verified yet.
 
 ## Release limitations
 
