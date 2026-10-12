@@ -6,7 +6,7 @@ import {
   Activity, AlertCircle, ArrowRight, ArrowUpRight, CheckCircle2,
   GitBranch, GitPullRequest, RefreshCw, ShieldCheck, TriangleAlert,
 } from 'lucide-react';
-import type { PublicActionsSummary } from '@/lib/github-public-actions';
+import { parsePublicRepository, type PublicActionsSummary } from '@/lib/github-public-actions';
 import type { PublicPullSummary, PullAttention } from '@/lib/nexus-public-prs';
 import { recommendInvestigations } from '@/lib/nexus-recommendations';
 
@@ -61,6 +61,7 @@ export default function NexusDeveloperPreview() {
   const [actions, setActions] = useState<Panel<PublicActionsSummary>>(empty);
   const [pulls, setPulls] = useState<Panel<PublicPullSummary>>(empty);
   const [loading, setLoading] = useState(false);
+  const [formError, setFormError] = useState('');
   const controller = useRef<AbortController | null>(null);
 
   const load = useCallback(async (repo: string) => {
@@ -90,7 +91,15 @@ export default function NexusDeveloperPreview() {
 
   function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    void load(repository);
+    const nextRepo = repository.trim();
+    try {
+      parsePublicRepository(nextRepo);
+    } catch {
+      setFormError('Enter a public GitHub repository as owner/repository.');
+      return;
+    }
+    setFormError('');
+    void load(nextRepo);
   }
 
   const validRuns = actions.data?.inspected_runs ?? 0;
@@ -139,19 +148,22 @@ export default function NexusDeveloperPreview() {
         </div>
 
         <section aria-label="Repository search" className="rounded-2xl border border-slate-800 bg-slate-900 p-5 sm:p-6">
-          <form onSubmit={onSubmit} className="flex flex-col gap-3 sm:flex-row sm:items-end">
+          <form onSubmit={onSubmit} aria-busy={loading} className="flex flex-col gap-3 sm:flex-row sm:items-end">
             <label className="flex-1 text-sm font-medium text-slate-300">
               Public GitHub repository
-              <input value={repository} onChange={event => setRepository(event.target.value)}
+              <input value={repository} onChange={event => { setRepository(event.target.value); setFormError(''); }}
                 maxLength={200} required autoComplete="off" placeholder="owner/repository"
+                aria-invalid={Boolean(formError)} aria-describedby={formError ? 'repository-error' : 'repository-hint'}
                 className="mt-2 block w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-base text-slate-100 outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/15" />
             </label>
-            <button type="submit" disabled={loading}
+            <button type="submit"
               className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-cyan-400 px-6 py-3 text-sm font-semibold text-slate-950 hover:bg-cyan-300 disabled:opacity-50">
               <RefreshCw className={'h-4 w-4 ' + (loading ? 'animate-spin' : '')} />
               {loading ? 'Analyzing…' : 'Analyze repository'}
             </button>
           </form>
+          {formError ? <p id="repository-error" className="mt-3 text-sm text-rose-300" role="alert">{formError}</p>
+            : <p id="repository-hint" className="mt-3 text-xs text-slate-500">Use an owner/repository name; public repositories only.</p>}
           <p className="mt-3 text-xs text-slate-500" aria-live="polite">
             {loading ? 'Reading public GitHub REST API records…' : `Selected: ${selectedRepo}`}
           </p>
