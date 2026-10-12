@@ -3,6 +3,12 @@
 An independent, read-only dashboard for inspecting recent GitHub Actions workflow runs
 and pull request merge state. **This is not part of Ops-Copilot.**
 
+> **Release blocked (13 October 2026):** A manual npm audit found 1 critical and
+> 2 high-severity production dependency findings in the currently committed
+> dependency set. A patched dependency combination passed cloud tests and audit
+> but its lockfile is **not yet committed**. Do not publicly deploy this version.
+> See [P0 security tracking issue #2](https://github.com/senanurcetin/nexus-devops-intelligence/issues/2).
+
 ## Current scope (MVP)
 
 - Public GitHub repositories only; no GitHub token, GitHub App installation, or write permission.
@@ -32,9 +38,10 @@ npm run typecheck
 npm run build
 ```
 
-**CI-free workflow:** Run the tests and build on your own machine. This repository
-does not contain any GitHub Actions or CircleCI workflow files. Tests use Node.js
-22 built-in TypeScript type stripping and do not need third-party dependencies.
+**CI-free workflow:** Tests, typecheck and production build are run manually in a
+short-lived cloud sandbox, without GitHub Actions or CircleCI. The current
+`npm test` command uses the locked `tsx` development dependency and requires
+`npm ci` first. There is no requirement to install anything on the user's PC.
 
 ## HTTP API
 
