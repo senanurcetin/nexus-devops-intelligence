@@ -4,25 +4,25 @@
 **Çalışma modeli:** GitHub üzerinde sürüm kontrollü geliştirme; kısa süreli bulut sandbox'larında manuel doğrulama. Kullanıcının bilgisayarına kurulum yok.  
 **İlk sürüm hedefi:** Public GitHub repository'lerinde CI geçmişi, açık PR durumları ve kanıta dayalı öncelikli inceleme önerilerini güvenilir biçimde sunan, halka açık, salt okunur MVP.
 
-## Kritik yayın engeli — 13 Ekim 2026
+## Güvenlik güncellemesi — 13 Ekim 2026
 
-**<a href="https://github.com/senanurcetin/nexus-devops-intelligence/issues/2">Issue #2</a> açık.** Manuel üretim bağımlılığı taraması `main` dalındaki Next.js 15.5.9 ve ilişkili PostCSS/Sharp sürümleri için **1 kritik + 2 yüksek** bulgu verdi. Geçici Vercel Sandbox'ta Next.js `15.5.27` ve `overrides: { next: { postcss: "8.5.30" }, sharp: "0.35.5" }` ile **sıfır üretim bağımlılığı bulgusu**, **33/33 test**, başarılı typecheck ve build görüldü. Ancak geçici ortam kilit dosyası gönderilmeden kapandı. **Düzeltme GitHub'a aktarılmış değildir.**
-
-- [ ] **P0:** `fix/secure-next-dependencies` dalına hem yeni `package.json` hem de yeni `package-lock.json` aktar.
-- [ ] **P0:** Temiz `npm ci`, `npm audit --omit=dev`, test, typecheck ve build'i yeni commit üzerinde doğrula.
-- [ ] **P0:** Güvenlik bulguları giderilmeden ve tarayıcı testleri bitmeden herkese açık yayın yapma.
+- [x] [PR #3](https://github.com/senanurcetin/nexus-devops-intelligence/pull/3) birleştirildi; [issue #2](https://github.com/senanurcetin/nexus-devops-intelligence/issues/2) çözüldü.
+- [x] Next.js `15.5.27`, PostCSS `8.5.30` ve Sharp `0.35.5`; `package.json` ile npm'in oluşturduğu `package-lock.json` birlikte commit edildi.
+- [x] Yeni dalın commit'inden temiz `npm ci --no-audit --no-fund`, `npm test` (**33/33**), `npm run typecheck` ve `npm run build` başarılı.
+- [x] `npm audit --omit=dev --json`: doğrulama anında **0 üretim bağımlılığı bulgusu** (önce 1 kritik + 2 yüksek).
+- [ ] **Yayın engelleri devam ediyor:** tarayıcı/a11y doğrulaması, uygulama ve Vercel seviyesinde kötüye kullanım kontrolleri, manuel preview uçtan uca testi.
 
 ## 0. Doğrulanmış mevcut durum
 
 | Bileşen | Durum | Kanıt |
 | --- | --- | --- |
 | Bağımsız açık kaynak repo | TAMAM | Ops-Copilot'dan ayrı GitHub deposu |
-| Next.js 15.5.9 dashboard | KODLANDI | `src/app/page.tsx` |
+| Next.js 15.5.27 dashboard | KODLANDI | `src/app/page.tsx` |
 | Actions + PR API | KODLANDI | `src/app/api/public-*/route.ts` |
 | Durum sınıflandırması ve öneriler | KODLANDI | `src/lib/` |
 | Bağımlılık kilidi | TAMAM | `package-lock.json`, commit `4b87e6d` |
-| Temiz kurulum | BAŞARILI | Bulutta `npm ci --no-audit --no-fund`, 108 paket |
-| Unit testler | BAŞARILI | Son cloud çalıştırmasında 24/24 |
+| Temiz kurulum | BAŞARILI | Bulutta `npm ci --no-audit --no-fund`, 107 paket |
+| Unit testler | BAŞARILI | Son cloud çalıştırmasında 33/33 |
 | TypeScript + Next.js production build | BAŞARILI | Manuel `npm run typecheck` ve `npm run build` |
 | Gerçek HTTP smoke | BAŞARILI | Ana sayfa 200, hatalı input 400, 10 workflow ve 5 PR örneği |
 | GitHub Actions / CircleCI | KULLANILMADI | Depoda workflow config yok |
@@ -104,4 +104,4 @@ Her iş için: kod değişikliği → ilgili test → kısa süreli Vercel Sandb
 
 ## MVP tamamlanma tanımı
 
-**MVP tamamlandı** demek için: API route testleri ve güvenlik incelemesi, 24 mevcut test dahil tüm güncel testlerin geçmesi, temiz `npm ci`, tam typecheck ve build, mobil/masaüstü browser QA, hatasız manuel HTTP testi ve kamuya açık çalışan preview gerekir. Repo dosyalarının varlığı veya başarılı build tek başına ürünün yayına hazır olduğu anlamına gelmez.
+**MVP tamamlandı** demek için: API route testleri ve güvenlik incelemesi, 33 mevcut test dahil tüm güncel testlerin geçmesi, temiz `npm ci`, tam typecheck ve build, mobil/masaüstü browser QA, hatasız manuel HTTP testi ve kamuya açık çalışan preview gerekir. Repo dosyalarının varlığı veya başarılı build tek başına ürünün yayına hazır olduğu anlamına gelmez.
