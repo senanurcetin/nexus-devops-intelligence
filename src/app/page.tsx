@@ -50,7 +50,7 @@ function Card({ label, value, detail, tone = 'default' }: {
       <p className="text-sm text-slate-400">{label}</p>
       <div className={'mt-2 text-3xl font-semibold tabular-nums ' +
         (tone === 'warning' ? 'text-amber-300' : 'text-white')}>{value}</div>
-      <p className="mt-2 text-xs leading-5 text-slate-500">{detail}</p>
+      <p className="mt-2 text-xs leading-5 text-slate-400">{detail}</p>
     </div>
   );
 }
@@ -163,8 +163,8 @@ export default function NexusDeveloperPreview() {
             </button>
           </form>
           {formError ? <p id="repository-error" className="mt-3 text-sm text-rose-300" role="alert">{formError}</p>
-            : <p id="repository-hint" className="mt-3 text-xs text-slate-500">Use an owner/repository name; public repositories only.</p>}
-          <p className="mt-3 text-xs text-slate-500" aria-live="polite">
+            : <p id="repository-hint" className="mt-3 text-xs text-slate-400">Use an owner/repository name; public repositories only.</p>}
+          <p className="mt-3 text-xs text-slate-400" aria-live="polite">
             {loading ? 'Reading public GitHub REST API records…' : `Selected: ${selectedRepo}`}
           </p>
         </section>
@@ -188,7 +188,7 @@ export default function NexusDeveloperPreview() {
                 <h2 id="workflow-title" className="flex items-center gap-2 text-lg font-semibold">
                   <Activity className="h-5 w-5 text-cyan-300" /> GitHub Actions
                 </h2>
-                <p className="mt-1 text-xs text-slate-500">Recent runs · GitHub REST API</p>
+                <p className="mt-1 text-xs text-slate-400">Recent runs · GitHub REST API</p>
               </div>
               <a href={`https://github.com/${selectedRepo}/actions`} target="_blank" rel="noopener noreferrer"
                 className="inline-flex items-center gap-1 text-sm text-cyan-300 hover:text-white">
@@ -202,7 +202,7 @@ export default function NexusDeveloperPreview() {
                 <li key={run.id} className="flex items-center justify-between gap-3 p-5">
                   <div className="min-w-0">
                     <p className="truncate text-sm font-medium text-slate-200">{run.name}</p>
-                    <p className="mt-1 text-xs text-slate-500">{run.event} · {run.created_at.slice(0, 10)} · #{run.id}</p>
+                    <p className="mt-1 text-xs text-slate-400">{run.event} · {run.created_at.slice(0, 10)} · #{run.id}</p>
                   </div>
                   <div className="flex shrink-0 items-center gap-3">
                     <span className={'text-xs ' + (run.conclusion === 'success' ? 'text-emerald-300' :
@@ -218,8 +218,8 @@ export default function NexusDeveloperPreview() {
               ))}
             </ul>
             {actions.data && runs.length === 0 && <p className="p-5 text-sm text-slate-400">No workflow runs in this sample.</p>}
-            {!actions.data && !actions.error && <p className="p-5 text-sm text-slate-500">{loading ? 'Loading workflow history…' : 'No workflow data loaded.'}</p>}
-            {actions.data && <p className="border-t border-slate-800 p-5 text-xs leading-5 text-slate-500">
+            {!actions.data && !actions.error && <p className="p-5 text-sm text-slate-400">{loading ? 'Loading workflow history…' : 'No workflow data loaded.'}</p>}
+            {actions.data && <p className="border-t border-slate-800 p-5 text-xs leading-5 text-slate-400">
               {actions.data.scope_note} GitHub reports {actions.data.total_matching_runs} matching workflow runs.
             </p>}
           </section>
@@ -230,7 +230,7 @@ export default function NexusDeveloperPreview() {
                 <h2 id="pulls-title" className="flex items-center gap-2 text-lg font-semibold">
                   <GitPullRequest className="h-5 w-5 text-cyan-300" /> PR Intelligence
                 </h2>
-                <p className="mt-1 text-xs text-slate-500">Recent open pull requests · GitHub-reported merge states</p>
+                <p className="mt-1 text-xs text-slate-400">Recent open pull requests · GitHub-reported merge states</p>
               </div>
               <a href={`https://github.com/${selectedRepo}/pulls`} target="_blank" rel="noopener noreferrer"
                 className="inline-flex items-center gap-1 text-sm text-cyan-300 hover:text-white">
@@ -252,13 +252,13 @@ export default function NexusDeveloperPreview() {
                     </span>
                   </div>
                   <p className="mt-2 text-xs leading-5 text-slate-400">{pr.explanation}</p>
-                  <p className="mt-2 text-xs text-slate-500">{pr.author} · Updated {pr.updated_at.slice(0, 10)}</p>
+                  <p className="mt-2 text-xs text-slate-400">{pr.author} · Updated {pr.updated_at.slice(0, 10)}</p>
                 </li>
               ))}
             </ul>
             {pulls.data && prList.length === 0 && <p className="p-5 text-sm text-slate-400">No open PRs found.</p>}
-            {!pulls.data && !pulls.error && <p className="p-5 text-sm text-slate-500">{loading ? 'Loading pull requests…' : 'No PR data loaded.'}</p>}
-            {pulls.data && <p className="border-t border-slate-800 p-5 text-xs leading-5 text-slate-500">
+            {!pulls.data && !pulls.error && <p className="p-5 text-sm text-slate-400">{loading ? 'Loading pull requests…' : 'No PR data loaded.'}</p>}
+            {pulls.data && <p className="border-t border-slate-800 p-5 text-xs leading-5 text-slate-400">
               {pulls.data.scope_note}
             </p>}
           </section>
@@ -305,10 +305,10 @@ export default function NexusDeveloperPreview() {
                 'Not enough verified API data to make a recommendation. Check the source panels for errors.'}
             </p>
           )}
-          <p className="mt-4 text-xs text-slate-500">No repository changes are made by this preview.</p>
+          <p className="mt-4 text-xs text-slate-400">No repository changes are made by this preview.</p>
         </section>
 
-        <footer className="mt-9 border-t border-slate-800 pt-6 text-xs leading-6 text-slate-500">
+        <footer className="mt-9 border-t border-slate-800 pt-6 text-xs leading-6 text-slate-400">
           Public repositories only; anonymous GET requests; sample sizes and unknown states are explicit.
           Not a production reliability rating, a security audit, or a GitHub billing statement.
         </footer>
