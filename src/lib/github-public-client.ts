@@ -5,7 +5,7 @@ import { summarizePublicPullRequests, type PublicPullSummary } from './nexus-pub
 export type GitHubFetcher = (
   url: string,
   init?: RequestInit & { next?: { revalidate: number } },
-) => Promise<Pick<Response, 'ok' | 'status' | 'json'>>;
+) => Promise<Pick<Response, 'ok' | 'status' | 'json'> & { headers?: Pick<Headers, 'get'> }>;
 
 export type ApiError = { error: string };
 export type ApiResult<T> = { status: number; body: T | ApiError };
@@ -37,7 +37,10 @@ async function githubGet(url: string, fetcher: GitHubFetcher): Promise<FetchResu
     return { kind: 'network' };
   }
   if (response.status === 404) return { kind: 'not_found' };
-  if (response.status === 429) return { kind: 'rate_limited' };
+  if (response.status === 429 ||
+      (response.status === 403 && response.headers?.get('x-ratelimit-remaining') === '0')) {
+    return { kind: 'rate_limited' };
+  }
   if (response.status === 401 || response.status === 403) return { kind: 'denied' };
   if (!response.ok) return { kind: 'unavailable' };
   try {
