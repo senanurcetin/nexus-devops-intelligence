@@ -1,62 +1,102 @@
-# NEXUS DevOps Intelligence — CI-free delivery plan
+# NEXUS DevOps Intelligence — CI-free delivery roadmap
 
-**Baseline:** 13 October 2026 · **Repository:** `senanurcetin/nexus-devops-intelligence` · **Delivery mode:** manual, local verification only.
+**Updated:** 13 October 2026  
+**Repository:** https://github.com/senanurcetin/nexus-devops-intelligence  
+**Product boundary:** Standalone developer application; no dependency on Ops-Copilot.
 
-## Non-negotiable constraints
+## Verified baseline
 
-- No GitHub Actions, CircleCI, GitLab CI or other hosted pipeline runs. Do not add `.github/workflows/**` or `.circleci/**` files until the owner explicitly reverses this constraint.
-- Do not merge an untested feature or report a successful build without a real `npm run build` result.
-- Never expose GitHub tokens in browser bundles, examples, logs or issues. The initial product accesses **public** repositories only through anonymous, bounded GET requests.
-- Treat GitHub PR mergeability as potentially pending/stale; never fabricate a passing CI status, security verdict or billed-minute estimate.
-- Keep this product and its repository independent from the industrial AI assistant Ops-Copilot.
+- [x] Dedicated public GitHub repository with standalone Next.js 15.5.9 application.
+- [x] GitHub Actions activity viewer, PR merge-state triage, and source-linked investigation recommendations.
+- [x] Read-only anonymous REST API access, fixed GitHub host, bounded fan-out, repository and upstream-link validation.
+- [x] Documentation: README, architecture, contribution guidelines, security policy, MIT license.
+- [x] **23/23 Node.js unit tests passed** on a temporary Vercel cloud sandbox.
+- [x] **Full `npm run typecheck` passed**, and **`npm run build` passed** in that sandbox (Node 24 / npm 11).
+- [x] Production server manually returned **HTTP 200** for the homepage and API endpoints; malformed repo input returned HTTP 400.
+- [x] Live public API probes returned 10 Actions runs from `senanurcetin/ot-sentinel` and 5 PRs from `vercel/next.js`.
+- [x] Temporary Vercel Sandbox stopped after the checks.
+- [x] No GitHub Actions or CircleCI jobs were started; no CI workflow files exist.
+- [ ] **`package-lock.json` not yet committed.** A lockfile was generated in the temporary sandbox but did not transfer into GitHub.
+- [ ] Full interactive browser QA and production deployment are not complete.
 
-## Phase 0 — Independent foundation (P0)
+The verified build corresponds to commit `30f40c65ea6d6100bd3fb7db551e6b8c50fc4d3a`; a subsequent documentation-only commit did not modify runtime code. Test and build logs were observed in the cloud sandbox, not a CI service.
 
-- [x] Create dedicated public repository and initialize a clean `main` branch.
-- [x] Add standalone Next.js source, two read-only API routes, responsive dashboard and shared validation models.
-- [x] Add license, `README.md`, `CONTRIBUTING.md`, `SECURITY.md` and architecture notes.
-- [x] Make Node.js 22 built-in TypeScript stripping usable for tests without project dependencies.
-- [x] Run `npm test` locally: **23 passed, 0 failed** (13 October 2026), including mocked GitHub REST behavior.
-- [x] Run focused dependency-free TypeScript check across both models and the API client with global `tsc`: **passed**.
-- [ ] Install pinned project dependencies and generate/commit a reproducible `package-lock.json`.
-- [ ] Run full `npm run typecheck` and `npm run build` **locally**. Current runtime cannot resolve npmjs.org (`EAI_AGAIN`); these checks are *not yet verified*.
+## Non-negotiable delivery constraints
 
-## Phase 1 — Data and API hardening (P0)
+1. **Do not run, configure or trigger GitHub Actions, CircleCI, GitLab CI, or automatic CI workflows.** Do not add `.github/workflows/` or `.circleci/` configuration without explicit permission.
+2. The user cannot install software locally. **Do not make the user's PC a prerequisite.** Use connected GitHub, short-lived cloud sandboxes and available cloud testing services when permitted.
+3. Do not deploy automatically on every push. Keep deployment a separate, reviewed operation.
+4. Never expose GitHub tokens or installation secrets in browser code, examples, logs, or GitHub issues. Public MVP stays anonymous and GET-only.
+5. Report only observed test/build outcomes; do not conflate sampled run durations with billed GitHub Actions minutes or an exhaustive CI health score.
+6. Do not describe pending or unverified PR mergeability as safe to merge.
+7. Verify Vercel plan limits and resource consumption before repeating sandbox work. Stop sessions promptly.
 
-- [x] Add dependency-free mock-based **GitHub API client** tests: valid empty responses, 404, 429/503, malformed payload, timeouts and partial PR-detail failure. (20/20 Node tests passed.)
-- [ ] Add full Next.js route-handler integration tests when dependencies can be installed; existing tests exercise the adapter consumed by both routes, not the Next.js runtime itself.
-- [x] Add offline-tested priority suggestions for GitHub-reported failures and PR merge states (no fabricated AI diagnosis).
-- [ ] Verify UI visually distinguishes `unknown`, `blocked`, `dirty`, `behind`, `unstable` and draft PRs in a real browser with live public GitHub data.
-- [x] Review anonymous rate-limit responses, bounded fan-out (1 Actions request or 1 PR list + at most 5 details), cache headers and forged upstream URL validation.
-- [ ] Evaluate runtime abuse prevention and global rate limiting before any broad public launch.
-- [ ] Confirm accessibility in a local browser: keyboard operation, loading and error states, narrow mobile viewport.
+## Phase 1 — Reproducible foundation (P0)
 
-## Phase 2 — Publishable free MVP (P1)
+- [ ] Regenerate the npm dependency lockfile in an authorized short-lived cloud environment and commit `package-lock.json` to `main`.
+- [ ] On a fresh checkout, run `npm ci --no-audit --no-fund` and verify package-lock/package.json consistency.
+- [ ] Repeat `npm test`, `npm run typecheck`, and `npm run build` on that exact dependency set. Record tool versions and results.
+- [ ] Review dependency scripts and the lockfile before committing. Avoid installing additional services or CI runners.
 
-- [ ] Verify a clean local production build and inspect browser console warnings.
-- [ ] Publish an isolated preview using an authorized hosting project when hosting quota permits. No CI pipeline or automatic deployment is needed.
-- [ ] Publish a versioned changelog and precise release notes based only on tests actually run.
-- [ ] Collect early user feedback from public GitHub repository maintainers.
+**Acceptance:** Fresh cloud checkout reproduces all 23 tests, typecheck and production build using `npm ci` with no lockfile drift.
 
-## Phase 3 — Post-MVP expansion (P2)
+## Phase 2 — API reliability and security (P0)
 
-- [ ] Add optional GitHub App authentication for private repos with **least-privilege, read-only** permissions, registered by the account owner.
-- [ ] Add CircleCI data integration after explicitly agreeing on API permissions and data-retention boundaries. This is **data ingestion**, not running CircleCI builds.
-- [ ] Add historical PR/CI health trends and evidence-backed diagnostic suggestions.
-- [ ] Consider AI-assisted incident explanations only after sufficient log redaction, provenance and user feedback.
+- [ ] Add focused Next.js route-handler integration tests; current 23 tests focus on domain models and the fetch adapter.
+- [ ] Cover 400, 404, 429, 502 and 503 responses; invalid JSON, malformed upstream objects, connection timeouts and partial PR-detail availability.
+- [ ] Audit GitHub anonymous rate-limit handling, `Cache-Control` semantics and resource exhaustion risks under concurrent requests. Design safe limits and public endpoint abuse controls.
+- [ ] Verify unknown, blocked, dirty, behind, unstable and draft PR categorization using fixtures; never fabricate merge-check outcomes.
+- [ ] Validate any external hrefs and text display; keep auth tokens and response bodies out of logs.
 
-## Commands: manual and quota-free
+**Acceptance:** Both routes fail safely under mocked faults, cap upstream requests, and show bounded, truthful public data.
+
+## Phase 3 — Browser experience and accessibility (P1)
+
+- [ ] Manually inspect desktop, tablet and mobile viewports; verify layouts and card readability.
+- [ ] Test repository input, loading and empty states, API error banners, retry behavior, long repo names and result links.
+- [ ] Verify keyboard navigation, focus visibility, form labels, color contrast, and screen-reader status updates.
+- [ ] Check stale-request races when switching repos rapidly and ensure error states are independent across panels.
+- [ ] Run a production-server browser smoke test in a cloud environment **without triggering CI**.
+
+**Acceptance:** An independent user can paste a public repo, understand its sampled CI/PR status, and follow a traceable investigation recommendation on mobile or desktop.
+
+## Phase 4 — Manual preview and release (P1)
+
+- [ ] Review the already-created **separate Vercel project** for NEXUS; ensure it is not linked to Ops-Copilot, Git auto-deployment is off and current plan limits permit a preview.
+- [ ] Publish one manually initiated preview after Phases 1–3 pass; do not enable push-triggered deployment.
+- [ ] Confirm production-like API responses and client-side behavior at the actual preview URL.
+- [ ] Add `CHANGELOG.md`, a release checklist, verified screenshots, support contact and explicit data/usage limitations.
+- [ ] Tag an `v0.1.0` release only after source, verification and preview match.
+
+**Acceptance:** A manually reviewed, accessible public preview has working real-data APIs and no unrelated CI execution.
+
+## Phase 5 — Later capabilities (P2; exclude from initial MVP)
+
+- GitHub App registration and least-privilege access to selected private repositories.
+- Read-only CircleCI API data analysis **without running CircleCI builds**.
+- Historical metrics with explicit sample-coverage and retention definitions.
+- AI-assisted incident interpretation only with evidence links, redaction and user controls.
+- GitHub Marketplace feasibility, packaged CLI, and commercial features after real user feedback.
+
+## Current blockers and ownership
+
+| Item | Status | Resolution |
+| --- | --- | --- |
+| npm lockfile | Pending | Generate/recover in cloud, commit, test with `npm ci` |
+| Full application test/build | **Verified on cloud sandbox** | Repeat only after committing the lockfile |
+| Interactive browser QA | Pending | Cloud browser / sandbox validation |
+| Public preview | Pending | Manual Vercel deployment after reviewing quotas |
+| CI minutes | **Not required** | No GitHub Actions or CircleCI |
+| Local user machine | **Not required** | Use cloud and connected GitHub |
+
+## Useful manual commands (cloud sandbox, not CI)
 
 ```bash
+npm ci --no-audit --no-fund
 npm test
-# Requires dependencies; execute only when package installation is available:
 npm run typecheck
 npm run build
-npm run dev
+npm run start
 ```
 
-`npm test` uses Node.js 22 and its built-in type stripping; no CI service is invoked. Build verification is a separate local task; passing seven model tests does **not** demonstrate that Next.js renders or deploys successfully.
-
-## Acceptance criterion for calling the MVP complete
-
-A fresh clone installs with a committed lockfile, all tests and typechecks pass on an authorized developer machine, a production build completes, API errors fail safely, and the page is manually verified on desktop and mobile. Deployment and public availability are separate from source readiness.
+**MVP completion definition:** Independent repository, reproducible dependency lock, passing unit and route tests, full typecheck and production build, responsive browser QA, secure bounded public API access, and a manually verified public preview. Keep advanced integrations out of the first release.
