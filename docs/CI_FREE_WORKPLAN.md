@@ -33,16 +33,18 @@ The verified build corresponds to commit `30f40c65ea6d6100bd3fb7db551e6b8c50fc4d
 
 ## Phase 1 — Reproducible foundation (P0)
 
-- [ ] Regenerate the npm dependency lockfile in an authorized short-lived cloud environment and commit `package-lock.json` to `main`.
-- [ ] On a fresh checkout, run `npm ci --no-audit --no-fund` and verify package-lock/package.json consistency.
-- [ ] Repeat `npm test`, `npm run typecheck`, and `npm run build` on that exact dependency set. Record tool versions and results.
+- [x] Regenerated and committed `package-lock.json` (commit `4b87e6d`); validated byte-for-byte against cloud-generated lockfile.
+- [x] After pulling committed lockfile, `npm ci --no-audit --no-fund` completed successfully (108 packages); the local snapshot matched GitHub's lockfile byte-for-byte.
+- [x] Repeated `npm test` (23/23), `npm run typecheck` (passed) and `npm run build` (passed, Next.js 15.5.9) using the committed lockfile in temporary Vercel Sandbox (Node 24, npm 11).
 - [ ] Review dependency scripts and the lockfile before committing. Avoid installing additional services or CI runners.
 
 **Acceptance:** Fresh cloud checkout reproduces all 23 tests, typecheck and production build using `npm ci` with no lockfile drift.
 
 ## Phase 2 — API reliability and security (P0)
 
-- [ ] Add focused Next.js route-handler integration tests; current 23 tests focus on domain models and the fetch adapter.
+A manually invoked HTTP smoke script is available as `npm run smoke:http` against a separately started `npm run start` server. It is not a CI job.
+
+- [ ] Add focused Next.js route-handler integration tests with mocked upstream failures; the new manual HTTP smoke script checks real HTTP endpoints, while the 23 unit tests exercise domain models and fetch adapters.
 - [ ] Cover 400, 404, 429, 502 and 503 responses; invalid JSON, malformed upstream objects, connection timeouts and partial PR-detail availability.
 - [ ] Audit GitHub anonymous rate-limit handling, `Cache-Control` semantics and resource exhaustion risks under concurrent requests. Design safe limits and public endpoint abuse controls.
 - [ ] Verify unknown, blocked, dirty, behind, unstable and draft PR categorization using fixtures; never fabricate merge-check outcomes.
@@ -82,8 +84,8 @@ The verified build corresponds to commit `30f40c65ea6d6100bd3fb7db551e6b8c50fc4d
 
 | Item | Status | Resolution |
 | --- | --- | --- |
-| npm lockfile | Pending | Generate/recover in cloud, commit, test with `npm ci` |
-| Full application test/build | **Verified on cloud sandbox** | Repeat only after committing the lockfile |
+| npm lockfile | **Committed and verified** | GitHub commit `4b87e6d`; `npm ci` and production build passed |
+| Full application test/build | **Verified after committed lockfile** | 23/23 tests, full TypeScript check and Next.js build passed |
 | Interactive browser QA | Pending | Cloud browser / sandbox validation |
 | Public preview | Pending | Manual Vercel deployment after reviewing quotas |
 | CI minutes | **Not required** | No GitHub Actions or CircleCI |
