@@ -10,16 +10,16 @@
 - [x] GitHub Actions activity viewer, PR merge-state triage, and source-linked investigation recommendations.
 - [x] Read-only anonymous REST API access, fixed GitHub host, bounded fan-out, repository and upstream-link validation.
 - [x] Documentation: README, architecture, contribution guidelines, security policy, MIT license.
-- [x] **23/23 Node.js unit tests passed** on a temporary Vercel cloud sandbox.
+- [x] **24/24 Node.js unit tests passed** on a temporary Vercel cloud sandbox.
 - [x] **Full `npm run typecheck` passed**, and **`npm run build` passed** in that sandbox (Node 24 / npm 11).
 - [x] Production server manually returned **HTTP 200** for the homepage and API endpoints; malformed repo input returned HTTP 400.
 - [x] Live public API probes returned 10 Actions runs from `senanurcetin/ot-sentinel` and 5 PRs from `vercel/next.js`.
 - [x] Temporary Vercel Sandbox stopped after the checks.
 - [x] No GitHub Actions or CircleCI jobs were started; no CI workflow files exist.
-- [ ] **`package-lock.json` not yet committed.** A lockfile was generated in the temporary sandbox but did not transfer into GitHub.
+- [x] **`package-lock.json` committed** in `4b87e6d`, verified byte-for-byte against the generated lockfile and installed with `npm ci`.
 - [ ] Full interactive browser QA and production deployment are not complete.
 
-The verified build corresponds to commit `30f40c65ea6d6100bd3fb7db551e6b8c50fc4d3a`; a subsequent documentation-only commit did not modify runtime code. Test and build logs were observed in the cloud sandbox, not a CI service.
+The latest complete unit tests, full typecheck and build were verified against commit `e51b38057dbc3be35fed4020e7b42434071c7783`, using the committed npm lockfile. Logs were observed in a temporary cloud sandbox, not a CI service.
 
 ## Non-negotiable delivery constraints
 
@@ -44,8 +44,8 @@ The verified build corresponds to commit `30f40c65ea6d6100bd3fb7db551e6b8c50fc4d
 
 A manually invoked HTTP smoke script is available as `npm run smoke:http` against a separately started `npm run start` server. It is not a CI job.
 
-- [ ] Add focused Next.js route-handler integration tests with mocked upstream failures; the new manual HTTP smoke script checks real HTTP endpoints, while the 23 unit tests exercise domain models and fetch adapters.
-- [ ] Cover 400, 404, 429, 502 and 503 responses; invalid JSON, malformed upstream objects, connection timeouts and partial PR-detail availability.
+- [ ] Add focused Next.js route-handler integration tests with mocked upstream failures; the manual HTTP smoke script checks actual Next.js HTTP endpoints, while 24 unit tests exercise domain models and fetch adapters.
+- [ ] Extend endpoint-level tests for 400, 404, 429, 502 and 503; the core adapter tests already cover these faults and GitHub's 403 exhausted-quota header.
 - [ ] Audit GitHub anonymous rate-limit handling, `Cache-Control` semantics and resource exhaustion risks under concurrent requests. Design safe limits and public endpoint abuse controls.
 - [ ] Verify unknown, blocked, dirty, behind, unstable and draft PR categorization using fixtures; never fabricate merge-check outcomes.
 - [ ] Validate any external hrefs and text display; keep auth tokens and response bodies out of logs.
@@ -100,5 +100,7 @@ npm run typecheck
 npm run build
 npm run start
 ```
+
+**Latest manual smoke test:** `npm run smoke:http` passed against a locally started production server: homepage 200, invalid repository requests 400 and no-store, public Actions sample 10 runs and PR endpoint sample 5 open PRs. No CI.
 
 **MVP completion definition:** Independent repository, reproducible dependency lock, passing unit and route tests, full typecheck and production build, responsive browser QA, secure bounded public API access, and a manually verified public preview. Keep advanced integrations out of the first release.
