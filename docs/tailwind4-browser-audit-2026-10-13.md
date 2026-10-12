@@ -26,6 +26,7 @@
 | Chromium at 375, 768, 1440px | Homepage HTTP 200, no horizontal overflow, NEXUS colors present, invalid repo form errors shown, no uncaught browser errors |
 | Mobile repo switching | Selecting `vercel/next.js` updated live selection and returned without a browser error |
 | Keyboard focus | Search input could be focused |
+| Rapid repository switching (mocked API race) | Selecting `example/first` then `example/second` produced `Selected: example/second`; the stale first response was discarded, two current independent panel error states rendered and no uncaught JS errors occurred |
 | axe-core 4.11.0 WCAG 2/2.1 A/AA automated scan | After contrast correction, **0 violations** at 375px and 1440px, 25 rules passed on each |
 
 The first axe scan recorded 26 color contrast violations at both widths. After changing 13 secondary-text styles to `text-slate-400`, the scan reported zero violations. Other WCAG criteria not covered by the automated scan must be evaluated separately.
