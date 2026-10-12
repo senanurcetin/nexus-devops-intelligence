@@ -62,18 +62,20 @@ without invoking any hosted CI job:
 npm test
 ```
 
-All mocks remain local; the tests do not call GitHub or CircleCI. A complete
-Next.js build still requires project dependencies and has not been verified yet.
+All mocks remain local; the tests do not call GitHub or CircleCI. A clean
+`npm ci --no-audit --no-fund`, full TypeScript check and production build were
+verified in a temporary Vercel Sandbox without CI. Start a production server
+with `npm run start`, then run `npm run smoke:http` to check live HTTP routes.
 
 ## Release limitations
 
 The current project is an **MVP source distribution**, not a deployed service or
-production-grade security monitor. Full Next.js build verification requires
-installing the dependencies and is recorded separately.
+production-grade security monitor. The Next.js production build was verified using the committed dependency lockfile;
+interactive browser QA and public deployment are still pending.
 
 ## Roadmap
 
-1. Full build/test verification and responsive browser QA.
+1. Responsive browser QA and route-level failure testing.
 2. Dedicated deployment, URL, and release checklist.
 3. Better PR check-run details, CI incident classification and historical trends.
 4. Optional least-privilege GitHub App, CircleCI integration and AI assistance.
@@ -88,10 +90,10 @@ Do not disclose GitHub tokens or private CI logs in public issues.
 The independent NEXUS repository was cloned into a temporary Vercel Sandbox (Node 24 / npm 11) and **checked manually without GitHub Actions or CircleCI**:
 
 - `npm install --no-audit --no-fund` — 108 packages installed successfully
-- `npm test` — 23 tests passed, zero failures
+- `npm test` — 24 tests passed, zero failures (latest source)
 - `npm run typecheck` — passed
 - `npm run build` — Next.js 15.5.9 production build passed
 - HTTP smoke test: `/` returned 200, Actions and PR API endpoints returned 200 with live public GitHub responses, malformed repository input returned 400
 - Additional populated-source probes: ten workflow runs from `senanurcetin/ot-sentinel`, five open PRs from `vercel/next.js`
 
-**Status limitations:** these results are a manual cloud verification of the source at `30f40c65ea6d6100bd3fb7db551e6b8c50fc4d3a`, not a publicly deployed production service or browser accessibility audit. npm generated a lockfile inside the temporary cloud environment; reproducible dependency locking is still pending until that file is committed to this repository. Vercel deployment and hosting have not been enabled.
+**Status limitations:** these results are a manual cloud verification of the source at `e51b38057dbc3be35fed4020e7b42434071c7783`, not a publicly deployed production service or browser accessibility audit. The dependency lockfile is committed (`4b87e6d`), and `npm ci` and Next.js production build have been verified against the latest source (`e51b380`). Vercel deployment and hosting have not been enabled.
