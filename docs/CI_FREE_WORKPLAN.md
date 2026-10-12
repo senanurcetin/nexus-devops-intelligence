@@ -11,6 +11,7 @@
 - [x] Yeni dalın commit'inden temiz `npm ci --no-audit --no-fund`, `npm test` (**33/33**), `npm run typecheck` ve `npm run build` başarılı.
 - [x] `npm audit --omit=dev --json`: doğrulama anında **0 üretim bağımlılığı bulgusu** (önce 1 kritik + 2 yüksek).
 - [ ] **Yayın engelleri devam ediyor:** tarayıcı/a11y doğrulaması, uygulama ve Vercel seviyesinde kötüye kullanım kontrolleri, manuel preview uçtan uca testi.
+- [ ] **Geliştirme bağımlılıkları:** tam `npm audit` 5 yüksek + 2 orta bulgu gösteriyor; Tailwind CSS 4 geçişi ve tarayıcı görsel karşılaştırmaları [issue #4](https://github.com/senanurcetin/nexus-devops-intelligence/issues/4) üzerinden izleniyor. `npm audit --omit=dev` sonuçlarıyla karıştırma.
 
 ## 0. Doğrulanmış mevcut durum
 
