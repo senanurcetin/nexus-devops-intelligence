@@ -82,3 +82,16 @@ installing the dependencies and is recorded separately.
 
 General contact: senanur.cetin.work@gmail.com.
 Do not disclose GitHub tokens or private CI logs in public issues.
+
+## Cloud verification (13 October 2026)
+
+The independent NEXUS repository was cloned into a temporary Vercel Sandbox (Node 24 / npm 11) and **checked manually without GitHub Actions or CircleCI**:
+
+- `npm install --no-audit --no-fund` — 108 packages installed successfully
+- `npm test` — 23 tests passed, zero failures
+- `npm run typecheck` — passed
+- `npm run build` — Next.js 15.5.9 production build passed
+- HTTP smoke test: `/` returned 200, Actions and PR API endpoints returned 200 with live public GitHub responses, malformed repository input returned 400
+- Additional populated-source probes: ten workflow runs from `senanurcetin/ot-sentinel`, five open PRs from `vercel/next.js`
+
+**Status limitations:** these results are a manual cloud verification of the source at `30f40c65ea6d6100bd3fb7db551e6b8c50fc4d3a`, not a publicly deployed production service or browser accessibility audit. npm generated a lockfile inside the temporary cloud environment; reproducible dependency locking is still pending until that file is committed to this repository. Vercel deployment and hosting have not been enabled.
