@@ -1,11 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { loadPublicActions } from '@/lib/github-public-client';
+import { coordinatePublicQuery, publicRequestKey } from '@/lib/nexus-public-gate';
 
 export const runtime = 'nodejs';
 
 /** Fixed-host, anonymous, GET-only public GitHub Actions endpoint. */
 export async function GET(request: NextRequest) {
-  const result = await loadPublicActions(request.nextUrl.searchParams.get('repository') || '');
+  const repository = request.nextUrl.searchParams.get('repository') || '';
+  const result = await coordinatePublicQuery(publicRequestKey('actions', repository),
+    () => loadPublicActions(repository));
   return NextResponse.json(result.body, {
     status: result.status,
     ...(result.status === 200 ? {
