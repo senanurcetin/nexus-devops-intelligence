@@ -698,3 +698,38 @@ body { background: #071829; color: #eff5ff; }
 @media (prefers-reduced-motion: reduce) {
   .nexus-devops-export-button { transition: none; }
 }
+
+/* F-02: source provenance and human-verifiable next steps for sampled records. */
+.nexus-devops-queue-meta { min-width: 0; overflow-wrap: anywhere; }
+.nexus-devops-queue-source {
+  border: 1px solid rgba(113, 165, 214, .32);
+  border-radius: 9999px;
+  padding: .15rem .55rem;
+  background: rgba(40, 91, 133, .19);
+  font-size: .68rem;
+  font-weight: 600;
+  letter-spacing: .025em;
+  color: #b6d7f5;
+}
+.nexus-devops-queue-actions {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  border-top: 1px solid rgba(125, 172, 213, .16);
+  padding-top: .75rem;
+}
+.nexus-devops-queue-action {
+  padding: .42rem .7rem;
+  border-radius: .55rem;
+  border: 1px solid rgba(110, 163, 209, .34);
+  background: rgba(11, 35, 56, .6);
+  overflow-wrap: anywhere;
+}
+.nexus-devops-queue-action:hover { border-color: rgba(161, 211, 255, .7); }
+.nexus-devops-queue-action:focus-visible {
+  outline: 2px solid #9edcff;
+  outline-offset: 2px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .nexus-devops-queue-action { scroll-behavior: auto; }
+}
