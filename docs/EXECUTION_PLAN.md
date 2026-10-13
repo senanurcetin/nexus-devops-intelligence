@@ -6,7 +6,7 @@
 
 ## Kesinleşmiş başlangıç durumu
 
-- [x] Son manuel bulut kontrolünde **57/57 otomatik test başarılı**, TypeScript ve Next.js production build başarılı.
+- [x] Son manuel bulut kontrolünde **59/59 otomatik test başarılı**, TypeScript ve Next.js production build başarılı.
 - [x] Son tam `npm audit --json` raporunda **0 bulgu**. Bu, gelecekteki açıkları garanti etmez.
 - [x] Gerçek public GitHub Actions ve PR REST API için localhost HTTP smoke başarılı.
 - [x] Chromium, Firefox ve Playwright WebKit motorlarında **375/768/1440 px** için temel responsive, form, klavye odağı ve otomatik axe-core WCAG A/AA testleri başarılı. Bu, tam WCAG veya ekran okuyucu onayı değildir.
@@ -31,6 +31,8 @@
 - [ ] Her değişiklik için ayrı branch/PR, `npm ci`, `npm test`, `npm run typecheck`, `npm run build`, tam `npm audit` ve manuel HTTP smoke.
 
 **Bitiş kriteri:** Doğrulanmış API hata yönetimi; WAF kapsam/maliyet planı ve rollback dosyası hazır. Gerçek WAF aktivasyonu ayrı bir onay ve doğrulama adımıdır.
+
+- [x] [PR #13](https://github.com/senanurcetin/nexus-devops-intelligence/pull/13): Her iki Next.js endpoint'inde parametre doğrulaması koordinatörden önce yapılır; 12 istek yuvası doluyken bile geçersiz/uzun repo parametreleri **400/no-store**, gerçek kapasite aşımı **503/no-store**. 2 yeni testle **59/59 başarılı**, typecheck/build/tam audit ve HTTP doğrulaması geçti.
 
 ## Faz 2 — Ürün UX ve erişilebilirlik (P0/P1 paralel)
 
