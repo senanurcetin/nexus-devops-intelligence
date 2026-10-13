@@ -6,7 +6,7 @@ and pull request merge state. **This is not part of Ops-Copilot.**
 > **Verified MVP development build (13 October 2026):** [PR #3](https://github.com/senanurcetin/nexus-devops-intelligence/pull/3)
 > upgraded Next.js; [PR #6](https://github.com/senanurcetin/nexus-devops-intelligence/pull/6)
 > migrated Tailwind to 4.3.3 and fixed secondary-text contrast. Clean cloud `npm ci`,
-> **41/41 tests**, full TypeScript and production build passed. Full `npm audit`
+> **45/45 tests**, full TypeScript and production build passed. Full `npm audit`
 > (including development dependencies) reported **zero findings at the time checked**.
 > Chromium 375/768/1440 responsive checks and automated axe-core A/AA tests passed.
 > **No public deployment:** Vercel WAF cross-instance rate limiting and final manual
@@ -21,8 +21,15 @@ outstanding.
 
 **Cross-browser QA:** [Firefox 157 manual smoke and axe-core check](docs/firefox-browser-qa-2026-10-13.md)
 passed at 375, 768 and 1440 pixels with controlled API error responses.
-Chromium and Firefox are covered; human screen-reader and public preview checks
-remain outstanding.
+Chromium, Firefox and [Playwright WebKit](docs/webkit-browser-qa-2026-10-13.md)
+are covered with manual cloud viewport and automated axe checks. Human
+screen-reader, real-device visual review and public preview checks remain outstanding.
+
+**Metric accuracy:** [PR #10](https://github.com/senanurcetin/nexus-devops-intelligence/pull/10)
+corrected GitHub Actions outcome breakdowns: cancelled/skipped/neutral runs
+are no longer counted as pending, and completed timeout/startup-failure runs
+are correctly included in confirmed failures. The figures remain a sample
+rather than billed CI minutes.
 
 ## Current scope (MVP)
 
