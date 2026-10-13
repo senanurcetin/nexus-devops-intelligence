@@ -37,11 +37,29 @@ async function githubGet(url: string, fetcher: GitHubFetcher): Promise<FetchResu
     return { kind: 'network' };
   }
   if (response.status === 404) return { kind: 'not_found' };
-  if (response.status === 429 ||
-      (response.status === 403 && response.headers?.get('x-ratelimit-remaining') === '0')) {
-    return { kind: 'rate_limited' };
+  if (response.status === 429) return { kind: 'rate_limited' };
+  if (response.status === 403) {
+    // GitHub secondary limits may return 403 with a nonzero primary quota.
+    // Never automatically retry these responses: doing so can prolong a limit.
+    if (response.headers?.get('x-ratelimit-remaining') === '0' ||
+        response.headers?.get('retry-after') !== null &&
+        response.headers?.get('retry-after') !== undefined) {
+      return { kind: 'rate_limited' };
+    }
+    try {
+      const body: unknown = await response.json();
+      const message = body && typeof body === 'object' && 'message' in body
+        ? (body as { message?: unknown }).message : null;
+      if (typeof message === 'string' &&
+          /secondary rate limit|API rate limit exceeded|rate limit exceeded/i.test(message)) {
+        return { kind: 'rate_limited' };
+      }
+    } catch {
+      // GitHub may return HTML or invalid JSON; never expose an upstream body.
+    }
+    return { kind: 'denied' };
   }
-  if (response.status === 401 || response.status === 403) return { kind: 'denied' };
+  if (response.status === 401) return { kind: 'denied' };
   if (!response.ok) return { kind: 'unavailable' };
   try {
     return { kind: 'ok', data: await response.json() as unknown };

@@ -68,9 +68,51 @@ test('Actions: GitHub 403 exhausted quota is 429, while ordinary 403 stays restr
   assert.equal(quota.status, 429);
   assert.match(quota.body.error, /rate limit/i);
   const forbidden = await loadPublicActions(repo, async () => ({
-    ...answer(403, null), headers: { get: () => '25' },
+    ...answer(403, null), headers: { get: key => key === 'x-ratelimit-remaining' ? '25' : null },
   }));
   assert.equal(forbidden.status, 503);
+});
+
+test('Actions: GitHub secondary 403 limits are mapped to 429 without a retry', async () => {
+  const responses = [
+    { ...answer(403, { message: 'You have exceeded a secondary rate limit.' }),
+      headers: { get: key => key === 'x-ratelimit-remaining' ? '55' : null } },
+    { ...answer(403, { message: 'forbidden' }),
+      headers: { get: key => key === 'retry-after' ? '60' : key === 'x-ratelimit-remaining' ? '50' : null } },
+    { ...answer(403, { message: 'API rate limit exceeded for this user.' }),
+      headers: { get: () => null } },
+  ];
+  for (const response of responses) {
+    let calls = 0;
+    const result = await loadPublicActions(repo, async () => { calls++; return response; });
+    assert.equal(result.status, 429);
+    assert.equal(calls, 1, 'never automatically retry a GitHub rate-limited GET');
+    assert.match(result.body.error, /rate limit/i);
+    assert.doesNotMatch(result.body.error, /forbidden|user/i);
+  }
+});
+
+test('Actions: ordinary 403, malformed upstream error, and 401 stay restricted', async () => {
+  for (const response of [
+    { ...answer(403, { message: 'Resource not accessible by integration' }),
+      headers: { get: key => key === 'x-ratelimit-remaining' ? '42' : null } },
+    { ok: false, status: 403, json: async () => { throw Error('upstream private body'); } },
+    answer(401, { message: 'Bad credentials' }),
+  ]) {
+    const result = await loadPublicActions(repo, async () => response);
+    assert.equal(result.status, 503);
+    assert.doesNotMatch(result.body.error, /upstream private|Bad credentials/);
+  }
+});
+
+test('PRs: secondary limit on list returns 429 without fetching details', async () => {
+  let calls = 0;
+  const result = await loadPublicPulls(repo, async () => {
+    calls++;
+    return answer(403, { message: 'You have exceeded a secondary rate limit.' });
+  });
+  assert.equal(result.status, 429);
+  assert.equal(calls, 1);
 });
 
 test('Actions: network and timeout errors are explicit', async () => {
