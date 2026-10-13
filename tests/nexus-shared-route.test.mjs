@@ -47,6 +47,7 @@ test('both real Next routes return shared Redis 429 before any GitHub GET', asyn
     ]) {
       const result = await GET(request(route, '198.51.100.141'));
       assert.equal(result.status, 429);
+      assert.equal(result.headers.get('x-nexus-rate-limit-source'), 'shared-redis');
       assert.equal(result.headers.get('cache-control'), 'no-store');
       assert.equal(result.headers.get('retry-after'), '17');
       assert.match((await result.json()).error, /limit/i);
@@ -69,6 +70,7 @@ test('configured Redis outage returns 503/no-store before any GitHub GET', async
     ]) {
       const response = await GET(request(route, '198.51.100.142'));
       assert.equal(response.status, 503);
+      assert.equal(response.headers.get('x-nexus-rate-limit-source'), 'shared-redis-unavailable');
       assert.equal(response.headers.get('cache-control'), 'no-store');
       assert.equal(response.headers.get('retry-after'), '5');
       assert.match((await response.json()).error, /temporarily unavailable/i);
@@ -105,9 +107,11 @@ test('shared Redis counter remains authoritative after twenty per-IP calls on bo
       const path = i % 2 === 0 ? '/api/public-prs' : '/api/public-actions';
       const response = await kind(request(path, '198.51.100.188'));
       assert.equal(response.status, 200, `request #${i}`);
+      assert.equal(response.headers.get('x-nexus-rate-limit-mode'), 'shared-redis');
     }
     const twentyFirst = await prsGET(request('/api/public-prs', '198.51.100.188'));
     assert.equal(twentyFirst.status, 429);
+    assert.equal(twentyFirst.headers.get('x-nexus-rate-limit-source'), 'shared-redis');
     assert.equal(twentyFirst.headers.get('retry-after'), '29');
     assert.equal(twentyFirst.headers.get('cache-control'), 'no-store');
     assert.equal(redisCalls, 21, 'Redis is consulted even after twenty local requests');
@@ -136,6 +140,7 @@ test('a healthy shared backend is not shadowed by the old per-instance 20/min li
     for (let i = 0; i < 23; i += 1) {
       const response = await actionsGET(request('/api/public-actions', '192.0.2.231'));
       assert.equal(response.status, 200, `distributed-backend acceptance ${i + 1}`);
+      assert.equal(response.headers.get('x-nexus-rate-limit-mode'), 'shared-redis');
     }
   });
   assert.equal(acceptedByRedis, 23, 'all requests must consult Redis');

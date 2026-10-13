@@ -31,6 +31,7 @@ export async function GET(request: NextRequest) {
         headers: {
           'Cache-Control': 'no-store',
           'Retry-After': String(sharedLimit.retryAfterSeconds),
+          'X-Nexus-Rate-Limit-Source': 'shared-redis',
         },
       },
     );
@@ -38,7 +39,8 @@ export async function GET(request: NextRequest) {
   if (sharedLimit.kind === 'unavailable') {
     return NextResponse.json(
       { error: 'Public analysis is temporarily unavailable. Please retry shortly.' },
-      { status: 503, headers: { 'Cache-Control': 'no-store', 'Retry-After': '5' } },
+      { status: 503, headers: { 'Cache-Control': 'no-store', 'Retry-After': '5',
+        'X-Nexus-Rate-Limit-Source': 'shared-redis-unavailable' } },
     );
   }
 
@@ -55,6 +57,7 @@ export async function GET(request: NextRequest) {
           headers: {
             'Cache-Control': 'no-store',
             'Retry-After': String(localLimit.retryAfterSeconds),
+            'X-Nexus-Rate-Limit-Source': 'local-fallback',
           },
         },
       );
@@ -66,6 +69,9 @@ export async function GET(request: NextRequest) {
     status: result.status,
     headers: {
       'Cache-Control': result.status === 200 ? 'public, max-age=60, stale-while-revalidate=120' : 'no-store',
+      'X-Nexus-Rate-Limit-Mode': sharedLimit.kind === 'allowed' ? 'shared-redis'
+        : process.env.VERCEL === '1' ? 'local-fallback' : 'inactive',
+      ...(result.status === 429 ? { 'X-Nexus-Rate-Limit-Source': 'github-upstream' } : {}),
       ...(result.status === 429 && result.retryAfterSeconds !== undefined
         ? { 'Retry-After': String(result.retryAfterSeconds) } : {}),
     },
