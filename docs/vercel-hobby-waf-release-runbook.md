@@ -15,6 +15,21 @@
 - axe-core WCAG 2/2.1 A/AA automation: no violations at 375px and 1440px after correcting slate text contrast.
 - Remaining: manual cross-browser/screen-reader review, global API rate limits, safe preview and release QA.
 
+## Verified Hobby feature and cost boundaries
+
+- The connected Vercel team is on the **Hobby** plan; the standalone NEXUS Vercel project has **no live deployment**.
+- Vercel's rate-limiting docs list **one rule per Hobby project**, fixed windows from 10 seconds to 10 minutes, and IP or JA4 counting.
+- Vercel's pricing documentation lists **1,000,000 allowed WAF rate-limit requests per month included** for Hobby, with pricing listed for additional allowed requests; plan-specific billing behavior and actual account usage must still be confirmed in Vercel.
+- Vercel's May 2026 change states traffic denied/challenged/rate-limited by WAF is not billed as CDN requests or data transfer. This **does not mean allowed traffic or Vercel Functions are free**.
+- The first rate-limit rule requires reviewing a **Rate Limiting Pricing** dialog in Vercel's dashboard before activation. Do not bypass this step via API.
+- Current project has no active publicly verified WAF rate limit. **No WAF setting was changed in this review.**
+
+References:
+- https://vercel.com/docs/vercel-firewall/vercel-waf/rate-limiting
+- https://vercel.com/docs/vercel-firewall/vercel-waf/usage-and-pricing
+- https://vercel.com/changelog/web-application-firewall-mitigated-traffic-is-free-on-vercel
+- https://vercel.com/pricing
+
 ## Preflight — avoid accidental costs or CI
 
 1. Confirm team/project IDs and account plan; ensure NEXUS remains separate from Ops-Copilot.
