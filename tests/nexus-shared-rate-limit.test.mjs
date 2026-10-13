@@ -79,7 +79,7 @@ test('refuses non-Upstash endpoint to avoid leaking bearer token', async () => {
     'https://attacker.example',
     'https://nexus-test-123.upstash.io@attacker.example',
     'https://nexus-test-123.upstash.io/path',
-    'https://nexus-test-123.upstash.io:443',
+    'https://nexus-test-123.upstash.io:8443',
   ]) {
     const result = await checkSharedPublicRateLimitForSource('198.51.100.1', {
       env: { ...goodConfig, UPSTASH_REDIS_REST_URL: endpoint },
