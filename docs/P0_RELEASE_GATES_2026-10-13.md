@@ -51,3 +51,24 @@ The **two paged, non-overlapping, team-wide deployment-list queries** for the la
 **WAF evidence:** GET active WAF configuration on **three projects** (`nexus-devops-intelligence`, deployed `nexus-web-v2`, and `vocab-master-olive`) returned the same `404 Seawall Config not found`. Therefore there is **no evidence that creating a first deployment alone will provision the missing WAF configuration**. This may require the team's Firewall dashboard initialization or provider intervention; the actual root cause is unconfirmed. Use the dashboard project Firewall → Configure → New Rule → inspect the mandatory Rate Limiting Pricing dialog → choose one OR-matched API-path rule. Publishing must follow explicit account-owner pricing review and testing. If the dashboard also fails, present these project-scoped errors/request IDs to Vercel Community Support or the eligible official support channel: https://vercel.com/docs/support-center . Hobby technical issues are generally directed to the community: https://vercel.com/legal/support-terms .
 
 **Current action status:** source merged and verified; no WAF rule was confirmed active; no manual preview was deployed; no settings of the other projects were changed and no paid features were enabled.
+
+
+## Live production and manual-only delivery control — 2026-10-13
+
+**New independent facts (post prior no-deployment state):**
+
+- Vercel team `team_sAoC03UJqqXy36NhZWBesgdg`, project `prj_sbU4ylt4OV4fLkcog3VpSr2fEXYe`, reported production deployment `dpl_7UUNxcnChR6oEAFPV5jWDCRYh7Zd` **READY**; its source is GitHub `main` SHA `27b6f2b381d8a94b3b63db7a656f3d846e40528e`. Project domain `https://nexus-devops-intelligence.vercel.app/` responded HTTP **200** through the connected Vercel URL fetch.
+- On that domain, `/api/public-actions` and `/api/public-prs` returned HTTP **200** for a real public GitHub repository. A malformed repository input returned **400** with `Cache-Control: no-store`, plus CSP, nosniff, anti-framing, referrer, permissions and HSTS headers.
+- Vercel's grouped runtime error view reported **no recent error clusters** at inspection time. This is not an uptime SLA, public anonymous accessibility certification, or WAF endorsement.
+- **PR #23** (`040618d6fc3642bd934fbcae38d09eccf50087da`) was squash-merged: adds `vercel.json` with Vercel's documented `git.deploymentEnabled: false`, preventing **automatic Git-triggered preview and production builds on all branches**. Preserves explicitly initiated manual deployment. CI-free cloud validation: **80/80** Node tests, TypeScript check, Next.js production build. The existing production deployment remained the **sole deployment** after the merge; no new automatic deployment appeared at verification time.
+- Do not confuse `git.deploymentEnabled: false` (future auto-build control) with disabling or rolling back an already published production deployment.
+
+**WAF remains an open P0 gate:**
+
+- Both `active` and `draft` firewall configuration readbacks still return **404 `Seawall Config not found`**. The user previously reported publishing the existing `nexus-public-api-limit` rule, but the last verified screenshot showed an incorrect **Equals `/api/public-`** matcher and **Then Log**. A published log rule does **not** enforce request throttling.
+- A **bounded 22-request diagnostic** against the production host used only malformed repository values (11 per path), so it did not issue GitHub upstream queries. All returned HTTP **400**; no `429` was observed. **Inconclusive:** the connector does not establish a single stable test-client IP, region or WAF counting key across those requests. Do **not** describe this as proof WAF is disabled or as proof that rate limits work.
+- An enforcing rule needs **Request Path → Starts With `/api/public-`**, fixed-window 60 seconds, 20 requests, by IP, then **Default (429)**, with the rate-limit pricing/usage dialog and review/publish procedure explicitly approved by the account owner. Verify *the existing rule*, never create an unapproved second Hobby rate-limit rule. See https://vercel.com/docs/vercel-firewall/vercel-waf/rate-limiting .
+- If the existing rule already has these settings in Vercel's UI, collect the rule's scope/status, rule ID, matching traffic view and a safe same-IP reproduction. If dashboard cannot expose/edit/activate the rule or the active/draft API continues giving 404, escalate the provider-specific `Seawall Config not found` error with Vercel project/team IDs (but **never** auth tokens).
+- Existing process-local per-source throttle is **not** multi-instance WAF protection. Avoid new public release claims, billing upgrades, and blind firewall mutation pending independently verified enforcement.
+
+**Accessibility:** prior 375/768/1440 Chromium+axe and 24 keyboard focus stops were automatic/manual-cloud evidence only. Human NVDA/VoiceOver and real-device sign-off in issue #5 remain open.
