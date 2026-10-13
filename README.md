@@ -50,6 +50,13 @@ Invalid or oversized repositories always receive 400/no-store even when all
 12 capacity slots are occupied; a valid overloaded request receives 503.
 This is not cross-instance WAF enforcement.
 
+**Independent panel refresh:** [PR #14](https://github.com/senanurcetin/nexus-devops-intelligence/pull/14)
+adds separately labeled Actions and PR refresh controls. One failed source can
+be reloaded without erasing or refetching the other; per-panel aria-busy and
+screen-reader status remain independent, and switching repositories cancels
+stale results. Chromium at 375/1440px and axe-core WCAG A/AA automated
+checks passed. [Manual QA evidence](docs/panel-refresh-browser-qa-2026-10-13.md).
+
 **Human accessibility checks:** The [manual screen-reader acceptance list](docs/MANUAL_ACCESSIBILITY_ACCEPTANCE.md)
 is prepared, but has **not** been performed by an NVDA/VoiceOver tester.
 Real-data browser screenshots are not committed because the file transfer
