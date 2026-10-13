@@ -130,11 +130,31 @@ export async function loadPublicPulls(
   } catch {
     return fail(502, 'GitHub returned invalid pull request list data.');
   }
-  const detailResults = await Promise.all(checked.pull_requests.map(async (pr): Promise<FetchResult> => {
-    // Draft classification takes precedence; no reason to spend a detail request.
-    if (pr.attention === 'draft') return { kind: 'ok', data: null };
-    return githubGet(`${base}/pulls/${pr.number}`, fetcher);
-  }));
+  // Respect GitHub's secondary-abuse limits: no more than two detail GETs
+  // are in flight, and do not start more once a quota response is observed.
+  // Already in-flight calls are allowed to settle so we can retain their
+  // validated Retry-After hints. Results keep the original PR ordering.
+  const detailResults: FetchResult[] = checked.pull_requests.map(
+    () => ({ kind: 'unavailable' }),
+  );
+  let cursor = 0;
+  let rateLimited = false;
+  async function detailWorker(): Promise<void> {
+    while (!rateLimited && cursor < checked.pull_requests.length) {
+      const slot = cursor++;
+      const pr = checked.pull_requests[slot];
+      if (pr.attention === 'draft') {
+        detailResults[slot] = { kind: 'ok', data: null };
+        continue;
+      }
+      const detail = await githubGet(`${base}/pulls/${pr.number}`, fetcher);
+      detailResults[slot] = detail;
+      if (detail.kind === 'rate_limited') rateLimited = true;
+    }
+  }
+  await Promise.all(
+    Array.from({ length: Math.min(2, checked.pull_requests.length) }, () => detailWorker()),
+  );
   // A rate limit on any detail is a rate limit on the whole PR analysis,
   // not a successful sample with silently unknown merge statuses.
   const limited = detailResults.filter(
