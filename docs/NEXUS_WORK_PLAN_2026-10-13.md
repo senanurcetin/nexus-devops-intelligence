@@ -157,3 +157,13 @@
 - [ ] Do not misstate this as **independent live Vercel serverless instances**; the real Upstash backend only passed the earlier **one-request Preview preflight** (`x-nexus-rate-limit-mode:shared-redis`, cache MISS). Issue #7 stays **OPEN** for a separately approved live/provider-based cross-instance acceptance strategy once free-tier quota and operational constraints permit it.
 - [ ] Human accessibility and physical device signoff remains open under issue #5. Git merges do **not** imply a new Vercel Production release.
 
+
+### P2 Actions Intelligence — sample visual analytics (13 October 2026)
+
+- [x] [PR #31](https://github.com/senanurcetin/nexus-devops-intelligence/pull/31) squash merged as `fe6446fb1b0b051a19faf2221beadae9f34a24e9`: enhanced read-only Actions Intelligence from the existing validated **maximum 10 recent public GitHub workflow runs**, with a sapphire-toned outcome composition graph, source-linked recent-run sequence and browser-only All/Success/Failed/Pending/Other filters.
+- [x] Server-equivalent outcome classification: only GitHub `completed` failure/timed_out/startup_failure counts as failed; active statuses count as pending; cancelled, skipped, neutral and unverified outcomes remain **Other**. Percentage denominator is strictly the **inspected sample**, not GitHub's total historical runs or reliability score. Zero/error/loading states never fabricate a percentage or trend.
+- [x] No new API endpoint, external library or Redis/Upstash requests on local filter interaction. Verified in controlled Chromium fixtures: initial **one Actions + one PR API request**, filter changes issued **zero** further GETs.
+- [x] Manual CI-free ephemeral Vercel Sandbox: **111/111 Node tests**, TypeScript, Next production build, npm audit **0 reported findings** at test time, actual read-only GitHub HTTP smoke. Controlled 375/768/1440px browser fixtures with 1 success/3 failed/2 pending/4 other, ten canonical run links, keyboard Enter filter navigation and empty/error cases: **no browser JS errors or document overflow; zero automated axe WCAG 2/2.1 A/AA violations**.
+- [x] [QA/evidence report](https://github.com/senanurcetin/nexus-devops-intelligence/blob/main/docs/ACTIONS_SAMPLE_INTELLIGENCE_QA_2026-10-13.md) distinguishes deterministic browser fixtures from actual repo metrics.
+- [ ] Human NVDA/VoiceOver and physical-device checks remain required (#5). Current Production does **not** automatically receive the change due to disabled Git deployment; manual release and shared Redis cross-instance gate (#7) remain outstanding.
+
