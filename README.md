@@ -6,7 +6,7 @@ and pull request merge state. **This is not part of Ops-Copilot.**
 > **Verified MVP development build (13 October 2026):** [PR #3](https://github.com/senanurcetin/nexus-devops-intelligence/pull/3)
 > upgraded Next.js; [PR #6](https://github.com/senanurcetin/nexus-devops-intelligence/pull/6)
 > migrated Tailwind to 4.3.3 and fixed secondary-text contrast. Clean cloud `npm ci`,
-> **59/59 tests**, full TypeScript and production build passed. Full `npm audit`
+> **64/64 tests**, full TypeScript and production build passed. Full `npm audit`
 > (including development dependencies) reported **zero findings at the time checked**.
 > Chromium 375/768/1440 responsive checks and automated axe-core A/AA tests passed.
 > **No public deployment:** Vercel WAF cross-instance rate limiting and final manual
@@ -61,6 +61,13 @@ checks passed. [Manual QA evidence](docs/panel-refresh-browser-qa-2026-10-13.md)
 is prepared, but has **not** been performed by an NVDA/VoiceOver tester.
 Real-data browser screenshots are not committed because the file transfer
 was blocked; automated browser checks do not constitute human sign-off.
+
+**PR detail quota correctness:** [PR #15](https://github.com/senanurcetin/nexus-devops-intelligence/pull/15)
+prevents a quota-limited PR detail from being silently reported as a
+successful PR analysis. A primary/secondary GitHub rate limit in any detail
+now returns HTTP 429/no-store and the longest validated Retry-After hint.
+Ordinary detail failures remain unknown. No automatic retries.
+See [rate-limit behavior](docs/RATE_LIMIT_BEHAVIOR.md).
 
 ## Current scope (MVP)
 
