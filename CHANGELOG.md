@@ -33,6 +33,7 @@
 - Nine offline regressions bring the suite to **57/57 passed**; manual clean install, TypeScript, production build, full npm audit (0 findings), and real-data localhost HTTP smoke passed.
 - [PR #13](https://github.com/senanurcetin/nexus-devops-intelligence/pull/13) validates repository inputs before the process-local request gate, preserving 400/no-store under saturation and 503/no-store for legitimate overload.
 - Two new Next.js route regression tests: **59/59 manually verified**, TypeScript/build/audit and production HTTP checks passed.
+- [PR #14](https://github.com/senanurcetin/nexus-devops-intelligence/pull/14) adds accessible independent refresh for read-only Actions and PR panels, per-panel loading states and stale repository response cancellation. Manual Chromium 375/1440px mock-error/regression checks and axe WCAG A/AA scans passed with zero automated violations; full 59-test suite, build, typecheck and npm audit passed.
 - No GitHub Actions or CircleCI jobs were configured or run.
 
 **Not yet released:** Platform-wide rate limiting, final manual cross-browser/screen-reader review and public preview deployment remain pending.
