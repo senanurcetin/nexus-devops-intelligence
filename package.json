@@ -11,7 +11,8 @@
     "typecheck": "tsc --noEmit",
     "test": "node --import tsx --test tests/*.test.mjs",
     "smoke:http": "node scripts/smoke-http.mjs",
-    "test:routes": "node --import tsx --test tests/next-routes.test.mjs"
+    "test:routes": "node --import tsx --test tests/next-routes.test.mjs",
+    "test:redis:offline": "node --import tsx scripts/verify-local-redis-multiprocess.mjs"
   },
   "dependencies": {
     "lucide-react": "^0.475.0",
