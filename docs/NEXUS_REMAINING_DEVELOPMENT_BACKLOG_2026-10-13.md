@@ -38,6 +38,10 @@
 
 ## P1 — remaining code reliability and quality fixes (do before proposing release)
 
+**Progress update (13 Oct 2026):** Q-01 is implemented and manually verified; Q-02's currently identified stale-request, independent error and targeted-retry scenarios passed controlled Chromium QA. Broader unmount/timer/race edge coverage may be added as follow-up. Q-03 is the next planned batch. See [PR #34](https://github.com/senanurcetin/nexus-devops-intelligence/pull/34).
+
+
+
 | ID | Task | Required change or investigation | Done when |
 | --- | --- | --- | --- |
 | **Q-01** | Source-specific freshness and partial-success semantics | The dashboard currently has **one** `lastApiResponseAt` set on either Actions or PR success. Separate receipt times and/or stale/available badges **per panel**; avoid presenting one successful response as freshness of both. | Correct load, error and retry timestamps; test with one panel failing while the other succeeds; zero new source GETs |
@@ -67,7 +71,7 @@
 
 ## Execution order — concrete PR-sized batches
 
-1. **Batch A (code-only, safe now):** Q-01 + Q-02 with focused typed tests and offline Chromium scenarios. Keep changes independent of Vercel deployment. **Next recommended work.**
+1. **Batch A (completed in GitHub):** Q-01 + Q-02 implemented through [PR #34](https://github.com/senanurcetin/nexus-devops-intelligence/pull/34), merge `4a6c19f4f3a4a249fcb0ac401c1b29e90489b04c`: independent validated Actions/PR browser-local receipt times, source-only refresh and failed-only retry, no stale former-repository results after rapid selection. Manual sandbox 121/121 tests, TS/build, audit 0 and read-only HTTP smoke; actual 375px Chromium delayed-request / partial 503 / single-source retry scenarios and automated axe A/AA 0 violations. **Not deployed.** [QA details](PANEL_SOURCE_RECEIPTS_QA_2026-10-13.md).
 2. **Batch B (code-only, safe now):** Q-03 + Q-05 origin error/budget checks; collect no secret material and do not run live quota bursts.
 3. **Batch C (design):** Q-04 + D-01 fixture-based visual comparison and screenshots, then request human review of actual Preview after deployment authorization.
 4. **Batch D (usability):** F-01 (sample export) + F-02 (clear evidence/provenance UX), one focused PR per feature.
