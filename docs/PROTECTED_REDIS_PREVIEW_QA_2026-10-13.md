@@ -1,5 +1,21 @@
 # P0.2 — protected Preview Redis acceptance probe
 
+> **STATUS UPDATE — 14 October 2026 (supersedes the historical opening below):**
+> Both Upstash REST variable **names** are now confirmed by Vercel as `Sensitive`,
+> scoped to **Preview + Production**. The owner confirmed they point to the **same
+> Upstash Free Redis instance**, so any real Preview origin GET can consume the
+> Production-shared quota. A single older protected Preview cache-MISS response
+> was already **200 with `shared-redis` mode**: connection reachability is established,
+> but Redis `429` on the current exact app SHA and independent Vercel multi-instance
+> enforcement are **NOT** established. The owner **declined** the optional
+> 21-request live test. **DO NOT run `--confirm-21-request-test` without NEW
+> specific consent and an agreed Free quota strategy.** The protected Preview
+> currently serves older commit `e745c61`; Production serves `74cd0e3`.
+> For current actions read [R-01 manifest](NEXUS_RELEASE_CANDIDATE_MANIFEST_2026-10-14.md)
+> and [manual owner-gated release plan](NEXUS_MANUAL_RELEASE_RUNBOOK_2026-10-14.md).
+
+
+
 **Status:** CI-free release test is implemented. **Not yet executed against a real Vercel Preview.** As of 13 October 2026, the NEXUS project has two server-only Upstash Redis variables scoped to **Production only**; Preview does not have them. The database owner confirmed **Upstash Free Tier / EU-CENTRAL-1**; command use and storage consumption have not been verified. The latest known production deployment is an older commit, so production cannot stand in for preview acceptance.
 
 ## Safety prerequisites (do not skip)
