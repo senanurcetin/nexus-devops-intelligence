@@ -26,6 +26,9 @@
 - [PR #10](https://github.com/senanurcetin/nexus-devops-intelligence/pull/10) corrected workflow outcome classification and evidence-based failed-run suggestions; four new tests bring the manually verified suite to **45/45**. TypeScript, Next production build and real public API smoke passed.
 - Added a third browser engine, **Playwright WebKit 27.2**, at 375/768/1440 px. No overflow, uncaught JS errors, failed invalid-repo validation or keyboard focus issues; axe-core WCAG A/AA: 0 automated violations in controlled API-error states.
 - Browser testing does not substitute for human screen-reader and real-device review. Platform-wide WAF protection and public preview remain outstanding.
+- [PR #11](https://github.com/senanurcetin/nexus-devops-intelligence/pull/11) handles GitHub secondary rate-limit 403 responses, including Retry-After and documented error messages, without retries; ordinary access-denied responses stay restricted.
+- Three offline API regressions bring the manual suite to **48/48**; production build, TypeScript, full npm audit and real GitHub HTTP smoke passed in a temporary cloud sandbox.
+- Added [human screen-reader acceptance checklist](docs/MANUAL_ACCESSIBILITY_ACCEPTANCE.md). Actual NVDA/VoiceOver verification and real screenshot artifact upload remain pending; the latter was blocked by secure file-transfer controls.
 - No GitHub Actions or CircleCI jobs were configured or run.
 
 **Not yet released:** Platform-wide rate limiting, final manual cross-browser/screen-reader review and public preview deployment remain pending.
