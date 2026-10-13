@@ -109,3 +109,11 @@
 
 **Important:** P0.1 is *partially* complete. P0.2 is blocked by missing Preview Redis config / approved release; issue #7 and human QA issue #5 remain **OPEN**. These checks do not imply that Vercel WAF Log mode blocks requests.
 
+
+### P1 client-data validation evidence — 13 October 2026
+
+- [x] [PR #27](https://github.com/senanurcetin/nexus-devops-intelligence/pull/27) squash merged as `6eb6d6cd7d0e897e88e7151320b6b32955d00780`: both Actions and PR panels now reject unexpected HTTP 200 JSON (wrong selected repository, inconsistent aggregate metrics, invalid PR classification, malformed fields, duplicate IDs or noncanonical GitHub links) before any data reaches React state. The page instead shows a concise retryable error; no untrusted payload is displayed.
+- [x] CI-free temporary Vercel Sandbox: clean npm ci, **96/96 tests**, TypeScript, production build, zero vulnerabilities in npm audit at check time, real GitHub REST smoke.
+- [x] Browser: Chromium **375px, 768px and 1440px**, with mocked bad 200 JSON in both panels followed by valid samples on user Retry, recovered on all three viewports; zero JS errors, horizontal overflow or automated axe WCAG 2/2.1 A/AA violations. Tablet and desktop were rerun in independent Chromium processes after the first combined process ended unexpectedly.
+- [ ] Human NVDA/VoiceOver and real-device visual signoff still **required** (issue #5). Automated browser tests do not satisfy this acceptance gate.
+- [ ] The latest GitHub source has not been deployed or revalidated on the live production alias; Redis Preview variables and P0 #7 acceptance remain separate blockers. Do not infer a production fix from the merge.
