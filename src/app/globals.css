@@ -62,3 +62,40 @@ body { background: #071829; color: #eff5ff; }
   .nexus-devops-section { font-size:.65rem;line-height:1.55; }
   .nexus-devops form button[type="submit"] { width:100%; }
 }
+
+/* NEXUS executive grid: evidence and investigation areas share the same
+   layered blue surface as the metric cards and masthead. */
+.nexus-devops-eyebrow {
+  display:flex;align-items:center;gap:10px;
+  color:#91caff;font-size:.7rem;font-weight:770;letter-spacing:.15em;text-transform:uppercase;
+}
+.nexus-devops-eyebrow::before { content:"";width:20px;height:2px;background:#4ea8ff; }
+.nexus-devops-evidence,.nexus-devops-investigations {
+  background:linear-gradient(148deg,rgba(17,46,74,.96),rgba(9,29,49,.98));
+  border:1px solid #2b5073;
+  box-shadow:0 14px 34px rgba(0,7,22,.18),inset 0 1px 0 rgba(190,216,251,.05);
+}
+.nexus-devops-evidence > div:first-child { background:rgba(8,27,47,.31);border-bottom-color:#284c71; }
+.nexus-devops-event {
+  transition:background-color .16s ease;
+  border-bottom-color:rgba(89,134,179,.21);
+}
+@media(hover:hover) {
+  .nexus-devops-event:hover { background:rgba(78,168,255,.085); }
+}
+.nexus-devops-investigations ol li {
+  border-color:#294b70;background:rgba(7,24,42,.71);border-radius:12px;
+}
+.nexus-devops-investigations ol li:hover { border-color:rgba(78,168,255,.44); }
+.nexus-devops-search input { font-variant-ligatures:none; }
+.nexus-devops a:focus-visible,.nexus-devops button:focus-visible {
+  outline:2px solid #85c6ff;outline-offset:3px;
+}
+@media(max-width:640px) {
+  .nexus-devops-evidence > div:first-child { align-items:start; }
+  .nexus-devops-evidence .nexus-devops-event { padding:14px; }
+  .nexus-devops-eyebrow { font-size:.63rem; }
+}
+@media(prefers-reduced-motion:reduce) {
+  .nexus-devops-event { transition:none; }
+}

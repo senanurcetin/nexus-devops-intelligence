@@ -146,6 +146,7 @@ export default function NexusDeveloperPreview() {
 
         <div className="nexus-devops-hero mb-8 grid gap-8 lg:grid-cols-[1.5fr_1fr] lg:items-end">
           <div>
+            <div className="nexus-devops-eyebrow mb-3">NEXUS / DEVELOPER INTELLIGENCE · 06</div>
             <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-[#4ea8ff]/30 bg-[#4ea8ff]/10 px-3 py-1 text-xs font-medium uppercase tracking-wider text-[#4ea8ff]">
               <ShieldCheck className="h-4 w-4" /> Public API · Read-only preview
             </div>
@@ -166,7 +167,7 @@ export default function NexusDeveloperPreview() {
           </div>
         </div>
 
-        <section aria-label="Repository search" className="rounded-2xl border border-slate-800 bg-slate-900 p-5 sm:p-6">
+        <section aria-label="Repository search" className="nexus-devops-search rounded-2xl border border-slate-800 bg-slate-900 p-5 sm:p-6">
           <form onSubmit={onSubmit} aria-busy={loading} className="flex flex-col gap-3 sm:flex-row sm:items-end">
             <label className="flex-1 text-sm font-medium text-slate-300">
               Public GitHub repository
@@ -203,7 +204,7 @@ export default function NexusDeveloperPreview() {
 
         <div className="nexus-devops-section mb-3 mt-9">02 / GitHub workflow and pull request evidence</div>
         <div className="grid gap-6 lg:grid-cols-2">
-          <section aria-labelledby="workflow-title" aria-busy={actionsLoading} className="min-w-0 overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/75">
+          <section aria-labelledby="workflow-title" aria-busy={actionsLoading} className="nexus-devops-evidence min-w-0 overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/75">
             <div className="flex items-start justify-between gap-3 border-b border-slate-800 p-5">
               <div>
                 <h2 id="workflow-title" className="flex items-center gap-2 text-lg font-semibold">
@@ -214,7 +215,7 @@ export default function NexusDeveloperPreview() {
               <div className="flex shrink-0 items-center gap-3">
                 <button type="button" onClick={() => refreshPanel('actions', selectedRepo)}
                   disabled={actionsLoading} aria-label="Refresh GitHub Actions" title="Refresh GitHub Actions"
-                  className="inline-flex min-h-10 min-w-10 items-center justify-center rounded-lg border border-slate-700 text-slate-300 hover:border-cyan-400 hover:text-[#4ea8ff] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-300 disabled:cursor-wait disabled:opacity-50">
+                  className="inline-flex min-h-10 min-w-10 items-center justify-center rounded-lg border border-slate-700 text-slate-300 hover:border-[#4ea8ff] hover:text-[#4ea8ff] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#4ea8ff] disabled:cursor-wait disabled:opacity-50">
                   <RefreshCw aria-hidden="true" className={'h-4 w-4 ' + (actionsLoading ? 'animate-spin' : '')} />
                 </button>
                 <a href={`https://github.com/${selectedRepo}/actions`} target="_blank" rel="noopener noreferrer"
@@ -228,7 +229,7 @@ export default function NexusDeveloperPreview() {
               <AlertCircle className="h-4 w-4 shrink-0" />{actions.error}</p>}
             <ul className="divide-y divide-slate-800/80">
               {runs.map(run => (
-                <li key={run.id} className="flex items-center justify-between gap-3 p-5">
+                <li key={run.id} className="nexus-devops-event flex items-center justify-between gap-3 p-5">
                   <div className="min-w-0">
                     <p className="truncate text-sm font-medium text-slate-200">{run.name}</p>
                     <p className="mt-1 text-xs text-slate-400">{run.event} · {run.created_at.slice(0, 10)} · #{run.id}</p>
@@ -253,7 +254,7 @@ export default function NexusDeveloperPreview() {
             </p>}
           </section>
 
-          <section aria-labelledby="pulls-title" aria-busy={pullsLoading} className="min-w-0 overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/75">
+          <section aria-labelledby="pulls-title" aria-busy={pullsLoading} className="nexus-devops-evidence min-w-0 overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/75">
             <div className="flex items-start justify-between gap-3 border-b border-slate-800 p-5">
               <div>
                 <h2 id="pulls-title" className="flex items-center gap-2 text-lg font-semibold">
@@ -264,7 +265,7 @@ export default function NexusDeveloperPreview() {
               <div className="flex shrink-0 items-center gap-3">
                 <button type="button" onClick={() => refreshPanel('prs', selectedRepo)}
                   disabled={pullsLoading} aria-label="Refresh pull requests" title="Refresh pull requests"
-                  className="inline-flex min-h-10 min-w-10 items-center justify-center rounded-lg border border-slate-700 text-slate-300 hover:border-cyan-400 hover:text-[#4ea8ff] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-300 disabled:cursor-wait disabled:opacity-50">
+                  className="inline-flex min-h-10 min-w-10 items-center justify-center rounded-lg border border-slate-700 text-slate-300 hover:border-[#4ea8ff] hover:text-[#4ea8ff] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#4ea8ff] disabled:cursor-wait disabled:opacity-50">
                   <RefreshCw aria-hidden="true" className={'h-4 w-4 ' + (pullsLoading ? 'animate-spin' : '')} />
                 </button>
                 <a href={`https://github.com/${selectedRepo}/pulls`} target="_blank" rel="noopener noreferrer"
@@ -281,7 +282,7 @@ export default function NexusDeveloperPreview() {
               <AlertCircle className="h-4 w-4 shrink-0" />{pulls.error}</p>}
             <ul className="divide-y divide-slate-800/80">
               {prList.map(pr => (
-                <li key={pr.number} className="p-5">
+                <li key={pr.number} className="nexus-devops-event p-5">
                   <div className="flex flex-wrap items-start justify-between gap-2">
                     <a href={pr.html_url} target="_blank" rel="noopener noreferrer"
                       className="max-w-full min-w-0 flex-1 text-sm font-medium text-slate-200 hover:text-[#4ea8ff]">
@@ -304,7 +305,7 @@ export default function NexusDeveloperPreview() {
           </section>
         </div>
 
-        <section className="mt-7 rounded-2xl border border-slate-800 bg-slate-900/70 p-5 sm:p-6" aria-labelledby="next-title">
+        <section className="nexus-devops-investigations mt-7 rounded-2xl border border-slate-800 bg-slate-900/70 p-5 sm:p-6" aria-labelledby="next-title">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
               <h2 id="next-title" className="flex items-center gap-2 text-base font-semibold">
@@ -332,7 +333,7 @@ export default function NexusDeveloperPreview() {
                     <p className="mt-1 text-xs leading-5 text-slate-400">{item.explanation}</p>
                   </div>
                   <a href={item.url} target="_blank" rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 text-xs font-medium text-[#4ea8ff] hover:text-cyan-100">
+                    className="inline-flex items-center gap-1 text-xs font-medium text-[#4ea8ff] hover:text-[#cee8ff]">
                     Review <ArrowUpRight className="h-4 w-4" />
                   </a>
                 </li>
