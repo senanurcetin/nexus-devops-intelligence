@@ -144,11 +144,11 @@ test('PRs: list validates identities before requesting details', async () => {
   assert.equal(calls.length, 1);
 });
 
-test('PRs: draft skips detail request, a partial detail failure remains unknown', async () => {
+test('PRs: draft skips detail request, ordinary partial failure remains unknown', async () => {
   const { calls, fetcher } = fakeFetcher(url => {
     if (url.includes('per_page=6')) return answer(200, [goodPR(10, true), goodPR(11), goodPR(12)]);
     if (url.endsWith('/pulls/11')) return answer(200, details(11, 'dirty'));
-    if (url.endsWith('/pulls/12')) return answer(429, null);
+    if (url.endsWith('/pulls/12')) return answer(503, null);
     throw Error(`Unexpected ${url}`);
   });
   const result = await loadPublicPulls(repo, fetcher);
@@ -224,4 +224,63 @@ test('Actions: untrusted Retry-After header is not forwarded', async () => {
     assert.equal(result.status, 429);
     assert.equal(result.retryAfterSeconds, undefined);
   }
+});
+
+test('PRs: 429 from a detail makes the whole result 429, not misleading success', async () => {
+  const { calls, fetcher } = fakeFetcher(url => {
+    if (url.includes('per_page=6')) return answer(200, [goodPR(1, true), goodPR(2), goodPR(3)]);
+    if (url.endsWith('/pulls/2')) return answer(200, details(2, 'clean'));
+    if (url.endsWith('/pulls/3')) return {
+      ...answer(429, { message: 'private upstream detail' }),
+      headers: { get: key => key === 'retry-after' ? '90' : null },
+    };
+    throw Error(`Unexpected ${url}`);
+  });
+  const result = await loadPublicPulls(repo, fetcher);
+  assert.equal(result.status, 429);
+  assert.equal(result.retryAfterSeconds, 90);
+  assert.match(result.body.error, /rate limit/i);
+  assert.doesNotMatch(result.body.error, /private upstream/);
+  assert.equal(calls.length, 3);
+  assert.ok(!calls.some(call => call.url.endsWith('/pulls/1')));
+});
+
+test('PRs: secondary 403 on a detail also propagates as 429', async () => {
+  const { calls, fetcher } = fakeFetcher(url => {
+    if (url.includes('per_page=6')) return answer(200, [goodPR(4)]);
+    return {
+      ...answer(403, { message: 'You have exceeded a secondary rate limit.' }),
+      headers: { get: key => key === 'x-ratelimit-remaining' ? '41' : key === 'retry-after' ? '120' : null },
+    };
+  });
+  const result = await loadPublicPulls(repo, fetcher);
+  assert.equal(result.status, 429);
+  assert.equal(result.retryAfterSeconds, 120);
+  assert.equal(calls.length, 2);
+});
+
+test('PRs: multiple detail limits select the longest safe Retry-After', async () => {
+  const { calls, fetcher } = fakeFetcher(url => {
+    if (url.includes('per_page=6')) return answer(200, [goodPR(6), goodPR(7), goodPR(8)]);
+    const number = Number(url.split('/').at(-1));
+    return {
+      ...answer(429, null),
+      headers: { get: key => key === 'retry-after'
+        ? number === 6 ? '30' : number === 7 ? '240' : '90000'
+        : null },
+    };
+  });
+  const result = await loadPublicPulls(repo, fetcher);
+  assert.equal(result.status, 429);
+  assert.equal(result.retryAfterSeconds, 240);
+  assert.equal(calls.length, 4);
+});
+
+test('PRs: all detail wait hints invalid return 429 without forwarding a header', async () => {
+  const { fetcher } = fakeFetcher(url => url.includes('per_page=6')
+    ? answer(200, [goodPR(9)])
+    : { ...answer(429, null), headers: { get: key => key === 'retry-after' ? '9999999' : null } });
+  const result = await loadPublicPulls(repo, fetcher);
+  assert.equal(result.status, 429);
+  assert.equal(result.retryAfterSeconds, undefined);
 });
