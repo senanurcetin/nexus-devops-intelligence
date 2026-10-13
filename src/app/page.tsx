@@ -9,12 +9,9 @@ import {
 import { parsePublicRepository, type PublicActionsSummary } from '@/lib/github-public-actions';
 import type { PublicPullSummary, PullAttention } from '@/lib/nexus-public-prs';
 import { recommendInvestigations } from '@/lib/nexus-recommendations';
+import { readPublicPanel, emptyPanel, type Panel } from '@/lib/nexus-panel-request';
 
 const DEFAULT_REPOSITORY = 'senanurcetin/ot-sentinel';
-
-type ApiFailure = { error: string };
-type Panel<T> = { data: T | null; error: string | null };
-const empty = <T,>(): Panel<T> => ({ data: null, error: null });
 
 const attentionMeta: Record<PullAttention, { label: string; className: string }> = {
   draft: { label: 'Draft', className: 'bg-slate-600/30 text-slate-300' },
@@ -25,22 +22,6 @@ const attentionMeta: Record<PullAttention, { label: string; className: string }>
   clear: { label: 'Clean (reported)', className: 'bg-emerald-400/15 text-emerald-300' },
   unknown: { label: 'Not verified', className: 'bg-slate-600/30 text-slate-300' },
 };
-
-async function readPanel<T>(url: string, signal: AbortSignal): Promise<Panel<T>> {
-  try {
-    const res = await fetch(url, { cache: 'no-store', signal });
-    const payload: unknown = await res.json();
-    const isError = payload !== null && typeof payload === 'object' && 'error' in payload;
-    if (!res.ok || isError || !payload) {
-      throw new Error(isError && typeof (payload as ApiFailure).error === 'string'
-        ? (payload as ApiFailure).error : 'GitHub data unavailable.');
-    }
-    return { data: payload as T, error: null };
-  } catch (error) {
-    if (signal.aborted) return empty<T>();
-    return { data: null, error: error instanceof Error ? error.message : 'Request failed.' };
-  }
-}
 
 function Card({ label, value, detail, tone = 'default' }: {
   label: string; value: string | number; detail: string; tone?: 'default' | 'warning';
@@ -58,8 +39,8 @@ function Card({ label, value, detail, tone = 'default' }: {
 export default function NexusDeveloperPreview() {
   const [repository, setRepository] = useState(DEFAULT_REPOSITORY);
   const [selectedRepo, setSelectedRepo] = useState(DEFAULT_REPOSITORY);
-  const [actions, setActions] = useState<Panel<PublicActionsSummary>>(empty);
-  const [pulls, setPulls] = useState<Panel<PublicPullSummary>>(empty);
+  const [actions, setActions] = useState<Panel<PublicActionsSummary>>(emptyPanel);
+  const [pulls, setPulls] = useState<Panel<PublicPullSummary>>(emptyPanel);
   const [loading, setLoading] = useState(false);
   const [formError, setFormError] = useState('');
   const controller = useRef<AbortController | null>(null);
@@ -71,17 +52,21 @@ export default function NexusDeveloperPreview() {
     const trimmed = repo.trim();
     setSelectedRepo(trimmed);
     setLoading(true);
-    setActions(empty());
-    setPulls(empty());
+    setActions(emptyPanel());
+    setPulls(emptyPanel());
     const params = new URLSearchParams({ repository: trimmed }).toString();
-    const [actionsResponse, pullsResponse] = await Promise.all([
-      readPanel<PublicActionsSummary>(`/api/public-actions?${params}`, next.signal),
-      readPanel<PublicPullSummary>(`/api/public-prs?${params}`, next.signal),
-    ]);
-    if (controller.current !== next || next.signal.aborted) return;
-    setActions(actionsResponse);
-    setPulls(pullsResponse);
-    setLoading(false);
+    // Each panel renders as soon as its request settles. A slower PR response
+    // cannot delay Actions, and stale responses are ignored after switching repos.
+    const loadActions = readPublicPanel<PublicActionsSummary>(`/api/public-actions?${params}`, next.signal)
+      .then(result => {
+        if (controller.current === next && !next.signal.aborted) setActions(result);
+      });
+    const loadPulls = readPublicPanel<PublicPullSummary>(`/api/public-prs?${params}`, next.signal)
+      .then(result => {
+        if (controller.current === next && !next.signal.aborted) setPulls(result);
+      });
+    await Promise.all([loadActions, loadPulls]);
+    if (controller.current === next && !next.signal.aborted) setLoading(false);
   }, []);
 
   useEffect(() => {
@@ -182,7 +167,7 @@ export default function NexusDeveloperPreview() {
         </section>
 
         <div className="mt-8 grid gap-6 lg:grid-cols-2">
-          <section aria-labelledby="workflow-title" className="min-w-0 overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/75">
+          <section aria-labelledby="workflow-title" aria-busy={loading && !actions.data && !actions.error} className="min-w-0 overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/75">
             <div className="flex items-start justify-between gap-3 border-b border-slate-800 p-5">
               <div>
                 <h2 id="workflow-title" className="flex items-center gap-2 text-lg font-semibold">
@@ -195,6 +180,7 @@ export default function NexusDeveloperPreview() {
                 History <ArrowUpRight className="h-4 w-4" />
               </a>
             </div>
+            <span role="status" className="sr-only">{actions.data ? `Loaded ${actions.data.inspected_runs} workflow runs.` : loading && !actions.error ? 'Loading workflow history.' : ''}</span>
             {actions.error && <p className="m-5 flex gap-2 rounded-xl bg-rose-950/30 p-4 text-sm text-rose-300" role="alert">
               <AlertCircle className="h-4 w-4 shrink-0" />{actions.error}</p>}
             <ul className="divide-y divide-slate-800/80">
@@ -224,7 +210,7 @@ export default function NexusDeveloperPreview() {
             </p>}
           </section>
 
-          <section aria-labelledby="pulls-title" className="min-w-0 overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/75">
+          <section aria-labelledby="pulls-title" aria-busy={loading && !pulls.data && !pulls.error} className="min-w-0 overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/75">
             <div className="flex items-start justify-between gap-3 border-b border-slate-800 p-5">
               <div>
                 <h2 id="pulls-title" className="flex items-center gap-2 text-lg font-semibold">
@@ -237,6 +223,7 @@ export default function NexusDeveloperPreview() {
                 Open PRs <ArrowUpRight className="h-4 w-4" />
               </a>
             </div>
+            <span role="status" className="sr-only">{pulls.data ? `Loaded ${pulls.data.inspected_prs} pull requests.` : loading && !pulls.error ? 'Loading pull requests.' : ''}</span>
             {pulls.error && <p className="m-5 flex gap-2 rounded-xl bg-rose-950/30 p-4 text-sm text-rose-300" role="alert">
               <AlertCircle className="h-4 w-4 shrink-0" />{pulls.error}</p>}
             <ul className="divide-y divide-slate-800/80">
