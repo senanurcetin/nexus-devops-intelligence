@@ -6,7 +6,7 @@ and pull request merge state. **This is not part of Ops-Copilot.**
 > **Verified MVP development build (13 October 2026):** [PR #3](https://github.com/senanurcetin/nexus-devops-intelligence/pull/3)
 > upgraded Next.js; [PR #6](https://github.com/senanurcetin/nexus-devops-intelligence/pull/6)
 > migrated Tailwind to 4.3.3 and fixed secondary-text contrast. Clean cloud `npm ci`,
-> **33/33 tests**, full TypeScript and production build passed. Full `npm audit`
+> **39/39 tests**, full TypeScript and production build passed. Full `npm audit`
 > (including development dependencies) reported **zero findings at the time checked**.
 > Chromium 375/768/1440 responsive checks and automated axe-core A/AA tests passed.
 > **No public deployment:** Vercel WAF cross-instance rate limiting and final manual
@@ -57,6 +57,18 @@ and an axe-core WCAG 2/2.1 A/AA scan. These manual checks are separate from the
 rate limit covering both APIs ([issue #7](https://github.com/senanurcetin/nexus-devops-intelligence/issues/7)).
 The current request gate is per Node process only. Vercel Hobby WAF configuration,
 its usage terms, manual preview and remaining accessibility checks are not complete.
+
+### Independent panels and edge rate limiting
+
+[PR #8](https://github.com/senanurcetin/nexus-devops-intelligence/pull/8)
+adds independent Actions/PR panel resolution, screen-reader loading announcements
+and safe handling of non-JSON WAF 429 responses. Manual Chromium regression
+checks at 375/768/1440px and six new offline unit tests passed. See
+[the browser QA record](docs/independent-panel-qa-2026-10-13.md).
+
+**Important:** Client-side 429 handling is not a firewall. Platform-wide WAF
+rate limiting remains a prerequisite before broad public release; see
+[issue #7](https://github.com/senanurcetin/nexus-devops-intelligence/issues/7).
 
 ## HTTP API
 
