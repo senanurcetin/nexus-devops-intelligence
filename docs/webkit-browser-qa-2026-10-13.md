@@ -26,6 +26,18 @@
 | axe-core WCAG 2/2.1 A/AA automated violations | **0** | **0** | **0** |
 | axe-core rules passed | 24 | 24 | 24 |
 
+## Additional live public GitHub browser test
+
+After the deterministic form/axe checks, WebKit was retested at **375px and 1440px** with **unmocked public GitHub API responses**. The browser waited for the initial React application to hydrate before submitting `vercel/next.js`.
+
+- Both viewports received HTTP 200 and eventually displayed `Selected: vercel/next.js`.
+- Both viewports exposed **20 GitHub source links** under the selected public repository.
+- No page JavaScript errors, API error banners, or horizontal overflow were observed.
+- An initial test that submitted before hydration timed out; waiting for page network-idle/interactive readiness resolved the test issue. This was a test sequencing problem, not evidence of an application defect.
+- Real mobile and desktop screenshots were captured inside the temporary cloud sandbox. **The sandbox expired before they could be transferred to GitHub, so no screenshot assets are claimed as committed.** Screenshot publication remains a separate documentation task.
+
+This is a live-read-only browser smoke test, **not a Vercel public deployment**, WAF test or comprehensive cross-browser certification.
+
 ## Interpretation and remaining limits
 
 The primary form and baseline error-state layout were manually exercised in **three browser engines across the project**: Chromium, Firefox, and Playwright WebKit. These checks provide browser-engine coverage but do not prove compatibility with every Safari release/device.
