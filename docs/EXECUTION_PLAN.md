@@ -6,7 +6,7 @@
 
 ## Kesinleşmiş başlangıç durumu
 
-- [x] Son manuel bulut kontrolünde **48/48 otomatik test başarılı**, TypeScript ve Next.js production build başarılı.
+- [x] Son manuel bulut kontrolünde **57/57 otomatik test başarılı**, TypeScript ve Next.js production build başarılı.
 - [x] Son tam `npm audit --json` raporunda **0 bulgu**. Bu, gelecekteki açıkları garanti etmez.
 - [x] Gerçek public GitHub Actions ve PR REST API için localhost HTTP smoke başarılı.
 - [x] Chromium, Firefox ve Playwright WebKit motorlarında **375/768/1440 px** için temel responsive, form, klavye odağı ve otomatik axe-core WCAG A/AA testleri başarılı. Bu, tam WCAG veya ekran okuyucu onayı değildir.
@@ -24,6 +24,7 @@
 
 ### API-04/05: Kod üzerinde güvenli devam işleri
 - [x] [PR #11](https://github.com/senanurcetin/nexus-devops-intelligence/pull/11) ile GitHub'ın **ikincil 403 hız sınırı** (Retry-After veya secondary-limit mesajı) doğru HTTP 429 olarak sınıflandırılıyor, otomatik retry yapılmıyor ve olağan 401/403 erişim yasağından ayrılıyor. 3 yeni testle **48/48** başarılı; typecheck/build/tam audit/gerçek HTTP smoke geçti.
+- [x] [PR #12](https://github.com/senanurcetin/nexus-devops-intelligence/pull/12): GitHub ve WAF `429` yanıtlarından yalnızca güvenli **1–3600 saniye** sayısal `Retry-After` aktarımı. İki API, browser paneli ve kötü niyetli/büyük başlık testleri dahil **57/57** geçti; otomatik retry yok. [Davranış notu](RATE_LIMIT_BEHAVIOR.md).
 - [ ] Timeout, abort, parallel request ve platform-level WAF senaryolarını gerektiği ölçüde genişlet; aşırı gerçek trafik üretme.
 - [ ] Önbellek, istemci retry davranışı ve 12 farklı process-local in-flight sınırını kaynak kullanımını artırmadan test et.
 - [ ] GitHub API rate-limit yanıtının kullanıcıya güvenli ve anlaşılır biçimde gösterildiğini doğrula.
