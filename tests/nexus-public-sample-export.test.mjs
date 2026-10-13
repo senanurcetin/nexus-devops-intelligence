@@ -42,7 +42,7 @@ const prs = () => ({
   pull_requests: [
     pr(77, 'conflict', '+cmd | powershell -c Invoke-WebRequest'),
     pr(78, 'unknown', '\t=1+2'),
-    pr(79, 'clean', 'Clean does not imply merge permission'),
+    pr(79, 'clear', 'Clean does not imply merge permission'),
   ],
   scope_note: 'Up to five open PRs; not a full audit.',
 });
