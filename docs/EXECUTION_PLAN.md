@@ -38,7 +38,8 @@
 - [ ] 5 paralel ayrıntı çağrısının halen eşzamanlı başladığı unutulmamalı; bu düzeltme global WAF değildir.
 
 - [x] **PR ayrıntı eşzamanlılığı:** [PR #16](https://github.com/senanurcetin/nexus-devops-intelligence/pull/16) ile PR detail çağrılarında iki worker sınırı, kota hata yanıtından sonra kuyruktaki çağrıların durması ve sonuç sırasının korunması tamamlandı. **67/67** test, typecheck/build/tam npm audit/gerçek HTTP smoke geçti. [Kota notları](RATE_LIMIT_BEHAVIOR.md).
-- [ ] Kullanıcı deneyimi için yavaş GitHub yanıtlarında iki worker nedeniyle oluşabilecek toplam PR yükleme gecikmesini manuel tarayıcıda ayrıca değerlendirmek gerekir.
+- [x] **Yavaş PR yüklenmesi:** [PR #17](https://github.com/senanurcetin/nexus-devops-intelligence/pull/17) ile 2,5 sn sonra istek bazlı görsel/erişilebilir durum; yeni repo veya yanıt sonunda temizleniyor. Simüle edilmiş beş PR fixture'da 80/160 ms ayrıntı gecikmeleri **243/482 ms** toplam verdi. Chromium 375/1440px ve axe A/AA 0 otomatik ihlal. [Kanıt](pr-slow-load-browser-qa-2026-10-13.md).
+- [ ] Gerçek dağıtım ve farklı GitHub ağ koşullarındaki uçtan uca PR gecikmesi ayrıca ölçülmeli; fixture ölçümü ürün SLA'sı değildir.
 
 ## Faz 2 — Ürün UX ve erişilebilirlik (P0/P1 paralel)
 
