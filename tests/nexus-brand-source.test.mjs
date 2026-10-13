@@ -22,8 +22,9 @@ test('NEXUS dashboard keeps app functionality while using sapphire brand identit
   assert.ok(page.includes('nexus-devops-evidence-note'));
   assert.ok(page.includes('nexus-devops-data-state'));
   assert.ok(page.includes('lastApiResponseAt'));
-  assert.ok(page.includes('Last API response received at'));
-  assert.ok(page.includes('No API response received for this selection yet'));
+  assert.equal((page.match(/if \(result\.data\) setLastApiResponseAt\(/g) ?? []).length, 2);
+  assert.ok(page.includes('Last successful GitHub API sample received at'));
+  assert.ok(page.includes('No successful GitHub API sample received for this selection yet'));
   assert.ok(css.includes('.nexus-devops-received-at'));
   assert.ok(page.includes('PARTIAL DATA · REVIEW PANEL ERRORS'));
   assert.ok(page.includes('BOTH SOURCE PANELS UNAVAILABLE'));
