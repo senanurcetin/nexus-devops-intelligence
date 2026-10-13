@@ -22,6 +22,7 @@
 - In [PR #9](https://github.com/senanurcetin/nexus-devops-intelligence/pull/9), added Next.js response security headers and corresponding HTTP/Node regression checks.
 - **41/41 tests**, full TypeScript check, production build and manual live API smoke passed with the new headers. Full npm audit showed 0 findings at verification time.
 - The limited CSP prevents framing, objects and unsafe base URLs; it is not a full script/style CSP and does not replace Vercel WAF rate limiting.
+- Added a second browser-engine validation using Firefox 157.0 at 375/768/1440px; no horizontal overflow, failed forms or page JS errors. axe-core WCAG A/AA: 0 automated violations in the controlled error-state flow. Human screen-reader and WebKit coverage remain open.
 - No GitHub Actions or CircleCI jobs were configured or run.
 
 **Not yet released:** Platform-wide rate limiting, final manual cross-browser/screen-reader review and public preview deployment remain pending.
