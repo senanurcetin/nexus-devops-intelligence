@@ -25,6 +25,7 @@ export async function readPublicPanel<T>(
   url: string,
   signal: AbortSignal,
   fetcher: PanelFetcher = fetch,
+  validate?: (payload: unknown) => payload is T,
 ): Promise<Panel<T>> {
   try {
     const response = await fetcher(url, { cache: 'no-store', signal });
@@ -46,6 +47,9 @@ export async function readPublicPanel<T>(
     const serverError = safeError(payload);
     if (!response.ok || serverError || !payload || typeof payload !== 'object' || Array.isArray(payload)) {
       return { data: null, error: serverError ?? 'GitHub data is temporarily unavailable.' };
+    }
+    if (validate && !validate(payload)) {
+      return { data: null, error: 'The public API sample could not be verified. Please retry.' };
     }
     return { data: payload as T, error: null };
   } catch {
