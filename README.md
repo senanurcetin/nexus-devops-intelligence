@@ -19,6 +19,11 @@ site and public APIs. These protections do not replace a Vercel WAF rate limit;
 WAF counters are per region, and the Hobby pricing acknowledgment remains
 outstanding.
 
+**Cross-browser QA:** [Firefox 157 manual smoke and axe-core check](docs/firefox-browser-qa-2026-10-13.md)
+passed at 375, 768 and 1440 pixels with controlled API error responses.
+Chromium and Firefox are covered; human screen-reader and public preview checks
+remain outstanding.
+
 ## Current scope (MVP)
 
 - Public GitHub repositories only; no GitHub token, GitHub App installation, or write permission.
