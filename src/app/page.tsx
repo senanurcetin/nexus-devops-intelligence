@@ -27,7 +27,7 @@ function Card({ label, value, detail, tone = 'default' }: {
   label: string; value: string | number; detail: string; tone?: 'default' | 'warning';
 }) {
   return (
-    <div className="rounded-2xl border border-slate-800 bg-slate-900/90 p-5">
+    <div className="nexus-devops-card rounded-2xl border border-slate-800 bg-slate-900/90 p-5">
       <p className="text-sm text-slate-400">{label}</p>
       <div className={'mt-2 text-3xl font-semibold tabular-nums ' +
         (tone === 'warning' ? 'text-amber-300' : 'text-white')}>{value}</div>
@@ -127,29 +127,29 @@ export default function NexusDeveloperPreview() {
   const recommendations = recommendInvestigations(actions.data, pulls.data);
 
   return (
-    <main className="min-h-screen bg-slate-950 text-slate-100">
+    <main className="nexus-devops min-h-screen bg-slate-950 text-slate-100">
       <div className="mx-auto max-w-7xl px-5 py-10 sm:px-8 lg:py-14">
         <header className="mb-12 flex flex-wrap items-center justify-between gap-4">
           <Link href="/"
             className="flex items-center gap-2 text-sm font-semibold tracking-wide text-white">
-            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-cyan-400/15 text-cyan-300">
+            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#4ea8ff]/15 text-[#4ea8ff]">
               <Activity className="h-5 w-5" />
             </span>
             NEXUS <span className="font-normal text-slate-400">/ Developer Intelligence</span>
           </Link>
           <a href="https://github.com/senanurcetin/nexus-devops-intelligence" target="_blank" rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 text-sm text-slate-400 hover:text-cyan-300">
+            className="inline-flex items-center gap-2 text-sm text-slate-400 hover:text-[#4ea8ff]">
             Open-source code <ArrowUpRight className="h-4 w-4" />
           </a>
         </header>
 
-        <div className="mb-10 grid gap-8 lg:grid-cols-[1.5fr_1fr] lg:items-end">
+        <div className="nexus-devops-hero mb-10 grid gap-8 lg:grid-cols-[1.5fr_1fr] lg:items-end">
           <div>
-            <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-cyan-400/30 bg-cyan-400/10 px-3 py-1 text-xs font-medium uppercase tracking-wider text-cyan-300">
+            <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-[#4ea8ff]/30 bg-[#4ea8ff]/10 px-3 py-1 text-xs font-medium uppercase tracking-wider text-[#4ea8ff]">
               <ShieldCheck className="h-4 w-4" /> Public API · Read-only preview
             </div>
             <h1 className="max-w-2xl text-4xl font-semibold tracking-tight text-white sm:text-5xl">
-              Your CI and pull requests. <span className="text-cyan-300">One view.</span>
+              Your CI and pull requests. <span className="text-[#4ea8ff]">One view.</span>
             </h1>
             <p className="mt-5 max-w-2xl text-base leading-7 text-slate-400">
               Explore real GitHub Actions history and GitHub-reported merge states.
@@ -158,7 +158,7 @@ export default function NexusDeveloperPreview() {
           </div>
           <div className="rounded-2xl border border-slate-800 bg-slate-900/75 p-5 text-sm leading-6 text-slate-400">
             <div className="mb-2 flex items-center gap-2 font-semibold text-slate-200">
-              <GitBranch className="h-4 w-4 text-cyan-300" /> Limited public preview
+              <GitBranch className="h-4 w-4 text-[#4ea8ff]" /> Limited public preview
             </div>
             Results are samples: up to 10 workflow runs and 5 open PRs. Merge states can be pending.
             No token, AI diagnosis, account-wide billing data or deployment claim.
@@ -172,7 +172,7 @@ export default function NexusDeveloperPreview() {
               <input value={repository} onChange={event => { setRepository(event.target.value); setFormError(''); }}
                 maxLength={200} required autoComplete="off" placeholder="owner/repository"
                 aria-invalid={Boolean(formError)} aria-describedby={formError ? 'repository-error' : 'repository-hint'}
-                className="mt-2 block w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-base text-slate-100 outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/15" />
+                className="mt-2 block w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-base text-slate-100 outline-none focus:border-cyan-400 focus:ring-2 focus:ring-[#4ea8ff]/15" />
             </label>
             <button type="submit"
               className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-cyan-400 px-6 py-3 text-sm font-semibold text-slate-950 hover:bg-cyan-300 disabled:opacity-50">
@@ -204,18 +204,18 @@ export default function NexusDeveloperPreview() {
             <div className="flex items-start justify-between gap-3 border-b border-slate-800 p-5">
               <div>
                 <h2 id="workflow-title" className="flex items-center gap-2 text-lg font-semibold">
-                  <Activity className="h-5 w-5 text-cyan-300" /> GitHub Actions
+                  <Activity className="h-5 w-5 text-[#4ea8ff]" /> GitHub Actions
                 </h2>
                 <p className="mt-1 text-xs text-slate-400">Recent runs · GitHub REST API</p>
               </div>
               <div className="flex shrink-0 items-center gap-3">
                 <button type="button" onClick={() => refreshPanel('actions', selectedRepo)}
                   disabled={actionsLoading} aria-label="Refresh GitHub Actions" title="Refresh GitHub Actions"
-                  className="inline-flex min-h-10 min-w-10 items-center justify-center rounded-lg border border-slate-700 text-slate-300 hover:border-cyan-400 hover:text-cyan-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-300 disabled:cursor-wait disabled:opacity-50">
+                  className="inline-flex min-h-10 min-w-10 items-center justify-center rounded-lg border border-slate-700 text-slate-300 hover:border-cyan-400 hover:text-[#4ea8ff] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-300 disabled:cursor-wait disabled:opacity-50">
                   <RefreshCw aria-hidden="true" className={'h-4 w-4 ' + (actionsLoading ? 'animate-spin' : '')} />
                 </button>
                 <a href={`https://github.com/${selectedRepo}/actions`} target="_blank" rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 text-sm text-cyan-300 hover:text-white">
+                  className="inline-flex items-center gap-1 text-sm text-[#4ea8ff] hover:text-white">
                   History <ArrowUpRight className="h-4 w-4" />
                 </a>
               </div>
@@ -236,7 +236,7 @@ export default function NexusDeveloperPreview() {
                       {run.conclusion ?? run.status}
                     </span>
                     <a href={run.html_url} target="_blank" rel="noopener noreferrer"
-                      aria-label={`View GitHub Actions run ${run.id}`} className="text-slate-400 hover:text-cyan-300">
+                      aria-label={`View GitHub Actions run ${run.id}`} className="text-slate-400 hover:text-[#4ea8ff]">
                       <ArrowUpRight className="h-4 w-4" />
                     </a>
                   </div>
@@ -254,18 +254,18 @@ export default function NexusDeveloperPreview() {
             <div className="flex items-start justify-between gap-3 border-b border-slate-800 p-5">
               <div>
                 <h2 id="pulls-title" className="flex items-center gap-2 text-lg font-semibold">
-                  <GitPullRequest className="h-5 w-5 text-cyan-300" /> PR Intelligence
+                  <GitPullRequest className="h-5 w-5 text-[#4ea8ff]" /> PR Intelligence
                 </h2>
                 <p className="mt-1 text-xs text-slate-400">Recent open pull requests · GitHub-reported merge states</p>
               </div>
               <div className="flex shrink-0 items-center gap-3">
                 <button type="button" onClick={() => refreshPanel('prs', selectedRepo)}
                   disabled={pullsLoading} aria-label="Refresh pull requests" title="Refresh pull requests"
-                  className="inline-flex min-h-10 min-w-10 items-center justify-center rounded-lg border border-slate-700 text-slate-300 hover:border-cyan-400 hover:text-cyan-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-300 disabled:cursor-wait disabled:opacity-50">
+                  className="inline-flex min-h-10 min-w-10 items-center justify-center rounded-lg border border-slate-700 text-slate-300 hover:border-cyan-400 hover:text-[#4ea8ff] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-300 disabled:cursor-wait disabled:opacity-50">
                   <RefreshCw aria-hidden="true" className={'h-4 w-4 ' + (pullsLoading ? 'animate-spin' : '')} />
                 </button>
                 <a href={`https://github.com/${selectedRepo}/pulls`} target="_blank" rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 text-sm text-cyan-300 hover:text-white">
+                  className="inline-flex items-center gap-1 text-sm text-[#4ea8ff] hover:text-white">
                   Open PRs <ArrowUpRight className="h-4 w-4" />
                 </a>
               </div>
@@ -281,7 +281,7 @@ export default function NexusDeveloperPreview() {
                 <li key={pr.number} className="p-5">
                   <div className="flex flex-wrap items-start justify-between gap-2">
                     <a href={pr.html_url} target="_blank" rel="noopener noreferrer"
-                      className="max-w-full min-w-0 flex-1 text-sm font-medium text-slate-200 hover:text-cyan-300">
+                      className="max-w-full min-w-0 flex-1 text-sm font-medium text-slate-200 hover:text-[#4ea8ff]">
                       #{pr.number} · {pr.title} <ArrowUpRight className="inline h-3.5 w-3.5" />
                     </a>
                     <span className={'shrink-0 rounded-full px-2.5 py-1 text-xs ' + attentionMeta[pr.attention].className}>
@@ -307,7 +307,7 @@ export default function NexusDeveloperPreview() {
               <h2 id="next-title" className="flex items-center gap-2 text-base font-semibold">
                 {recommendations.some(r => r.severity === 'high') ?
                   <TriangleAlert className="h-5 w-5 text-amber-300" /> :
-                  <CheckCircle2 className="h-5 w-5 text-cyan-300" />}
+                  <CheckCircle2 className="h-5 w-5 text-[#4ea8ff]" />}
                 Suggested investigations
               </h2>
               <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-400">
@@ -316,7 +316,7 @@ export default function NexusDeveloperPreview() {
             </div>
             <a href="https://docs.github.com/en/rest/actions/workflow-runs"
               target="_blank" rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 text-sm font-medium text-cyan-300 hover:text-white">
+              className="inline-flex items-center gap-1 text-sm font-medium text-[#4ea8ff] hover:text-white">
               GitHub API docs <ArrowRight className="h-4 w-4" />
             </a>
           </div>
@@ -329,7 +329,7 @@ export default function NexusDeveloperPreview() {
                     <p className="mt-1 text-xs leading-5 text-slate-400">{item.explanation}</p>
                   </div>
                   <a href={item.url} target="_blank" rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 text-xs font-medium text-cyan-300 hover:text-cyan-100">
+                    className="inline-flex items-center gap-1 text-xs font-medium text-[#4ea8ff] hover:text-cyan-100">
                     Review <ArrowUpRight className="h-4 w-4" />
                   </a>
                 </li>

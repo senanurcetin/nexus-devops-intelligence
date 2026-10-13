@@ -5,3 +5,42 @@ body { margin: 0; background: #020617; color: #f8fafc; font-family: ui-sans-seri
 * { box-sizing: border-box; }
 a { text-underline-offset: 3px; }
 button:focus-visible, input:focus-visible, a:focus-visible { outline: 2px solid #22d3ee; outline-offset: 2px; }
+
+/* NEXUS portfolio production visual treatment. Functional API panels unchanged. */
+:root { color-scheme: dark; }
+body { background: #071829; color: #eff5ff; }
+.nexus-devops {
+  background: radial-gradient(ellipse at 87% 0%, rgba(78,168,255,.13), transparent 37%),
+              radial-gradient(ellipse at 12% 90%, rgba(143,155,255,.055), transparent 42%),
+              #071829 !important;
+}
+.nexus-devops-hero {
+  position: relative;
+  padding: clamp(23px, 3vw, 42px);
+  border: 1px solid #2e567c;
+  border-radius: 20px;
+  overflow: hidden;
+  background: linear-gradient(113deg, #123451, #0b2540 57%, #0b1b34);
+  box-shadow: 0 24px 54px rgba(0,8,23,.24), inset 0 1px 0 rgba(160,207,255,.09);
+}
+.nexus-devops-hero::after {
+  content: ""; position: absolute; width: 340px; height: 340px;
+  top: -228px; right: -62px; border-radius: 50%; pointer-events: none;
+  background: radial-gradient(circle,rgba(78,168,255,.23),transparent 72%);
+}
+.nexus-devops-hero > * { position: relative; z-index: 1; }
+.nexus-devops-card {
+  border-color: #294b6b;
+  border-top: 2px solid rgba(78,168,255,.55);
+  background: linear-gradient(145deg, #12314c, #0e243c);
+  box-shadow: 0 15px 30px rgba(0,7,22,.20), inset 0 1px 0 rgba(191,211,250,.055);
+}
+.nexus-devops input { color: #f1f7ff; }
+.nexus-devops :focus-visible { outline: 2px solid #4ea8ff; outline-offset: 3px; }
+@media (max-width: 680px) {
+  .nexus-devops-hero { padding: 19px 17px; border-radius: 16px; }
+  .nexus-devops-card { border-radius: 14px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .nexus-devops *, .nexus-devops *::before, .nexus-devops *::after { transition-duration: .01ms!important; animation-duration: .01ms!important; }
+}
