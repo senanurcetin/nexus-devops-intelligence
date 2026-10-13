@@ -221,3 +221,48 @@ test('Next Actions route: valid overload is 503/no-store, then recovers after sl
     assert.equal(calls.length, 1);
   });
 });
+
+test('Next routes: same trusted Vercel IP shares 20/min quota across both API endpoints', async () => {
+  const previous = process.env.VERCEL;
+  process.env.VERCEL = '1';
+  try {
+    await withMockGitHub(url => url.includes('/actions/')
+      ? fakeResponse(200, { total_count: 0, workflow_runs: [] })
+      : fakeResponse(200, []), async calls => {
+      const pathFor = n => n % 2 ? '/api/public-prs' : '/api/public-actions';
+      const getFor = n => n % 2 ? pullsGET : actionsGET;
+      const requestWithIp = (n, repoName = repository) => new NextRequest(
+        `${api}${pathFor(n)}?repository=${encodeURIComponent(repoName)}`, {
+          headers: {
+            'x-vercel-forwarded-for': '203.0.113.219',
+            'x-forwarded-for': `198.51.100.${n + 1}`,
+          },
+        },
+      );
+      // Input rejection precedes the budget.
+      const invalid = await actionsGET(requestWithIp(0, 'not a valid repo'));
+      assert.equal(invalid.status, 400);
+      for (let n = 0; n < 20; n++) {
+        const response = await getFor(n)(requestWithIp(n));
+        assert.equal(response.status, 200, `request ${n + 1} of 20`);
+      }
+      const blocked = await actionsGET(requestWithIp(20));
+      assert.equal(blocked.status, 429);
+      assert.equal(blocked.headers.get('cache-control'), 'no-store');
+      assert.ok(Number(blocked.headers.get('retry-after')) >= 1);
+      assert.match((await blocked.json()).error, /request limit/i);
+      assert.equal(calls.length, 20,
+        'the blocked 21st request must not touch GitHub; both routes share a budget');
+
+      // Another source may still use its own request allocation.
+      const other = new NextRequest(`${api}/api/public-actions?repository=${repository}`, {
+        headers: { 'x-vercel-forwarded-for': '203.0.113.220' },
+      });
+      assert.equal((await actionsGET(other)).status, 200);
+      assert.equal(calls.length, 21);
+    });
+  } finally {
+    if (previous === undefined) delete process.env.VERCEL;
+    else process.env.VERCEL = previous;
+  }
+});

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { parsePublicRepository } from '@/lib/github-public-actions';
+import { checkVercelPublicRateLimit } from '@/lib/nexus-public-rate-limit';
 import { loadPublicActions } from '@/lib/github-public-client';
 import { coordinatePublicQuery, publicRequestKey } from '@/lib/nexus-public-gate';
 
@@ -16,6 +17,19 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(
       { error: 'Use a public GitHub repository in owner/name format.' },
       { status: 400, headers: { 'Cache-Control': 'no-store' } },
+    );
+  }
+  const localLimit = checkVercelPublicRateLimit(request.headers);
+  if (localLimit) {
+    return NextResponse.json(
+      { error: 'Request limit reached. Please retry later.' },
+      {
+        status: 429,
+        headers: {
+          'Cache-Control': 'no-store',
+          'Retry-After': String(localLimit.retryAfterSeconds),
+        },
+      },
     );
   }
   const result = await coordinatePublicQuery(publicRequestKey('actions', repository),
