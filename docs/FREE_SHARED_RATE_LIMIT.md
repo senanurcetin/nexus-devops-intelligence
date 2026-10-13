@@ -19,6 +19,20 @@
 4. **Manually** deploy an explicitly reviewed NEXUS commit after confirming the user wishes to roll out the feature. The repository uses `vercel.json` with `git.deploymentEnabled: false`; ordinary Git commits must not trigger deploys.
 5. Keep the existing WAF `nexus-public-api-limit` in **Log** mode if the enforcing action requires a paid plan. Log is observability only. Do not create a second paid WAF rule or describe this app-level guard as an edge WAF.
 
+## Non-sensitive HTTP evidence markers
+
+Both public API routes expose only **categorical, non-secret** response headers for release diagnostics:
+
+| HTTP response | Diagnostic header | Meaning |
+| --- | --- | --- |
+| Application Redis rejection (`429`) | `X-Nexus-Rate-Limit-Source: shared-redis` | The Redis EVAL response, **not** the old local process counter, triggered the origin rejection. |
+| Application local fallback rejection (`429`) | `X-Nexus-Rate-Limit-Source: local-fallback` | Redis was **not configured**; the per-instance fallback triggered the rejection. |
+| Explicitly configured Redis unavailable (`503`) | `X-Nexus-Rate-Limit-Source: shared-redis-unavailable` | Redis failed closed, with no GitHub API fanout. |
+| Upstream GitHub rejection (`429`) | `X-Nexus-Rate-Limit-Source: github-upstream` | GitHub returned a limit error after origin admission was allowed. |
+| Origin success or other upstream response | `X-Nexus-Rate-Limit-Mode: shared-redis`, `local-fallback`, or `inactive` | The source of the **admission check**. `inactive` is used in non-Vercel local development. |
+
+This data **never** includes IPs, Redis tokens, keys, counters, usage totals, or database addresses. A `shared-redis` marker establishes attribution for **that origin response**, not that multiple instances were exercised or that a Vercel edge WAF exists. Inspect only **cache-MISS** responses; cached HTTP 200 responses can carry previously cached headers without triggering a fresh Redis EVAL. Errors remain `Cache-Control: no-store`.
+
 ## Validation after setup
 
 - A normal two-panel GitHub lookup remains functional and returns 200 where the public repository exists.
