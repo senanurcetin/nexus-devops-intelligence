@@ -2,6 +2,16 @@
 
 **Status snapshot:** 13 October 2026. This file is the **current authoritative open-work register**; the older [cumulative work plan](NEXUS_WORK_PLAN_2026-10-13.md) records chronological decisions and may contain superseded unchecked tasks (for example, Preview Redis variables have since been configured). Check each external state again before executing.
 
+## Current release-control update — 14 October 2026
+
+**R-01: DONE (metadata and exact-source offline testing), but deployment NOT authorized.** Reviewed proposed exact candidate `599ced76605c25161b182b2d5bfbadbd091bfb53`; a disposable Node 24 Sandbox checked that exact SHA and passed **135/135 Node tests, TypeScript, production build, local JS budget guard (401,241 raw/117,432 gzip), npm audit 0 at check, and read-only public GitHub/local HTTP smoke**. This was **not** a protected Preview or Production deployment. Current older Production `74cd0e3` and protected Preview `e745c61` remain unchanged.
+
+**D-02/D-03: DOCUMENTED** in the [acceptance status register](NEXUS_ACCEPTANCE_STATUS_2026-10-14.md), [immutable deployment/source inventory](NEXUS_RELEASE_CANDIDATE_MANIFEST_2026-10-14.md), and [manual owner-gated deployment/rollback runbook](NEXUS_MANUAL_RELEASE_RUNBOOK_2026-10-14.md). The owner has **not** approved a new Preview, Production deploy, or live shared Redis quota test.
+
+**Human QA tracking discrepancy:** [Issue #5](https://github.com/senanurcetin/nexus-devops-intelligence/issues/5) is **CLOSED (`completed`)** as of 13 Oct 20:39 UTC, but the [human screen-reader checklist](MANUAL_ACCESSIBILITY_ACCEPTANCE.md) remains **unchecked**. Do **not** call this human acceptance, automatically reopen the issue or mark R-05 done. [Issue #7](https://github.com/senanurcetin/nexus-devops-intelligence/issues/7) is **OPEN** for live independent Vercel Redis proof or explicit owner residual risk decision.
+
+**Next release blockers:** R-02 aggregate Upstash Free usage (owner-only dashboard, no secrets); explicit R-03 protected exact-SHA Preview approval; R-04 real latest Preview visual/functional QA; R-05 human device/screen-reader/editorial acceptance; R-06 Redis/edge residual-risk decision; only then separately authorized R-07 Production. Existing Q-04 extreme + cross-engine checks remain an accessibility task. The historical 13 Oct task table below is retained for project history; **the 14 Oct ledger supersedes old open/closed/status wording**.
+
 ## Verified baseline — do not confuse implementation with release
 
 | Boundary | Latest verified evidence | Not yet accepted |
