@@ -6,7 +6,7 @@
 
 ## Kesinleşmiş başlangıç durumu
 
-- [x] Son manuel bulut kontrolünde **59/59 otomatik test başarılı**, TypeScript ve Next.js production build başarılı.
+- [x] Son manuel bulut kontrolünde **64/64 otomatik test başarılı**, TypeScript ve Next.js production build başarılı.
 - [x] Son tam `npm audit --json` raporunda **0 bulgu**. Bu, gelecekteki açıkları garanti etmez.
 - [x] Gerçek public GitHub Actions ve PR REST API için localhost HTTP smoke başarılı.
 - [x] Chromium, Firefox ve Playwright WebKit motorlarında **375/768/1440 px** için temel responsive, form, klavye odağı ve otomatik axe-core WCAG A/AA testleri başarılı. Bu, tam WCAG veya ekran okuyucu onayı değildir.
@@ -33,6 +33,9 @@
 **Bitiş kriteri:** Doğrulanmış API hata yönetimi; WAF kapsam/maliyet planı ve rollback dosyası hazır. Gerçek WAF aktivasyonu ayrı bir onay ve doğrulama adımıdır.
 
 - [x] [PR #13](https://github.com/senanurcetin/nexus-devops-intelligence/pull/13): Her iki Next.js endpoint'inde parametre doğrulaması koordinatörden önce yapılır; 12 istek yuvası doluyken bile geçersiz/uzun repo parametreleri **400/no-store**, gerçek kapasite aşımı **503/no-store**. 2 yeni testle **59/59 başarılı**, typecheck/build/tam audit ve HTTP doğrulaması geçti.
+
+- [x] **PR ayrıntısında kota hatası görünürlüğü:** [PR #15](https://github.com/senanurcetin/nexus-devops-intelligence/pull/15) ile GitHub PR listesi başarılı olsa dahi ayrıntı 403/429 kota hatası tüm endpoint'te **429/no-store** oluyor. En uzun geçerli Retry-After taşınıyor; 5 yeni regresyon testiyle **64/64** başarılı. Normal ayrıntı hata/timeout bilinmiyor. [Teknik açıklama](RATE_LIMIT_BEHAVIOR.md).
+- [ ] 5 paralel ayrıntı çağrısının halen eşzamanlı başladığı unutulmamalı; bu düzeltme global WAF değildir.
 
 ## Faz 2 — Ürün UX ve erişilebilirlik (P0/P1 paralel)
 
