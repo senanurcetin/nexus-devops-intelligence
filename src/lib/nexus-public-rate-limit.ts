@@ -22,6 +22,25 @@ function sourceKey(source: string): string {
   return createHash('sha256').update(salt).update(source).digest('hex');
 }
 
+/**
+ * Collapse alternative textual representations of the same source IP into a
+ * single budget. WHATWG URL canonicalizes IPv6; IPv4-mapped IPv6 must also
+ * share the native IPv4 bucket to avoid doubling the per-source allowance.
+ */
+function canonicalClientIp(raw: string): string {
+  const ip = raw.trim();
+  const family = isIP(ip);
+  if (family === 4) return ip;
+  if (family !== 6) return 'unattributed';
+
+  const normalized = new URL(`http://[${ip}]/`).hostname.slice(1, -1);
+  const mapped = /^::ffff:([0-9a-f]{1,4}):([0-9a-f]{1,4})$/.exec(normalized);
+  if (!mapped) return normalized;
+  const first = Number.parseInt(mapped[1], 16);
+  const second = Number.parseInt(mapped[2], 16);
+  return [first >>> 8, first & 255, second >>> 8, second & 255].join('.');
+}
+
 /** Requests from both API routes consume the same local per-source budget. */
 export function checkLocalPublicRateLimit(source: string, now = Date.now()): RateLimitResult | null {
   const key = sourceKey(source);
@@ -61,7 +80,6 @@ export function checkLocalPublicRateLimit(source: string, now = Date.now()): Rat
  */
 export function checkVercelPublicRateLimit(headers: Pick<Headers, 'get'>): RateLimitResult | null {
   if (process.env.VERCEL !== '1') return null;
-  const forwarded = headers.get('x-vercel-forwarded-for')?.trim() ?? '';
-  const source = isIP(forwarded) ? forwarded : 'unattributed';
-  return checkLocalPublicRateLimit(source);
+  const forwarded = headers.get('x-vercel-forwarded-for') ?? '';
+  return checkLocalPublicRateLimit(canonicalClientIp(forwarded));
 }
