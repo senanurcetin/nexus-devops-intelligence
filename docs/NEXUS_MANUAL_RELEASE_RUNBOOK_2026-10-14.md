@@ -15,7 +15,7 @@
 - Identify current GitHub `main` SHA and record selected **immutable** candidate SHA. As of inventory: provisional candidate `599ced76605c25161b182b2d5bfbadbd091bfb53`; most recent application feature merge `8ebcbea05a2386a351b040ed743adca596f38b8e`. Subsequent docs commits do not automatically become approved release candidates.
 - Record current READY Production deployment ID and SHA: `dpl_9fXGATNHhyhNVrN1i47k3BU4u5K5`, `74cd0e344eb94255b4bc8db99e4a4dc7f3a5a0bf`. Record older protected Preview: `dpl_DxFyywkhBrMe3hzooikmqCpKAuyx`, `e745c6188f47942ffe8405aa195d7584e2d395da`. Do not mistake either for the newer application.
 - Compare `vercel.json` (`git.deploymentEnabled:false`), current SSO `enabled:true` / `all_except_custom_domains`, Preview branch target and deployed source commit. List only `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN` variable **names/scopes**, never values.
-- In an isolated disposable development Sandbox check out exactly the selected SHA and run:
+- **DONE for provisional `599ced76605c25161b182b2d5bfbadbd091bfb53` on 14 Oct:** exact checked-out SHA was verified in an isolated, disposable Node 24 Sandbox; 135/135 tests, typecheck/build, budget and audit passed; local production HTTP smoke passed; the Sandbox was stopped. If choosing a **different** SHA or after material changes, repeat this step. Reproducible commands:
   ```sh
   npm ci
   npm test
@@ -68,7 +68,7 @@ Only after independent authorization for **Production**, exact candidate SHA and
 
 | Field | Value at document creation |
 | --- | --- |
-| Reviewed exact source SHA / build log | **PENDING exact-SHA validation** |
+| Reviewed exact source SHA / build log | **`599ced76605c25161b182b2d5bfbadbd091bfb53` offline validated 14 Oct** in disposable Node 24 Sandbox: 135/135 tests, TS/build, 401,241 raw / 117,432 gzip JS within review caps, audit 0, public GitHub/local HTTP smoke. **No deployment approval.** |
 | Free Redis command headroom | **UNKNOWN** |
 | Protected updated Preview ID/SHA | **NOT DEPLOYED** |
 | Preview real request budget and outcomes | **NOT AUTHORIZED** |
