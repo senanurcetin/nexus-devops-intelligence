@@ -11,8 +11,10 @@ export async function GET(request: NextRequest) {
     () => loadPublicActions(repository));
   return NextResponse.json(result.body, {
     status: result.status,
-    ...(result.status === 200 ? {
-      headers: { 'Cache-Control': 'public, max-age=60, stale-while-revalidate=120' },
-    } : { headers: { 'Cache-Control': 'no-store' } }),
+    headers: {
+      'Cache-Control': result.status === 200 ? 'public, max-age=60, stale-while-revalidate=120' : 'no-store',
+      ...(result.status === 429 && result.retryAfterSeconds !== undefined
+        ? { 'Retry-After': String(result.retryAfterSeconds) } : {}),
+    },
   });
 }
