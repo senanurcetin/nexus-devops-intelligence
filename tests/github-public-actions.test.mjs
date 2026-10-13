@@ -62,9 +62,9 @@ test('completed cancelled, skipped and neutral outcomes are not pending runs', (
   assert.equal(result.successful_runs, 1);
   assert.equal(result.failed_runs, 3);
   assert.equal(result.pending_runs, 3);
-  assert.equal(result.other_completed_runs, 3);
+  assert.equal(result.other_outcome_runs, 3);
   assert.equal(result.successful_runs + result.failed_runs + result.pending_runs +
-    result.other_completed_runs, result.inspected_runs);
+    result.other_outcome_runs, result.inspected_runs);
 });
 
 test('completed runs without a conclusion are unknown outcomes, not pending', () => {
@@ -73,6 +73,6 @@ test('completed runs without a conclusion are unknown outcomes, not pending', ()
     workflow_runs: [workflow(1, null), { ...workflow(2, null), status: 'requested' }],
   });
   assert.equal(r.pending_runs, 1);
-  assert.equal(r.other_completed_runs, 1);
+  assert.equal(r.other_outcome_runs, 1);
   assert.equal(r.failed_runs, 0);
 });
