@@ -20,7 +20,7 @@
 
 ### Phase 0 — P0 release and abuse protection (highest priority)
 
-**P0.1 — Verify the deployment boundary and costs** — **NOT STARTED**
+**P0.1 — Verify the deployment boundary and costs** — **PARTIALLY VERIFIED (external account confirmation pending)**
 - Read back exact latest GitHub SHA, Vercel deployment target, host aliases, existing deployment protection and production vs preview environment variable **names only**. Do not read/log tokens.
 - Confirm Vercel SSO-protected preview mechanics without lowering protection; confirm user's Upstash plan is **Free / $0**, quota approx. 256 MB, 500,000 commands/month; record actual dashboard values and any limits/auto-upgrade policy.
 - Review the last production deployment for live runtime errors and accidental changes from concurrent pushes.
@@ -93,3 +93,18 @@
 2. Verify whether protected preview of pinned `e647bae` is available on the Hobby project. If not, document the blocker and prepare QA evidence without bypassing SSO.
 3. Conduct bounded genuine cross-instance Redis attribution test once the **correct code** is deployed with approval.
 4. Update issue #7 with measured evidence; begin human/real-device items from issue #5.
+
+### P0.1 execution evidence — 13 October 2026, later session
+
+- [x] Verified Vercel project's exact ID/team, latest production `READY` deployment `dpl_23cYA6n7AU6eEtxRNqw3oJQFnnWs` (SHA `74cd0e344eb94255b4bc8db99e4a4dc7f3a5a0bf`) and rollback candidate `dpl_DbvJfcGmZ5GGnHdb7kuK4wmQRrr5` (`44479f2`). **No release** happened during this plan execution.
+- [x] Confirmed `vercel.json` still has `git.deploymentEnabled:false`; the project remains SSO-protected on applicable Vercel deployment URLs using `deploymentType: all_except_custom_domains`. Authentication-protected URLs are not a substitute for human/public-URL signoff.
+- [x] Confirmed only **Production** has `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN`, both of type **Sensitive**. The **Preview** environment does **not** contain them; only variable **names/targets/types** were read. No sensitive values retrieved.
+- [x] Vercel recent runtime error summary reported no clusters for the past 24 hours at inspection. Do not mistake this for proof of zero individual application errors or availability SLA.
+- [x] Implemented and merged [PR #26](https://github.com/senanurcetin/nexus-devops-intelligence/pull/26), application-only release diagnostics: `X-Nexus-Rate-Limit-Source` distinguishes `shared-redis` from `local-fallback`, `github-upstream` and `shared-redis-unavailable`. `X-Nexus-Rate-Limit-Mode` marks the currently selected origin admission layer on responses. No tokens, IPs, keys, counter values or paid dependencies are exposed. No Vercel deployment triggered.
+- [x] CI-free temporary Vercel Sandbox checks for PR #26: **90/90 Node tests**, TS check, production build, full npm audit (**0 findings** at time of execution), read-only GitHub HTTP smoke. The sandbox was ephemeral.
+- [ ] **Owner action — confirm Upstash Free $0 usage/plan:** The Vercel integration has no Upstash account usage connector, so direct account billing, commands consumed and storage usage cannot be verified by reading Vercel env variable metadata. Use redacted Upstash billing/usage dashboard, **never** a secret token.
+- [ ] **Preview credentials:** Any Redis-capable protected preview requires owner-managed **Preview-scoped** sensitive environment variables (or an approved isolated Free test database). Never copy production secrets into Preview without owner review. No preview deployment has been initiated.
+- [ ] **Manual protected release approval:** Current `main` contains the Redis-authoritative and provenance fixes, but current production still runs `74cd0e3`. Do not deploy automatically or use the production alias merely to bypass absent preview readiness. After approval, manually release a precisely identified and revalidated commit, test on the actual deployment and preserve the previous deployment ID for rollback.
+
+**Important:** P0.1 is *partially* complete. P0.2 is blocked by missing Preview Redis config / approved release; issue #7 and human QA issue #5 remain **OPEN**. These checks do not imply that Vercel WAF Log mode blocks requests.
+
