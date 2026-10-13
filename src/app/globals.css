@@ -596,3 +596,48 @@ body { background: #071829; color: #eff5ff; }
   .nexus-devops-company,
   .nexus-devops-sublabel { overflow-wrap: anywhere; }
 }
+
+/* Text-only zoom safety: investigation header can become wider than its
+   panel because a flex heading otherwise keeps its full min-content width. */
+.nexus-devops-investigations > div:first-child > div {
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+.nexus-devops-investigations h2 { flex-wrap: wrap; min-width: 0; }
+.nexus-devops-evidence > div:first-child { flex-wrap: wrap; }
+.nexus-devops-evidence > div:first-child > div:first-child {
+  min-width: 0;
+  max-width: 100%;
+}
+.nexus-devops-event span.rounded-full {
+  max-width: 100%;
+  flex-shrink: 1;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 640px) {
+  /* Fixed rem padding expands four-fold under text-only zoom; viewport
+     padding must remain bounded so controls can reflow at 320 CSS px. */
+  .nexus-devops > div {
+    padding-left: clamp(12px, 4vw, 28px);
+    padding-right: clamp(12px, 4vw, 28px);
+  }
+  .nexus-devops-search,
+  .nexus-devops-investigations,
+  .nexus-devops-insights,
+  .nexus-devops-pr-insights,
+  .nexus-devops-run-sequence,
+  .nexus-devops-pr-sequence,
+  .nexus-devops-evidence > div:first-child,
+  .nexus-devops-evidence .nexus-devops-event,
+  .nexus-devops-card {
+    padding: clamp(12px, 3vw, 24px);
+  }
+  .nexus-devops-command-nav { min-width: 0; max-width: 100%; }
+  .nexus-devops-evidence-controls { width: auto; max-width: 100%; }
+  .nexus-devops-evidence-controls > button {
+    min-width: 40px;
+    min-height: 40px;
+  }
+}
