@@ -284,3 +284,84 @@ test('PRs: all detail wait hints invalid return 429 without forwarding a header'
   assert.equal(result.status, 429);
   assert.equal(result.retryAfterSeconds, undefined);
 });
+
+test('PRs: at most two detail GETs run concurrently while preserving result order', async () => {
+  const list = Array.from({ length: 5 }, (_, i) => goodPR(i + 1));
+  let active = 0;
+  let maxActive = 0;
+  const { calls, fetcher } = fakeFetcher(async url => {
+    if (url.includes('per_page=6')) return answer(200, list);
+    active++;
+    maxActive = Math.max(maxActive, active);
+    await new Promise(resolve => setImmediate(resolve));
+    active--;
+    const number = Number(url.split('/').at(-1));
+    return answer(200, details(number, number === 3 ? 'dirty' : 'clean'));
+  });
+  const result = await loadPublicPulls(repo, fetcher);
+  assert.equal(result.status, 200);
+  assert.equal(maxActive, 2, 'bounded worker pool must not exceed two detail requests');
+  assert.equal(calls.length, 6, 'one list and five detail GETs when not rate-limited');
+  assert.deepEqual(result.body.pull_requests.map(pr => pr.number), [1, 2, 3, 4, 5]);
+  assert.deepEqual(result.body.pull_requests.map(pr => pr.attention),
+    ['clear', 'clear', 'conflict', 'clear', 'clear']);
+});
+
+test('PRs: observed detail rate limit prevents any queued requests from starting', async () => {
+  const list = Array.from({ length: 5 }, (_, i) => goodPR(i + 1));
+  const started = [];
+  const pending = new Map();
+  let bothStarted;
+  const ready = new Promise(resolve => { bothStarted = resolve; });
+  const { calls, fetcher } = fakeFetcher(url => {
+    if (url.includes('per_page=6')) return answer(200, list);
+    const number = Number(url.split('/').at(-1));
+    started.push(number);
+    if (started.length === 2) bothStarted();
+    return new Promise(resolve => pending.set(number, resolve));
+  });
+  const operation = loadPublicPulls(repo, fetcher);
+  await ready;
+  assert.deepEqual(started, [1, 2]);
+  pending.get(1)({
+    ...answer(429, { message: 'private upstream text' }),
+    headers: { get: key => key === 'retry-after' ? '60' : null },
+  });
+  await new Promise(resolve => setImmediate(resolve));
+  assert.deepEqual(started, [1, 2], 'quota observation must stop new detail GETs');
+  pending.get(2)(answer(200, details(2)));
+  const result = await operation;
+  assert.equal(result.status, 429);
+  assert.equal(result.retryAfterSeconds, 60);
+  assert.equal(calls.length, 3, 'the queued three detail calls were not sent');
+  assert.doesNotMatch(result.body.error, /private upstream/);
+});
+
+test('PRs: multiple already-in-flight limits retain longest trusted wait without new fanout', async () => {
+  const list = Array.from({ length: 5 }, (_, i) => goodPR(i + 1));
+  const pending = new Map();
+  let bothStarted;
+  const ready = new Promise(resolve => { bothStarted = resolve; });
+  const { calls, fetcher } = fakeFetcher(url => {
+    if (url.includes('per_page=6')) return answer(200, list);
+    const number = Number(url.split('/').at(-1));
+    if (pending.size === 1) bothStarted();
+    return new Promise(resolve => pending.set(number, resolve));
+  });
+  const operation = loadPublicPulls(repo, fetcher);
+  await ready;
+  pending.get(1)({
+    ...answer(429, null),
+    headers: { get: key => key === 'retry-after' ? '30' : null },
+  });
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(calls.length, 3);
+  pending.get(2)({
+    ...answer(429, null),
+    headers: { get: key => key === 'retry-after' ? '240' : null },
+  });
+  const result = await operation;
+  assert.equal(result.status, 429);
+  assert.equal(result.retryAfterSeconds, 240);
+  assert.equal(calls.length, 3);
+});
