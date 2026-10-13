@@ -127,3 +127,12 @@
 - [x] [QA evidence](https://github.com/senanurcetin/nexus-devops-intelligence/blob/main/docs/RETRY_RACE_BROWSER_QA_2026-10-13.md) saved with fixtures clearly labeled; no mocks passed off as real GitHub data.
 - [ ] Human NVDA/VoiceOver and real-device visual acceptance remains **OPEN** (#5). Redis's actual cross-instance proof, Preview-scoped secrets and reviewed manual release remain **OPEN** (#7). No production deployment occurred.
 
+
+### P0.2 protected-preview Redis probe preparation — 13 October 2026
+
+- [x] [PR #29](https://github.com/senanurcetin/nexus-devops-intelligence/pull/29) merged as `a0ae2010c5792443540e5e1cd33da9f6fef1949d`, adding **manual-only, zero-secret protected Preview admission verification**. CLI `scripts/verify-protected-redis-preview.mjs` refuses the production alias and non-NEXUS team URLs **before issuing any request**; does not follow redirects or leak any optional Preview bypass token.
+- [x] One-GET default preflight and separate **explicitly requested** bounded 21-request / 55-second Actions+PR shared quota test; it rejects cache HIT, SSO redirect, unknown Redis mode, incorrect `429` source or unbounded Retry-After. `crossInstanceVerified:false` remains explicit even after successful first-instance origin `429`.
+- [x] CI-free cloud validation: **105/105** Node tests; TypeScript, Next.js production build, 0 reported `npm audit` vulnerabilities and real public GitHub HTTP smoke. Real CLI against production alias with the full test flag returned `blocked`, `requests:0`.
+- [x] Test procedure: [PROTECTED_REDIS_PREVIEW_QA_2026-10-13.md](https://github.com/senanurcetin/nexus-devops-intelligence/blob/main/docs/PROTECTED_REDIS_PREVIEW_QA_2026-10-13.md).
+- [ ] **External gate:** Preview-scoped **Sensitive** Upstash Redis REST credentials are still absent; do not copy production credentials or relax SSO without user-approved secure provisioning. Account owner showed `EU-CENTRAL-1 / Free Tier`, but actual usage remains unknown.
+- [ ] **Release gate:** no manual Preview deployment or real Redis shared-counter test was performed by this PR. A reviewed, exact-SHA and properly protected Preview deployment is required before executing the one-request preflight and separately authorized bounded probe. Multi-instance proof and the production rollout remain unverified; issues #7 and #5 stay open.
