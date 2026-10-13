@@ -29,12 +29,22 @@ async function request(path, expectedStatus, contentType) {
 
 const page = await request('/', 200, /text\/html/);
 assert.match(page.body, /NEXUS/);
-console.log('PASS: homepage renders NEXUS (200).');
+const defenses = [
+  ['x-content-type-options', 'nosniff'],
+  ['x-frame-options', 'DENY'],
+  ['referrer-policy', 'strict-origin-when-cross-origin'],
+];
+for (const [name, expected] of defenses) {
+  assert.equal(page.response.headers.get(name), expected, `Missing security header ${name}`);
+}
+assert.match(page.response.headers.get('content-security-policy') ?? '', /frame-ancestors 'none'/);
+console.log('PASS: homepage renders NEXUS with anti-framing, nosniff and referrer headers (200).');
 
 for (const api of ['/api/public-actions', '/api/public-prs']) {
   const invalid = await request(`${api}?repository=not-a-repository`, 400, /application\/json/);
   assert.equal(typeof JSON.parse(invalid.body).error, 'string');
   assert.match(invalid.response.headers.get('cache-control') ?? '', /no-store/);
+  assert.equal(invalid.response.headers.get('x-content-type-options'), 'nosniff');
   console.log(`PASS: ${api} rejects invalid repository (400, no-store).`);
 }
 

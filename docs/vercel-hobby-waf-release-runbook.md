@@ -34,7 +34,7 @@ References:
 
 1. Confirm team/project IDs and account plan; ensure NEXUS remains separate from Ops-Copilot.
 2. Confirm **no automatic GitHub/Vercel push deployment** and **no GitHub Actions/CircleCI** workflows. Prefer a reviewed manual deployment of an exact GitHub SHA.
-3. In the Vercel dashboard, review **WAF Rate Limiting Pricing** before enabling any billed capability. On Hobby, documentation lists **one** rate-limit rule per project and fixed-window IP/JA4 counting.
+3. In the Vercel dashboard, review the mandatory **Rate Limiting Pricing** dialog before enabling the first rule. Documentation updated 28 August 2026 lists **one** rule per Hobby project, **1,000,000 included allowed WAF rate-limit requests**, per-region counters and fixed-window IP/JA4 counting. The published unit price is **$0.50 per million allowed requests** where overage pricing applies; do not assume Hobby overages or other function/CDN usage are free. Confirm the account-specific cost and limit behavior.
 4. Review current Hobby usage and whether the quota is exhausted; if the account cannot safely run a preview, leave the application undeployed.
 5. Keep sensitive tokens out of repository source, browser bundles, command output, and screenshots.
 
@@ -51,7 +51,7 @@ Official references:
 - **Strategy:** fixed window, starting proposal **20 requests / 60 seconds / IP**. Review actual traffic before choosing the enforced threshold; each dashboard lookup normally fetches both endpoints.
 - **Staging action:** log/observe if supported. Confirm routes and legitimate-client traffic match expectations.
 - **Enforcement:** return HTTP **429 Too Many Requests** after threshold. Retest both endpoints, not just one.
-- **Scope:** Vercel's edge-level rule is project-wide, unlike the existing per-process `nexus-public-gate` concurrency protection.
+- **Scope:** The rule protects all matching traffic for this project across serverless instances, unlike the existing per-process `nexus-public-gate`. **WAF rate-limit counters are tracked per region**; the 20-per-minute threshold can be exceeded by the same source across regions.
 - **Release:** apply only after pricing, team permission, false-positive impact and rollback instructions are checked.
 
 ### Manual verification after publishing
@@ -66,6 +66,14 @@ Official references:
 ## Rollback
 
 If the rule blocks legitimate users or costs exceed acceptable limits, revert/disable the **specific** WAF rule from Vercel Firewall configuration and verify the prior configuration is restored. For a defective preview, stop or remove that specific preview without modifying Ops-Copilot or enabling automated deployments.
+
+## Cloud-verified HTTP security headers
+
+[Manual security-header work](https://github.com/senanurcetin/nexus-devops-intelligence/blob/main/next.config.mjs) adds `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Referrer-Policy`, camera/mic/geolocation disabling and a **limited** CSP protecting `frame-ancestors`, `base-uri` and `object-src`. This is not a full JavaScript CSP.
+
+- [x] Fresh cloud `npm ci`, 41/41 tests, TypeScript check, Next.js production build and `npm audit --json` (0 observed findings).
+- [x] Manual production server smoke: security headers on homepage and both API routes, invalid repository returns 400/no-store, 10 real workflow runs and 5 public PRs sampled.
+- [ ] Vercel WAF rate limit **not enabled**. Dashboard pricing acknowledgment and traffic review are required before a rule is applied.
 
 ## Release gate
 
