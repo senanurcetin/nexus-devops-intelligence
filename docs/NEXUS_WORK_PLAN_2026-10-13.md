@@ -177,3 +177,14 @@
 - [x] [PR Sample Intelligence QA report](https://github.com/senanurcetin/nexus-devops-intelligence/blob/main/docs/PR_SAMPLE_INTELLIGENCE_QA_2026-10-13.md) separates browser fixture data from live GitHub sample evidence.
 - [ ] Human NVDA/VoiceOver and real-device visual acceptance remain OPEN (#5); latest GitHub merge is **not deployed** to Vercel Production. Shared Upstash real Vercel cross-instance gate remains OPEN (#7). No CI, paid service or live Redis load test was performed.
 
+
+### P4 executive information architecture and visual QC — 13 October 2026
+
+- [x] [PR #33](https://github.com/senanurcetin/nexus-devops-intelligence/pull/33) squash merged as `6a51fe7c6d2a5d7ae0f4ae47ee4a71e881848683`: editorial dashboard refactor with clearer source/sample/read-only masthead, four strong numbered KPI cards, accessible sticky native-anchor navigation, twin Actions + PR intelligence composition at desktop width and single-column responsive mobile/tablet layout.
+- [x] **Investigation queue elevated ahead of long source-record panels**, without changing deterministic recommendation rules or misleadingly claiming confirmed root causes. Explicit high/medium/info cues are sourced from the already verified recommendation field. Raw evidence still includes exact GitHub links, filter controls and API origin qualifiers.
+- [x] No new API endpoints, external dependencies, shared Upstash quota requests on navigation or filter operations. Native section anchors scroll below the sticky bar; selected repository is visible on larger screens. Four new structural navigation/order regression tests.
+- [x] CI-free temporary Vercel Sandbox: **121/121 tests**, typecheck, production build, full npm audit **0 findings** at test time, actual read-only public GitHub HTTP smoke. Browser fixtures on **320/375/768/1280/1440/1920 px**, verifying mobile stacked vs desktop parallel analyses, native anchor and API conservation: **two initial fixture GETs, zero extra for navigation/filtering**, no JS errors/horizontal overflow and **zero automated axe WCAG 2/2.1 A/AA violations**. Explicit empty and both-source error cases tested at 375px.
+- [x] [Executive dashboard CI-free QA](https://github.com/senanurcetin/nexus-devops-intelligence/blob/main/docs/NEXUS_EXECUTIVE_LAYOUT_QA_2026-10-13.md), including browser fixture provenance and precise limits.
+- [ ] Human NVDA/VoiceOver and physical-device/editorial acceptance remain **OPEN** under issue #5. Real independent Vercel cross-instance shared Redis quota gate remains **OPEN** under issue #7; owner requested no 21-request load test on shared Free Upstash database.
+- [ ] Merging GitHub does **not** deploy the dashboard; reviewed exact-SHA, protected Preview and owner-approved manual Production release remain future gates. No CI or paid feature was enabled.
+
