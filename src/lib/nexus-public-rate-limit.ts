@@ -27,7 +27,7 @@ function sourceKey(source: string): string {
  * single budget. WHATWG URL canonicalizes IPv6; IPv4-mapped IPv6 must also
  * share the native IPv4 bucket to avoid doubling the per-source allowance.
  */
-function canonicalClientIp(raw: string): string {
+export function canonicalClientIp(raw: string): string {
   const ip = raw.trim();
   const family = isIP(ip);
   if (family === 4) return ip;
