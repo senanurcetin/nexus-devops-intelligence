@@ -1,6 +1,6 @@
 # NEXUS development / verification / deployment status register
 
-**Snapshot:** 14 October 2026, Europe/Istanbul. **Authoritative for acceptance labels**, alongside [release manifest](NEXUS_RELEASE_CANDIDATE_MANIFEST_2026-10-14.md) and [remaining backlog](NEXUS_REMAINING_DEVELOPMENT_BACKLOG_2026-10-13.md). A completed PR or closed GitHub issue is **not** automatic proof that all acceptance gates passed.
+**Snapshot:** 14 October 2026, Europe/Istanbul (updated after new Preview deployment). **Authoritative for acceptance labels**, alongside [release manifest](NEXUS_RELEASE_CANDIDATE_MANIFEST_2026-10-14.md) and [remaining backlog](NEXUS_REMAINING_DEVELOPMENT_BACKLOG_2026-10-13.md). A completed PR or closed GitHub issue is **not** automatic proof that all acceptance gates passed.
 
 ## Status terminology
 
@@ -23,7 +23,7 @@
 | API error sanitization / Redis-GitHub offline matrix | Yes, PR #35 | Yes, 129/129; 400/429/502/503/504/no-leak/no fanout | No | No | Not applicable | Real deployment error-budget review |
 | Long/unbroken source label reflow / zoom | Yes, PR #36 | Yes, 132/132; 320–1440px + selected large text zoom; 0 automated axe A/AA violations | No | No | No | Extreme 320px+400% extra text-only zoom still overflowed, plus Firefox/WebKit and physical device |
 | Offline API GitHub/Redis fanout + bundle budget | Yes, PR #37 | Yes, **135/135**; max 7 GitHub GETs, 2 synthetic Redis admissions; local page JS **401,241 raw / 117,432 gzip** | No | No | Not applicable | Actual Upstash/Vercel usage is unknown; owner check required |
-| Release manifest / safe manual deploy + rollback procedure | Yes, docs on this branch when merged | **Exact immutable `599ced7`** tested in disposable Node 24 Sandbox: 135/135, TS/build/budget/audit 0/smoke; environment metadata inspected without secrets | Deployment **not authorized** | New release **not authorized** | No | Owner Preview/Production authorization + remaining human/Redis gates |
+| Release manifest / safe manual deploy + rollback procedure | Yes | **Exact immutable `599ced7`** tested in disposable Node 24 Sandbox: 135/135, TS/build/budget/audit 0/smoke; new exact-SHA Preview `dpl_Beyxk5vGuDcvx5XDD4gVdsbUX9tg` READY | **Preview build metadata confirmed**, real UI acceptance not yet checked | New **Production** release **not authorized** | No | R-02 usage, R-04 actual Preview UI/API, R-05 human and R-06 Redis evidence/risk acceptance |
 | Accessibility final acceptance | Some keyboard/axe/Chromium controls verified | Many automated checks | Latest updated SHA not deployed | Current production is old SHA | **UNVERIFIED** | [Manual SR-01…SR-12](MANUAL_ACCESSIBILITY_ACCEPTANCE.md) all unchecked. **Issue #5 is CLOSED** (GitHub state reason `completed`, closed 13 Oct 20:39 UTC) but there is no human-signoff evidence in the current manual checklist. Treat as **tracking discrepancy**, not permission to reopen without owner choice |
 
 ## Acceptance conflicts / editorial corrections
@@ -42,8 +42,8 @@
 - [x] D-03 written owner-gated release/rollback procedure.
 - [x] R-01 immutable proposed `599ced7` **offline SHA-matched build verified** (14 Oct): 135/135, TS, build, bundle review budget, audit 0 at check, local production HTTP smoke. Sandbox stopped; not a Vercel app deployment.
 - [ ] R-02 owner verifies aggregate Upstash Free command/storage headroom; no secret access. **No actual free-tier usage is known.**
-- [ ] R-03 owner explicitly approves **exact SHA, protected Preview only, expected origin-request budget**. Until then, no deploy.
-- [ ] R-04 new protected Preview real visual/functional checks after R-03.
+- [x] R-03 owner approved manual **Preview-only** exact SHA `599ced7`; Vercel `dpl_Beyxk5vGuDcvx5XDD4gVdsbUX9tg` is **READY**, target Preview, SSO metadata enabled. [Verified record](NEXUS_PROTECTED_PREVIEW_DEPLOYMENT_2026-10-14.md). **No live API / Upstash probes performed.**
+- [ ] R-04 authenticated visual and functional checks of **new** protected Preview on real URL remain open; no automatic SSO bypass was created and no real API checks were run.
 - [ ] R-05 human screen-reader/physical-device/editorial acceptance; tracking issue closure is not signoff.
 - [ ] R-06 independent live cross-instance Redis evidence **without shared-Free quota stress**, or separately owner-accepted residual risk. Issue #7 stays OPEN.
 - [ ] R-07 separate explicit Production approval, READY exact-SHA deployment, bounded public smoke and recoverable fallback.
