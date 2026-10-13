@@ -102,6 +102,10 @@ test('Next PR route: 1 list + 2 details, draft skipped, conflict and unknown are
     const data = await response.json();
     assert.equal(data.inspected_prs, 3);
     assert.deepEqual(data.pull_requests.map(p => p.attention), ['draft', 'conflict', 'unknown']);
+    assert.equal(data.conflicts, 1);
+    assert.equal(data.unknown, 1);
+    assert.equal(data.needs_attention, 2,
+      'a conflicting and an unverified PR both require inspection; a draft does not');
     assert.equal(calls.length, 3);
     assert.ok(!calls.some(c => c.url.endsWith('/pulls/1')));
   });

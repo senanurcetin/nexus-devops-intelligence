@@ -100,6 +100,14 @@ request-budget identity, preventing one IP from receiving multiple local
 test validates 1,024 buckets and expiration. This is still **per function
 instance**, not shared edge rate limiting. See [Hobby protections](docs/HOBBY_LOCAL_API_PROTECTION.md).
 
+**PR inspection count accuracy:** When GitHub cannot establish a pull request's
+merge state, the UI now counts that `unknown` PR among items **needing
+inspection**. This matches the existing investigation recommendation; it
+does **not** present unknown statuses as confirmed merge conflicts. Draft
+and clean PRs are excluded. Regression tests and controlled responsive
+browser checks are documented in
+[PR inspection QA](docs/pr-inspection-count-browser-qa-2026-10-13.md).
+
 ## Current scope (MVP)
 
 - Public GitHub repositories only; no GitHub token, GitHub App installation, or write permission.
