@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react'
 import Link from 'next/link';
 import {
   Activity, AlertCircle, ArrowRight, ArrowUpRight, CheckCircle2,
-  Download, GitBranch, GitPullRequest, RefreshCw, ShieldCheck, TriangleAlert,
+  Check, Copy, Download, GitBranch, GitPullRequest, RefreshCw, ShieldCheck, TriangleAlert,
 } from 'lucide-react';
 import { parsePublicRepository, type PublicActionsSummary } from '@/lib/github-public-actions';
 import type { PublicPullSummary, PullAttention } from '@/lib/nexus-public-prs';
@@ -59,12 +59,14 @@ export default function NexusDeveloperPreview() {
   const [workflowFilter, setWorkflowFilter] = useState<WorkflowFilter>('all');
   const [pullFilter, setPullFilter] = useState<PullFilter>('all');
   const [exportError, setExportError] = useState('');
+  const [copyStatus, setCopyStatus] = useState<{ key: string; message: string; ok: boolean } | null>(null);
   const controllers = useRef<{ actions: AbortController | null; prs: AbortController | null }>({
     actions: null, prs: null,
   });
   const pullsSlowTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const refreshPanel = useCallback((kind: 'actions' | 'prs', repo: string) => {
+    setCopyStatus(null);
     controllers.current[kind]?.abort();
     const next = new AbortController();
     controllers.current[kind] = next;
@@ -120,6 +122,7 @@ export default function NexusDeveloperPreview() {
     setWorkflowFilter('all');
     setPullFilter('all');
     setExportError('');
+    setCopyStatus(null);
     setActionsReceivedAt(null);
     setPullsReceivedAt(null);
     refreshPanel('actions', trimmed);
@@ -156,6 +159,17 @@ export default function NexusDeveloperPreview() {
   const visiblePulls = filteredPublicPulls(pulls.data, pullFilter);
   const recommendations = recommendInvestigations(actions.data, pulls.data);
   const canExport = !loading && Boolean(actions.data || pulls.data);
+
+  async function copyEvidenceLink(key: string, url: string) {
+    try {
+      // Only canonical, source-validated GitHub URLs reach these controls.
+      if (!navigator.clipboard?.writeText) throw new Error('Clipboard unavailable');
+      await navigator.clipboard.writeText(url);
+      setCopyStatus({ key, ok: true, message: 'GitHub source link copied.' });
+    } catch {
+      setCopyStatus({ key, ok: false, message: 'Clipboard unavailable. Use Review source to open the GitHub record.' });
+    }
+  }
 
   function downloadSample(format: 'csv' | 'json') {
     setExportError('');
@@ -546,14 +560,34 @@ export default function NexusDeveloperPreview() {
                 <li key={item.key} className="nexus-devops-queue-item flex flex-wrap items-start justify-between gap-3 rounded-xl border border-slate-800 bg-slate-950/70 p-4"
                   data-severity={item.severity}>
                   <div className="min-w-0 flex-1">
-                    <span className="nexus-devops-queue-severity">{item.severity} / evidence-backed</span>
+                    <div className="nexus-devops-queue-meta flex flex-wrap items-center gap-2">
+                      <span className="nexus-devops-queue-severity">{item.severity} / triage</span>
+                      <span className="nexus-devops-queue-source">{item.sourceLabel} · GitHub REST</span>
+                    </div>
                     <p className="mt-2 text-sm font-semibold text-slate-100">{item.title}</p>
-                    <p className="mt-1 text-xs leading-5 text-slate-400">{item.explanation}</p>
+                    <p className="mt-2 text-xs font-semibold text-[#a6d3fa]">{item.reportedSignal}</p>
+                    <p className="mt-1 text-xs leading-5 text-slate-300">{item.explanation}</p>
+                    <p className="mt-2 text-xs leading-5 text-slate-400"><strong className="text-slate-300">Why prioritized:</strong> {item.severityReason}</p>
+                    <p className="mt-1 text-xs leading-5 text-slate-400"><strong className="text-slate-300">Verify next:</strong> {item.nextStep}</p>
+                    {copyStatus?.key === item.key &&
+                      <p className={'mt-2 text-xs ' + (copyStatus.ok ? 'text-emerald-300' : 'text-amber-300')}
+                        role="status" aria-live="polite">{copyStatus.message}</p>}
                   </div>
-                  <a href={item.url} target="_blank" rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 text-xs font-medium text-[#4ea8ff] hover:text-[#cee8ff]">
-                    Review <ArrowUpRight className="h-4 w-4" />
-                  </a>
+                  <div className="nexus-devops-queue-actions flex flex-wrap items-center gap-2">
+                    <a href={item.url} target="_blank" rel="noopener noreferrer"
+                      aria-label={'Review ' + item.sourceLabel + ' on GitHub'}
+                      className="nexus-devops-queue-action inline-flex min-h-10 items-center gap-1 text-xs font-medium text-[#4ea8ff] hover:text-[#cee8ff]">
+                      Review source <ArrowUpRight aria-hidden="true" className="h-4 w-4" />
+                    </a>
+                    <button type="button" onClick={() => { void copyEvidenceLink(item.key, item.url); }}
+                      aria-label={'Copy GitHub link for ' + item.sourceLabel}
+                      className="nexus-devops-queue-action inline-flex min-h-10 items-center gap-1 text-xs font-medium text-[#b5dfff] hover:text-white">
+                      {copyStatus?.key === item.key && copyStatus.ok ?
+                        <Check aria-hidden="true" className="h-4 w-4" /> :
+                        <Copy aria-hidden="true" className="h-4 w-4" />}
+                      Copy link
+                    </button>
+                  </div>
                 </li>
               ))}
             </ol>
