@@ -6,7 +6,7 @@ and pull request merge state. **This is not part of Ops-Copilot.**
 > **Verified MVP development build (13 October 2026):** [PR #3](https://github.com/senanurcetin/nexus-devops-intelligence/pull/3)
 > upgraded Next.js; [PR #6](https://github.com/senanurcetin/nexus-devops-intelligence/pull/6)
 > migrated Tailwind to 4.3.3 and fixed secondary-text contrast. Clean cloud `npm ci`,
-> **57/57 tests**, full TypeScript and production build passed. Full `npm audit`
+> **59/59 tests**, full TypeScript and production build passed. Full `npm audit`
 > (including development dependencies) reported **zero findings at the time checked**.
 > Chromium 375/768/1440 responsive checks and automated axe-core A/AA tests passed.
 > **No public deployment:** Vercel WAF cross-instance rate limiting and final manual
@@ -43,6 +43,12 @@ read-only APIs. The dashboard displays safe wait guidance for GitHub or edge
 WAF 429 responses, without background or automatic retries.
 See [API rate-limit behavior](docs/RATE_LIMIT_BEHAVIOR.md).
 The WAF rule is **not enabled**; rate-limit hints are not a substitute for protection.
+
+**Input validation under load:** [PR #13](https://github.com/senanurcetin/nexus-devops-intelligence/pull/13)
+validates both read-only API parameters before the process-local in-flight gate.
+Invalid or oversized repositories always receive 400/no-store even when all
+12 capacity slots are occupied; a valid overloaded request receives 503.
+This is not cross-instance WAF enforcement.
 
 **Human accessibility checks:** The [manual screen-reader acceptance list](docs/MANUAL_ACCESSIBILITY_ACCEPTANCE.md)
 is prepared, but has **not** been performed by an NVDA/VoiceOver tester.
