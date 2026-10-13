@@ -76,6 +76,15 @@ running requests finish so their bounded Retry-After can be preserved.
 This can increase latency for slow responses and is **not** a Vercel
 platform-wide traffic limiter. See [rate-limit behavior](docs/RATE_LIMIT_BEHAVIOR.md).
 
+**Slow PR analysis feedback:** [PR #17](https://github.com/senanurcetin/nexus-devops-intelligence/pull/17)
+now announces a non-blocking slow-load state if the current PR request takes
+longer than 2.5 seconds. The hint clears when data arrives or the selected
+repository changes; it does not trigger new requests. The two-worker PR
+detail limit still applies. Controlled **80/160ms** simulated per-detail
+latency resulted in **243/482ms** total for five details; these are **not**
+real GitHub performance measurements. See
+[manual latency and browser QA](docs/pr-slow-load-browser-qa-2026-10-13.md).
+
 ## Current scope (MVP)
 
 - Public GitHub repositories only; no GitHub token, GitHub App installation, or write permission.
