@@ -10,7 +10,7 @@
 
 - [x] Bağımsız GitHub deposu; Ops-Copilot'dan ayrı.
 - [x] Next.js 15.5.27, Tailwind CSS 4.3.3, npm lockfile ve read-only public GitHub Actions/PR API.
-- [x] Birim, adapter, route-handler ve güvenlik başlığı testleri: **45/45 başarılı** (son manuel cloud çalışması).
+- [x] Birim, adapter, route-handler ve güvenlik başlığı testleri: **48/48 başarılı** (son manuel cloud çalışması).
 - [x] `npm ci`, TypeScript, Next.js production build ve tam `npm audit` (kontrol anında **0 bulgu**) başarılı.
 - [x] Gerçek GitHub verileriyle manuel HTTP smoke kontrolü; PR/Actions endpoint hata durumları.
 - [x] Chromium, Firefox ve WebKit'te 375/768/1440px temel responsive, form ve klavye odak kontrolleri; axe-core otomatik WCAG A/AA kontrollerinde test edilen akışlar için **0 ihlal**.
@@ -24,6 +24,10 @@ Bu kontrol sonuçları manuel test edilen commit'lere aittir. Otomatik erişileb
 
 - [x] **MET-01 — Actions sonucu doğruluğu:** [PR #10](https://github.com/senanurcetin/nexus-devops-intelligence/pull/10) birleştirildi; `cancelled`, `skipped`, `neutral` sonuçları pending değil, `timed_out` ve `startup_failure` tamamlanmış hata olarak sınıflandırılıyor. 4 ek regresyon testiyle **45/45** başarılı; typecheck/build ve gerçek HTTP smoke geçti.
 - [x] **QA-02 (otomatik üç motor):** Chromium + Firefox + [WebKit](webkit-browser-qa-2026-10-13.md) temel responsive/klavye/axe testi 375/768/1440 px'de başarılı. İnsan incelemesi [#5](https://github.com/senanurcetin/nexus-devops-intelligence/issues/5) altında açık.
+
+- [x] **API-04 (ikincil rate limit):** [PR #11](https://github.com/senanurcetin/nexus-devops-intelligence/pull/11) tamamlandı; GitHub secondary-limit 403, normal 403 ve Retry-After senaryolarına 3 yeni test eklendi. **48/48** başarılı; yeni isteği otomatik tekrarlamıyor.
+- [x] **QA-01 hazırlık:** [Ekran okuyucu kabul kontrol listesi](MANUAL_ACCESSIBILITY_ACCEPTANCE.md) hazır. İnsan NVDA/VoiceOver kontrolü yapılmadı.
+- [ ] **DOC-01 ekran görüntüsü:** Gerçek public GitHub verileriyle mobil/masaüstü görüntüler bulutta üretildi; güvenlik kontrolü dosya transferini engellediği için GitHub'a henüz eklenmedi.
 
 ## P0 — Paylaşılabilir MVP'nin yayın kapıları
 
