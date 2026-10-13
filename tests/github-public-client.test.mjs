@@ -68,7 +68,7 @@ test('Actions: GitHub 403 exhausted quota is 429, while ordinary 403 stays restr
   assert.equal(quota.status, 429);
   assert.match(quota.body.error, /rate limit/i);
   const forbidden = await loadPublicActions(repo, async () => ({
-    ...answer(403, null), headers: { get: () => '25' },
+    ...answer(403, null), headers: { get: key => key === 'x-ratelimit-remaining' ? '25' : null },
   }));
   assert.equal(forbidden.status, 503);
 });
