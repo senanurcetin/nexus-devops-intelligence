@@ -24,8 +24,8 @@ test('NEXUS dashboard keeps app functionality while using sapphire brand identit
   assert.ok(!page.includes('lastApiResponseAt'));
   assert.ok(page.includes('actionsReceivedAt'));
   assert.ok(page.includes('pullsReceivedAt'));
-  assert.equal((page.match(/if \\(result\\.data\\) setActionsReceivedAt\\(/g) ?? []).length, 1);
-  assert.equal((page.match(/if \\(result\\.data\\) setPullsReceivedAt\\(/g) ?? []).length, 1);
+  assert.equal(page.split('if (result.data) setActionsReceivedAt(').length - 1, 1);
+  assert.equal(page.split('if (result.data) setPullsReceivedAt(').length - 1, 1);
   assert.ok(page.includes('Independent GitHub source receipt status'));
   assert.ok(page.includes('Verified sample received at'));
   assert.ok(page.includes('No verified sample received for this selection'));
