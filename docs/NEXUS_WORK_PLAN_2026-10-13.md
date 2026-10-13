@@ -117,3 +117,13 @@
 - [x] Browser: Chromium **375px, 768px and 1440px**, with mocked bad 200 JSON in both panels followed by valid samples on user Retry, recovered on all three viewports; zero JS errors, horizontal overflow or automated axe WCAG 2/2.1 A/AA violations. Tablet and desktop were rerun in independent Chromium processes after the first combined process ended unexpectedly.
 - [ ] Human NVDA/VoiceOver and real-device visual signoff still **required** (issue #5). Automated browser tests do not satisfy this acceptance gate.
 - [ ] The latest GitHub source has not been deployed or revalidated on the live production alias; Redis Preview variables and P0 #7 acceptance remain separate blockers. Do not infer a production fix from the merge.
+
+### P1 targeted retry and stale-request evidence — 13 October 2026
+
+- [x] [PR #28](https://github.com/senanurcetin/nexus-devops-intelligence/pull/28) squash merged as `9618ede1a0c14fd0ae804229e9f01d661b66f837`. The shared Retry action now refreshes **only the failed Actions or PR source panel**; if both failed, both refresh. Already verified sibling data and last-success timestamp remain intact, avoiding unnecessary GitHub and Redis requests in the Free/Hobby plan.
+- [x] **Race behavior observed in a real Chromium browser:** switching `owner/first` to `owner/second` while both source requests were delayed left only second-repository Actions/PR results visible (375 and 1440px). Previous AbortController generation checks remained unchanged.
+- [x] Browser partial retry scenarios: PR-only (375, 768), Actions-only (375, 768), both-failed (375, 1440). All recovered with the correct **one or two** new requests. Dedicated Chromium processes were used to avoid unrelated sandbox browser closure.
+- [x] CI-free manual checks: **96/96 Node tests**, TS and production build, npm audit zero reported vulnerabilities at test time, live read-only GitHub REST HTTP smoke. Axe WCAG 2/2.1 A/AA at 375, 768, 1440: **0 automated violations, 26 passes per viewport**; no reported page JavaScript exceptions or horizontal overflow.
+- [x] [QA evidence](https://github.com/senanurcetin/nexus-devops-intelligence/blob/main/docs/RETRY_RACE_BROWSER_QA_2026-10-13.md) saved with fixtures clearly labeled; no mocks passed off as real GitHub data.
+- [ ] Human NVDA/VoiceOver and real-device visual acceptance remains **OPEN** (#5). Redis's actual cross-instance proof, Preview-scoped secrets and reviewed manual release remain **OPEN** (#7). No production deployment occurred.
+
