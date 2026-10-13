@@ -6,7 +6,7 @@
 
 ## Kesinleşmiş başlangıç durumu
 
-- [x] Son manuel bulut kontrolünde **73/73 otomatik test başarılı**, TypeScript ve Next.js production build başarılı.
+- [x] Son manuel bulut kontrolünde **76/76 otomatik test başarılı**, TypeScript ve Next.js production build başarılı.
 - [x] Son tam `npm audit --json` raporunda **0 bulgu**. Bu, gelecekteki açıkları garanti etmez.
 - [x] Gerçek public GitHub Actions ve PR REST API için localhost HTTP smoke başarılı.
 - [x] Chromium, Firefox ve Playwright WebKit motorlarında **375/768/1440 px** için temel responsive, form, klavye odağı ve otomatik axe-core WCAG A/AA testleri başarılı. Bu, tam WCAG veya ekran okuyucu onayı değildir.
@@ -43,6 +43,9 @@
 
 - [x] **Hobby ücret gerektirmeyen API katmanı:** [PR #19](https://github.com/senanurcetin/nexus-devops-intelligence/pull/19) ile her Vercel sunucu örneğinde kaynak IP'ye göre 20/60sn Actions+PR istek sınırı, 429/no-store/Retry-After, güvenli kaynak kimliği ve sınırlı bellek uygulandı. Altı regresyonla **73/73** test, build, typecheck, audit ve HTTP smoke başarılı. [Teknik belge](HOBBY_LOCAL_API_PROTECTION.md).
 - [ ] Sunucu örnekleri arasında ortak bir kota **henüz yok**. Mevcut WAF kuralı Log olduğundan halka açık yayın engeli devam ediyor. Ücretli dış servis açmadan korumalı preview testleri hazırlanabilir.
+
+- [x] **Ücretsiz API koruması adres eşdeğerliği:** [PR #20](https://github.com/senanurcetin/nexus-devops-intelligence/pull/20) ile IPv6 uzun/kısa biçimleri ve IPv4-mapped IPv6 aynı IP kotasına bağlandı. 1.024 bucket sınırı ve expired-key temizliği regresyon testleriyle kontrol edildi. **76/76** test, TypeScript, production build, tam audit ve gerçek HTTP smoke başarılı. [Mimari kısıtları](HOBBY_LOCAL_API_PROTECTION.md).
+- [ ] Bu yerel kota **farklı Vercel işlev örnekleri arasında paylaşılmıyor**; herkesin erişebileceği dağıtım için platform seviyesinde gerçek koruma veya doğrulanmış eşdeğer çözüm gerekli.
 
 ## Faz 2 — Ürün UX ve erişilebilirlik (P0/P1 paralel)
 
