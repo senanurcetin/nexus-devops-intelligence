@@ -1,6 +1,6 @@
 # NEXUS — manual Preview/Production release and rollback runbook
 
-**Version:** 14 Oct 2026. **Execution state: document only. NO deployment permission has been given.** Applies exclusively to `senanurcetin/nexus-devops-intelligence` Vercel project `prj_sbU4ylt4OV4fLkcog3VpSr2fEXYe`, team `team_sAoC03UJqqXy36NhZWBesgdg`. The [R-01 immutable inventory](NEXUS_RELEASE_CANDIDATE_MANIFEST_2026-10-14.md) captures a proposed source SHA and the actual older deployed sources.
+**Version:** 14 Oct 2026. **Execution state: owner authorized and manually created a SSO-configured, exact-SHA Preview only. No Production approval has been given.** [Deployment record](NEXUS_PROTECTED_PREVIEW_DEPLOYMENT_2026-10-14.md). Future deployments/tests require separate approval. Applies exclusively to `senanurcetin/nexus-devops-intelligence` Vercel project `prj_sbU4ylt4OV4fLkcog3VpSr2fEXYe`, team `team_sAoC03UJqqXy36NhZWBesgdg`. The [R-01 immutable inventory](NEXUS_RELEASE_CANDIDATE_MANIFEST_2026-10-14.md) captures a proposed source SHA and the actual older deployed sources.
 
 ## 0. Hard stop rules
 
@@ -70,12 +70,12 @@ Only after independent authorization for **Production**, exact candidate SHA and
 | --- | --- |
 | Reviewed exact source SHA / build log | **`599ced76605c25161b182b2d5bfbadbd091bfb53` offline validated 14 Oct** in disposable Node 24 Sandbox: 135/135 tests, TS/build, 401,241 raw / 117,432 gzip JS within review caps, audit 0, public GitHub/local HTTP smoke. **No deployment approval.** |
 | Free Redis command headroom | **UNKNOWN** |
-| Protected updated Preview ID/SHA | **NOT DEPLOYED** |
-| Preview real request budget and outcomes | **NOT AUTHORIZED** |
+| Protected updated Preview ID/SHA | **READY** `dpl_Beyxk5vGuDcvx5XDD4gVdsbUX9tg`, `599ced76605c25161b182b2d5bfbadbd091bfb53`, target Preview, SSO project metadata enabled |
+| Preview real request budget and outcomes | **No real API requests/probes performed in this deployment step**; further Upstash-connected acceptance checks require explicit small budget and authorization |
 | Human NVDA/VoiceOver + real device + editorial QA | **UNVERIFIED** (issue #5 closed, checklist unchecked) |
 | Independent Vercel Redis origin proof / risk disposition | **OPEN** ([issue #7](https://github.com/senanurcetin/nexus-devops-intelligence/issues/7)) |
 | Approved Production source/deploy time | **NOT AUTHORIZED** |
 | Previous Production fallback | `dpl_9fXGATNHhyhNVrN1i47k3BU4u5K5`, subject to live recheck |
 | Actual rollback performed | **NO** |
 
-**No deployment, rollout, rollback, cost-bearing action or quota test was performed by preparing this document.**
+**This runbook did not initiate an additional deployment:** its documented owner-approved manual **Preview** deployment is recorded separately. No Production rollout/rollback or live shared Upstash quota test was performed.
