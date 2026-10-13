@@ -6,11 +6,18 @@ and pull request merge state. **This is not part of Ops-Copilot.**
 > **Verified MVP development build (13 October 2026):** [PR #3](https://github.com/senanurcetin/nexus-devops-intelligence/pull/3)
 > upgraded Next.js; [PR #6](https://github.com/senanurcetin/nexus-devops-intelligence/pull/6)
 > migrated Tailwind to 4.3.3 and fixed secondary-text contrast. Clean cloud `npm ci`,
-> **39/39 tests**, full TypeScript and production build passed. Full `npm audit`
+> **41/41 tests**, full TypeScript and production build passed. Full `npm audit`
 > (including development dependencies) reported **zero findings at the time checked**.
 > Chromium 375/768/1440 responsive checks and automated axe-core A/AA tests passed.
 > **No public deployment:** Vercel WAF cross-instance rate limiting and final manual
 > release QA remain pending. No GitHub Actions or CircleCI were run.
+
+**Release security:** [PR #9](https://github.com/senanurcetin/nexus-devops-intelligence/pull/9)
+adds verified anti-framing, MIME-sniffing, referrer and permissions headers,
+plus a limited CSP. The production HTTP smoke checks their presence on the
+site and public APIs. These protections do not replace a Vercel WAF rate limit;
+WAF counters are per region, and the Hobby pricing acknowledgment remains
+outstanding.
 
 ## Current scope (MVP)
 
