@@ -23,6 +23,9 @@
 - **41/41 tests**, full TypeScript check, production build and manual live API smoke passed with the new headers. Full npm audit showed 0 findings at verification time.
 - The limited CSP prevents framing, objects and unsafe base URLs; it is not a full script/style CSP and does not replace Vercel WAF rate limiting.
 - Added a second browser-engine validation using Firefox 157.0 at 375/768/1440px; no horizontal overflow, failed forms or page JS errors. axe-core WCAG A/AA: 0 automated violations in the controlled error-state flow. Human screen-reader and WebKit coverage remain open.
+- [PR #10](https://github.com/senanurcetin/nexus-devops-intelligence/pull/10) corrected workflow outcome classification and evidence-based failed-run suggestions; four new tests bring the manually verified suite to **45/45**. TypeScript, Next production build and real public API smoke passed.
+- Added a third browser engine, **Playwright WebKit 27.2**, at 375/768/1440 px. No overflow, uncaught JS errors, failed invalid-repo validation or keyboard focus issues; axe-core WCAG A/AA: 0 automated violations in controlled API-error states.
+- Browser testing does not substitute for human screen-reader and real-device review. Platform-wide WAF protection and public preview remain outstanding.
 - No GitHub Actions or CircleCI jobs were configured or run.
 
 **Not yet released:** Platform-wide rate limiting, final manual cross-browser/screen-reader review and public preview deployment remain pending.
