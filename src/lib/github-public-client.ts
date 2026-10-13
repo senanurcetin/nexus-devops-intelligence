@@ -130,12 +130,27 @@ export async function loadPublicPulls(
   } catch {
     return fail(502, 'GitHub returned invalid pull request list data.');
   }
-  const details = await Promise.all(checked.pull_requests.map(async pr => {
+  const detailResults = await Promise.all(checked.pull_requests.map(async (pr): Promise<FetchResult> => {
     // Draft classification takes precedence; no reason to spend a detail request.
-    if (pr.attention === 'draft') return null;
-    const detail = await githubGet(`${base}/pulls/${pr.number}`, fetcher);
-    return detail.kind === 'ok' ? detail.data : null;
+    if (pr.attention === 'draft') return { kind: 'ok', data: null };
+    return githubGet(`${base}/pulls/${pr.number}`, fetcher);
   }));
+  // A rate limit on any detail is a rate limit on the whole PR analysis,
+  // not a successful sample with silently unknown merge statuses.
+  const limited = detailResults.filter(
+    (result): result is Extract<FetchResult, { kind: 'rate_limited' }> => result.kind === 'rate_limited',
+  );
+  if (limited.length) {
+    const waits = limited
+      .map(result => result.retryAfterSeconds)
+      .filter((seconds): seconds is number => seconds !== null);
+    return upstreamError({
+      kind: 'rate_limited',
+      retryAfterSeconds: waits.length ? Math.max(...waits) : null,
+    }, 'pull request details');
+  }
+  // Other individual detail failures remain "unknown"; never invent mergeability.
+  const details = detailResults.map(result => result.kind === 'ok' ? result.data : null);
   try {
     return { status: 200, body: summarizePublicPullRequests(repository, list, details) };
   } catch {

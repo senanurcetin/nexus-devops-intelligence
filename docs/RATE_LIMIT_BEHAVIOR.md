@@ -13,6 +13,14 @@
 6. The browser displays the bounded wait hint, including for an HTML 429 response from an edge-level WAF. If no safe hint is present, it shows a general retry-later message.
 7. **No automatic retries, retry timers or additional GitHub calls** are launched after a 429. The user may manually submit a new request later.
 
+## PR-detail quota correctness
+
+- A successful PR **list** response is not enough to claim that the PR analysis succeeded.
+- The list can require up to **five** additional, bounded detail requests for non-draft PRs. If **any** detail request returns a GitHub primary/secondary rate-limit indication (403/429), the **whole PR endpoint returns 429/no-store** instead of silently treating that quota failure as an ordinary unknown merge status.
+- If several details report valid numerical `Retry-After` values, the API exposes the **largest** safe 1–3600-second wait, never arbitrary GitHub error text or invalid headers.
+- Individual **non-rate-limit** detail errors (503, timeout, invalid payload) stay **unknown**. A failed detail must never be reported as merge-ready.
+- The bounded detail fan-out still starts requests concurrently; this change **does not claim to prevent further concurrent detail fetches** after a rate limit is discovered or replace Vercel WAF enforcement.
+
 ## Cache and privacy
 
 - Successful sample responses are public and may use `Cache-Control: public, max-age=60, stale-while-revalidate=120`.

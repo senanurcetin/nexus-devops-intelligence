@@ -93,7 +93,7 @@ test('Next PR route: 1 list + 2 details, draft skipped, conflict and unknown are
       number: 2, mergeable: false, mergeable_state: 'dirty',
       html_url: 'https://github.com/owner/example/pull/2',
     });
-    if (url.endsWith('/pulls/3')) return fakeResponse(429, {});
+    if (url.endsWith('/pulls/3')) return fakeResponse(503, {});
     throw new Error('unexpected REST request');
   }, async calls => {
     const response = await pullsGET(request('/api/public-prs'));
@@ -135,6 +135,25 @@ test('Next routes: 429 sends bounded Retry-After and no-store on both APIs', asy
       assert.equal(response.headers.get('cache-control'), 'no-store');
       assert.match((await response.json()).error, /rate limit/i);
     }
+    assert.equal(calls.length, 2);
+  });
+});
+
+test('Next PR route: detail rate limit returns 429/no-store with safe retry hint', async () => {
+  await withMockGitHub(url => {
+    if (url.includes('per_page=6')) return fakeResponse(200, [{
+      number: 5, title: 'Example PR', draft: false,
+      updated_at: '2026-10-12T12:00:00Z',
+      html_url: 'https://github.com/owner/example/pull/5',
+      user: { login: 'maintainer' },
+    }]);
+    return fakeResponse(429, { message: 'untrusted upstream response' }, { 'Retry-After': '66' });
+  }, async calls => {
+    const result = await pullsGET(request('/api/public-prs'));
+    assert.equal(result.status, 429);
+    assert.equal(result.headers.get('retry-after'), '66');
+    assert.equal(result.headers.get('cache-control'), 'no-store');
+    assert.match((await result.json()).error, /rate limit/i);
     assert.equal(calls.length, 2);
   });
 });
