@@ -20,21 +20,8 @@ export async function GET(request: NextRequest) {
       { status: 400, headers: { 'Cache-Control': 'no-store' } },
     );
   }
-  const localLimit = checkVercelPublicRateLimit(request.headers);
-  if (localLimit) {
-    return NextResponse.json(
-      { error: 'Request limit reached. Please retry later.' },
-      {
-        status: 429,
-        headers: {
-          'Cache-Control': 'no-store',
-          'Retry-After': String(localLimit.retryAfterSeconds),
-        },
-      },
-    );
-  }
-  // When configured, the shared Redis counter is authoritative across
-  // serverless instances and both public API routes. Failure is fail-closed.
+  // Shared Redis admission runs before any per-instance fallback or GitHub work.
+  // With Redis configured, all instances consult the same atomic counter.
   const sharedLimit = await checkVercelSharedPublicRateLimit(request.headers);
   if (sharedLimit.kind === 'limited') {
     return NextResponse.json(
@@ -53,6 +40,25 @@ export async function GET(request: NextRequest) {
       { error: 'Public analysis is temporarily unavailable. Please retry shortly.' },
       { status: 503, headers: { 'Cache-Control': 'no-store', 'Retry-After': '5' } },
     );
+  }
+
+  // An enabled Redis counter is the sole per-IP budget authority across instances.
+  // Use the process-local guard only if no shared backend was configured.
+  // Otherwise a local 429 would mask whether the global counter was consulted.
+  if (sharedLimit.kind === 'disabled') {
+    const localLimit = checkVercelPublicRateLimit(request.headers);
+    if (localLimit) {
+      return NextResponse.json(
+        { error: 'Request limit reached. Please retry later.' },
+        {
+          status: 429,
+          headers: {
+            'Cache-Control': 'no-store',
+            'Retry-After': String(localLimit.retryAfterSeconds),
+          },
+        },
+      );
+    }
   }
   const result = await coordinatePublicQuery(publicRequestKey('prs', repository),
     () => loadPublicPulls(repository));
