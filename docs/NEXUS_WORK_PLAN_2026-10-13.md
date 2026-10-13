@@ -167,3 +167,13 @@
 - [x] [QA/evidence report](https://github.com/senanurcetin/nexus-devops-intelligence/blob/main/docs/ACTIONS_SAMPLE_INTELLIGENCE_QA_2026-10-13.md) distinguishes deterministic browser fixtures from actual repo metrics.
 - [ ] Human NVDA/VoiceOver and physical-device checks remain required (#5). Current Production does **not** automatically receive the change due to disabled Git deployment; manual release and shared Redis cross-instance gate (#7) remain outstanding.
 
+
+### P3 PR Intelligence — source-based sample landscape (13 October 2026)
+
+- [x] [PR #32](https://github.com/senanurcetin/nexus-devops-intelligence/pull/32) squash merged as `287d26fbd3408fe11731d642bb8477885784930d`: sample-only PR review landscape with a categorical responsive merge-state composition bar, text counts/percentages and source-linked GitHub PR tiles.
+- [x] Five **disjoint and source-evidenced** categories for at most **five recently listed open PRs**: `conflict`; `blocked/behind/unstable` (restrictions, not proven CI failures); `unknown` (unverified); `clear` (GitHub-reported clean, **not** merge approval); `draft`. Never derive all-repository risk scores, trend lines or missing percentages. Display `more_open_prs` when GitHub has additional open PRs.
+- [x] Client-only `All / Conflicts / Restrictions / Unverified / Clean / Drafts` filters are keyboard-operable and report sample match count; no extra API/Upstash calls on filter change, source results and full-sample investigation suggestions unaffected. Honest error/empty/loading states.
+- [x] Manual CI-free ephemeral Vercel Sandbox: **117/117** Node tests; TypeScript, production build and real read-only GitHub HTTP smoke passed; npm audit **0 reported findings** at inspection. Controlled Chromium mock fixtures at **375px / 768px / 1440px** verified distribution, five source links, filtered results, keyboard activation, two initial API mocks and zero further filter-related requests. Empty and HTTP 503 PR states tested on mobile. **Zero** JS exceptions, document horizontal overflow and automated axe WCAG 2/2.1 A/AA violations.
+- [x] [PR Sample Intelligence QA report](https://github.com/senanurcetin/nexus-devops-intelligence/blob/main/docs/PR_SAMPLE_INTELLIGENCE_QA_2026-10-13.md) separates browser fixture data from live GitHub sample evidence.
+- [ ] Human NVDA/VoiceOver and real-device visual acceptance remain OPEN (#5); latest GitHub merge is **not deployed** to Vercel Production. Shared Upstash real Vercel cross-instance gate remains OPEN (#7). No CI, paid service or live Redis load test was performed.
+
