@@ -17,6 +17,8 @@
 - Raised secondary-text contrast: axe-core WCAG 2/2.1 A/AA automated checks reported zero violations at 375px and 1440px after correction; Chromium mobile/tablet/desktop responsive checks passed.
 - Manually checked rapid repository switching, stale responses, independent API error panels, keyboard search focus and the public read-only HTTP endpoints.
 - **Remaining release gates:** platform-wide rate limiting via Vercel WAF and final preview/manual accessibility review. This repository has not been publicly deployed.
+- In [PR #8](https://github.com/senanurcetin/nexus-devops-intelligence/pull/8), independently settled Actions and PR panels, added accessible loading status announcements and safe non-JSON WAF 429 handling.
+- Six new regression tests: **39/39 total passed**. Full manual npm audit: 0 findings. Chromium at 375/768/1440 and axe-core WCAG A/AA: 0 reported automated violations in tested error states.
 - No GitHub Actions or CircleCI jobs were configured or run.
 
 **Not yet released:** Platform-wide rate limiting, final manual cross-browser/screen-reader review and public preview deployment remain pending.
