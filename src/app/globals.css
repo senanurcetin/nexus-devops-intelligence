@@ -550,3 +550,39 @@ body { background: #071829; color: #eff5ff; }
 @media (prefers-reduced-motion:reduce) {
   .nexus-devops-command-link, .nexus-devops-queue-item { transition: none; }
 }
+
+/* Source-specific provenance: a verified Actions receipt never certifies the PR panel. */
+.nexus-devops-receipt-grid {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: minmax(0, 1fr);
+  margin-top: 13px;
+}
+.nexus-devops-receipt-grid .nexus-devops-received-at {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin: 0;
+  border: 1px solid rgba(129,173,215,.21);
+  border-radius: 10px;
+  padding: 10px 12px;
+  background: rgba(6,24,41,.58);
+  overflow-wrap: anywhere;
+}
+.nexus-devops-receipt-title {
+  color: #d4e9ff;
+  font-size: .73rem;
+  font-weight: 740;
+}
+.nexus-devops-received-at[data-receipt="verified"] {
+  border-left: 3px solid #6fd9b1;
+}
+.nexus-devops-received-at[data-receipt="error"] {
+  border-left: 3px solid #f39caa;
+}
+.nexus-devops-received-at[data-receipt="loading"] {
+  border-left: 3px solid #77bcfa;
+}
+@media(min-width:640px) and (max-width:1023px) {
+  .nexus-devops-receipt-grid { grid-template-columns: repeat(2, minmax(0,1fr)); }
+}
