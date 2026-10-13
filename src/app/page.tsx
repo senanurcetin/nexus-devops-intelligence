@@ -10,6 +10,7 @@ import { isConfirmedWorkflowFailure, parsePublicRepository, type PublicActionsSu
 import type { PublicPullSummary, PullAttention } from '@/lib/nexus-public-prs';
 import { recommendInvestigations } from '@/lib/nexus-recommendations';
 import { readPublicPanel, emptyPanel, type Panel } from '@/lib/nexus-panel-request';
+import { isPublicActionsSample, isPublicPullSample } from '@/lib/nexus-panel-validation';
 
 const DEFAULT_REPOSITORY = 'senanurcetin/ot-sentinel';
 
@@ -61,7 +62,8 @@ export default function NexusDeveloperPreview() {
     if (kind === 'actions') {
       setActionsLoading(true);
       setActions(emptyPanel());
-      void readPublicPanel<PublicActionsSummary>(`/api/public-actions?${params}`, next.signal)
+      void readPublicPanel<PublicActionsSummary>(`/api/public-actions?${params}`, next.signal,
+        fetch, (data): data is PublicActionsSummary => isPublicActionsSample(data, repo))
         .then(result => {
           if (controllers.current.actions === next && !next.signal.aborted) {
             setActions(result);
@@ -81,7 +83,8 @@ export default function NexusDeveloperPreview() {
       pullsSlowTimer.current = setTimeout(() => {
         if (controllers.current.prs === next && !next.signal.aborted) setPullsSlow(true);
       }, 2500);
-      void readPublicPanel<PublicPullSummary>(`/api/public-prs?${params}`, next.signal)
+      void readPublicPanel<PublicPullSummary>(`/api/public-prs?${params}`, next.signal,
+        fetch, (data): data is PublicPullSummary => isPublicPullSample(data, repo))
         .then(result => {
           if (controllers.current.prs === next && !next.signal.aborted) {
             setPulls(result);
