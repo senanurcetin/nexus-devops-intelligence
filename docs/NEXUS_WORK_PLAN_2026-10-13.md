@@ -1,5 +1,9 @@
 # NEXUS DevOps Intelligence — delivery and development plan
 
+## Current open work (authoritative)
+
+**See [NEXUS remaining development and release backlog](NEXUS_REMAINING_DEVELOPMENT_BACKLOG_2026-10-13.md) for the current prioritized, measurable tasks and release gates.** This original document is an accumulated chronological activity log. Some earlier unchecked statements are **superseded** by later evidence: Preview Redis secrets have since been securely configured; Preview and Production share the same owner-confirmed Upstash Free budget; the user declined further live 21-request quota tests; later merge commits added Actions/PR intelligence and executive dashboard layout. Open [issue #5](https://github.com/senanurcetin/nexus-devops-intelligence/issues/5) and [issue #7](https://github.com/senanurcetin/nexus-devops-intelligence/issues/7) remain acceptance gates. No GitHub merge implies a Production deployment.
+
 **Baseline:** 13 October 2026 · **Execution policy:** CI-free; manual cloud verification; no paid services, automatic Git deployment, or unapproved production release.
 
 ## Verified starting point
