@@ -27,7 +27,8 @@ function Card({ label, value, detail, tone = 'default' }: {
   label: string; value: string | number; detail: string; tone?: 'default' | 'warning';
 }) {
   return (
-    <div className="nexus-devops-card rounded-2xl border border-slate-800 bg-slate-900/90 p-5">
+    <div className={'nexus-devops-card rounded-2xl border border-slate-800 bg-slate-900/90 p-5' +
+      (tone === 'warning' ? ' nexus-devops-warning' : '')}>
       <p className="text-sm text-slate-400">{label}</p>
       <div className={'mt-2 text-3xl font-semibold tabular-nums ' +
         (tone === 'warning' ? 'text-amber-300' : 'text-white')}>{value}</div>
@@ -129,7 +130,7 @@ export default function NexusDeveloperPreview() {
   return (
     <main className="nexus-devops min-h-screen bg-slate-950 text-slate-100">
       <div className="mx-auto max-w-7xl px-5 py-10 sm:px-8 lg:py-14">
-        <header className="mb-12 flex flex-wrap items-center justify-between gap-4">
+        <header className="mb-6 flex flex-wrap items-center justify-between gap-4">
           <Link href="/"
             className="flex items-center gap-2 text-sm font-semibold tracking-wide text-white">
             <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#4ea8ff]/15 text-[#4ea8ff]">
@@ -143,7 +144,7 @@ export default function NexusDeveloperPreview() {
           </a>
         </header>
 
-        <div className="nexus-devops-hero mb-10 grid gap-8 lg:grid-cols-[1.5fr_1fr] lg:items-end">
+        <div className="nexus-devops-hero mb-8 grid gap-8 lg:grid-cols-[1.5fr_1fr] lg:items-end">
           <div>
             <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-[#4ea8ff]/30 bg-[#4ea8ff]/10 px-3 py-1 text-xs font-medium uppercase tracking-wider text-[#4ea8ff]">
               <ShieldCheck className="h-4 w-4" /> Public API · Read-only preview
@@ -172,10 +173,10 @@ export default function NexusDeveloperPreview() {
               <input value={repository} onChange={event => { setRepository(event.target.value); setFormError(''); }}
                 maxLength={200} required autoComplete="off" placeholder="owner/repository"
                 aria-invalid={Boolean(formError)} aria-describedby={formError ? 'repository-error' : 'repository-hint'}
-                className="mt-2 block w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-base text-slate-100 outline-none focus:border-cyan-400 focus:ring-2 focus:ring-[#4ea8ff]/15" />
+                className="mt-2 block w-full rounded-xl border border-[#365b81] bg-[#071829] px-4 py-3 text-base text-slate-100 outline-none focus:border-[#4ea8ff] focus:ring-2 focus:ring-[#4ea8ff]/20" />
             </label>
             <button type="submit"
-              className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-cyan-400 px-6 py-3 text-sm font-semibold text-slate-950 hover:bg-cyan-300 disabled:opacity-50">
+              className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-[#4ea8ff] px-6 py-3 text-sm font-semibold text-[#071829] hover:bg-[#90ccff] disabled:opacity-50">
               <RefreshCw className={'h-4 w-4 ' + (loading ? 'animate-spin' : '')} />
               {loading ? 'Analyzing…' : 'Analyze repository'}
             </button>
@@ -187,7 +188,8 @@ export default function NexusDeveloperPreview() {
           </p>
         </section>
 
-        <section className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4" aria-label="Sample statistics">
+        <div className="nexus-devops-section mb-3 mt-7">01 / Public repository metrics</div>
+        <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4" aria-label="Sample statistics">
           <Card label="Workflow runs inspected" value={actions.data?.inspected_runs ?? (actionsLoading ? '…' : '—')}
             detail="Up to ten most recent runs" />
           <Card label="Successful in sample" value={successRatio === null ? '—' : `${successRatio}%`}
@@ -199,7 +201,8 @@ export default function NexusDeveloperPreview() {
             tone={Boolean(pulls.data?.needs_attention) ? 'warning' : 'default'} />
         </section>
 
-        <div className="mt-8 grid gap-6 lg:grid-cols-2">
+        <div className="nexus-devops-section mb-3 mt-9">02 / GitHub workflow and pull request evidence</div>
+        <div className="grid gap-6 lg:grid-cols-2">
           <section aria-labelledby="workflow-title" aria-busy={actionsLoading} className="min-w-0 overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/75">
             <div className="flex items-start justify-between gap-3 border-b border-slate-800 p-5">
               <div>

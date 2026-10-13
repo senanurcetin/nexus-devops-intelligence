@@ -44,3 +44,21 @@ body { background: #071829; color: #eff5ff; }
 @media (prefers-reduced-motion: reduce) {
   .nexus-devops *, .nexus-devops *::before, .nexus-devops *::after { transition-duration: .01ms!important; animation-duration: .01ms!important; }
 }
+
+/* Explicit executive hierarchy and contextual warning meaning. */
+.nexus-devops-section {
+  color:#9bcdff; font-size:.71rem; font-weight:760;
+  letter-spacing:.14em; text-transform:uppercase;
+}
+.nexus-devops-warning { border-top-color:rgba(246,185,95,.85); }
+.nexus-devops form button[type="submit"] { box-shadow:0 8px 22px rgba(46,119,209,.18); }
+.nexus-devops form button[type="submit"]:focus-visible { outline:2px solid #c3e6ff;outline-offset:3px; }
+.nexus-devops section[aria-label="Repository search"] {
+  background:linear-gradient(115deg,rgba(16,43,69,.95),rgba(10,30,51,.98));
+  border-color:#315477;
+  box-shadow:0 10px 30px rgba(0,6,22,.14);
+}
+@media(max-width:680px) {
+  .nexus-devops-section { font-size:.65rem;line-height:1.55; }
+  .nexus-devops form button[type="submit"] { width:100%; }
+}

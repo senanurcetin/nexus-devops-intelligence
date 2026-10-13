@@ -13,4 +13,8 @@ test('NEXUS dashboard keeps app functionality while using sapphire brand identit
   assert.ok(css.includes('#071829'));
   assert.ok(css.includes('#4ea8ff'));
   assert.ok(css.includes('prefers-reduced-motion'));
+  assert.ok(page.includes('nexus-devops-section'));
+  assert.ok(page.includes('nexus-devops-warning'));
+  assert.ok(page.includes('bg-[#4ea8ff]'));
+  assert.ok(css.includes('.nexus-devops-warning'));
 });
