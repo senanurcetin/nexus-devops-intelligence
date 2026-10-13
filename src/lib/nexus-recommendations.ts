@@ -1,4 +1,4 @@
-import type { PublicActionsSummary } from './github-public-actions.ts';
+import { isConfirmedWorkflowFailure, type PublicActionsSummary } from './github-public-actions.ts';
 import type { PublicPullSummary, PullAttention } from './nexus-public-prs.ts';
 
 /** Evidence-backed suggestions only: no speculative diagnosis or repo writes. */
@@ -42,12 +42,12 @@ export function recommendInvestigations(
     });
   }
   for (const run of actions?.runs ?? []) {
-    if (run.conclusion !== 'failure') continue;
+    if (!isConfirmedWorkflowFailure(run.conclusion) || run.status !== 'completed') continue;
     suggestions.push({
       key: `run-${run.id}`,
       severity: 'high',
-      title: `Inspect failed workflow · ${run.name}`,
-      explanation: `GitHub reports a failed ${run.event} workflow run; inspect its logs before diagnosing a cause.`,
+      title: `Inspect ${run.conclusion === 'timed_out' ? 'timed-out' : 'failed'} workflow · ${run.name}`,
+      explanation: `GitHub reports workflow conclusion "${run.conclusion}" for a ${run.event} run; inspect its logs before diagnosing a cause.`,
       url: run.html_url,
     });
   }
