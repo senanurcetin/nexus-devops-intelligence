@@ -10,15 +10,20 @@
 
 - [x] Bağımsız GitHub deposu; Ops-Copilot'dan ayrı.
 - [x] Next.js 15.5.27, Tailwind CSS 4.3.3, npm lockfile ve read-only public GitHub Actions/PR API.
-- [x] Birim, adapter, route-handler ve güvenlik başlığı testleri: **41/41 başarılı** (son manuel cloud çalışması).
+- [x] Birim, adapter, route-handler ve güvenlik başlığı testleri: **45/45 başarılı** (son manuel cloud çalışması).
 - [x] `npm ci`, TypeScript, Next.js production build ve tam `npm audit` (kontrol anında **0 bulgu**) başarılı.
 - [x] Gerçek GitHub verileriyle manuel HTTP smoke kontrolü; PR/Actions endpoint hata durumları.
-- [x] Chromium ve Firefox'ta 375/768/1440px temel responsive, form ve klavye odak kontrolleri; axe-core otomatik WCAG A/AA kontrollerinde test edilen akışlar için **0 ihlal**.
+- [x] Chromium, Firefox ve WebKit'te 375/768/1440px temel responsive, form ve klavye odak kontrolleri; axe-core otomatik WCAG A/AA kontrollerinde test edilen akışlar için **0 ihlal**.
 - [x] [PR #9](https://github.com/senanurcetin/nexus-devops-intelligence/pull/9): anti-framing, MIME sniffing, referrer/permissions ve sınırlı CSP güvenlik başlıkları.
 - [x] GitHub'da **CI workflow dosyası yok**; hiçbir CI koşulu aranmayacak.
 - [ ] **Vercel canlı/preview deployment yok.** Halka açık URL doğrulanmadı.
 
 Bu kontrol sonuçları manuel test edilen commit'lere aittir. Otomatik erişilebilirlik raporu tam WCAG sertifikası, npm audit sonucu ise sürekli güvenlik garantisi değildir.
+
+## Son uygulama — işlenen görev
+
+- [x] **MET-01 — Actions sonucu doğruluğu:** [PR #10](https://github.com/senanurcetin/nexus-devops-intelligence/pull/10) birleştirildi; `cancelled`, `skipped`, `neutral` sonuçları pending değil, `timed_out` ve `startup_failure` tamamlanmış hata olarak sınıflandırılıyor. 4 ek regresyon testiyle **45/45** başarılı; typecheck/build ve gerçek HTTP smoke geçti.
+- [x] **QA-02 (otomatik üç motor):** Chromium + Firefox + [WebKit](webkit-browser-qa-2026-10-13.md) temel responsive/klavye/axe testi 375/768/1440 px'de başarılı. İnsan incelemesi [#5](https://github.com/senanurcetin/nexus-devops-intelligence/issues/5) altında açık.
 
 ## P0 — Paylaşılabilir MVP'nin yayın kapıları
 
@@ -27,7 +32,7 @@ Bu kontrol sonuçları manuel test edilen commit'lere aittir. Otomatik erişileb
 | 01 | SEC-01 | Vercel Hobby WAF fiyat/kota onayı, gerçek mevcut kullanım kontrolü | İlk rate-limit kuralının fiyatlandırma onayı incelenecek; izin/ücret riski kayda alınacak. **Onaysız aktivasyon yok** | [#7](https://github.com/senanurcetin/nexus-devops-intelligence/issues/7) |
 | 02 | SEC-02 | Tek WAF rate-limit kuralı ile iki anonim API'yi koruma | Hem `/api/public-actions` hem `/api/public-prs` kapsamda; normal istekler geçiyor, yoğun trafikte 429; bölge bazlı sayaç sınırlaması ve rollback belgelenmiş | [#7](https://github.com/senanurcetin/nexus-devops-intelligence/issues/7) |
 | 03 | QA-01 | Ekran okuyucu ve kapsamlı klavye akışı | NVDA/VoiceOver ile repo arama, hata/boş/yükleniyor/sonuç durumları anlamlı okunuyor; klavye tuzağı yok, odak sırası doğrulandı | [#5](https://github.com/senanurcetin/nexus-devops-intelligence/issues/5) |
-| 04 | QA-02 | Tarayıcılar arası son kalite kontrolü | Chromium ve Firefox geçmiş testleri korunacak; imkan varsa Safari/WebKit ve gerçek ekran görüntüsü üzerinden görsel denetim; açık önemli hata yok | [#5](https://github.com/senanurcetin/nexus-devops-intelligence/issues/5) |
+| 04 | QA-02 | Tarayıcılar arası son kalite kontrolü | **Chromium, Firefox, WebKit otomatik testleri geçti.** Gerçek cihaz görsel incelemesi ve insan ekran okuyucu testi açık; [WebKit kanıtı](webkit-browser-qa-2026-10-13.md) | [#5](https://github.com/senanurcetin/nexus-devops-intelligence/issues/5) |
 | 05 | REL-01 | Manuel, commit-SHA'ya bağlı Vercel preview oluşturma | Ayrı NEXUS projesi, Git auto-deploy kapalı; proje erişim/SSO koruması ve hesap kotaları gözden geçirilmiş; kaynak SHA kaydedilmiş | [Yayın prosedürü](vercel-hobby-waf-release-runbook.md) |
 | 06 | REL-02 | Preview URL üzerinde uçtan uca test | 200 ana sayfa; 400 hatalı repo; gerçek Actions ve PR örneği; 404/429/5xx kullanıcı mesajı; WAF, cache ve güvenlik başlıkları; mobil/masaüstü tarayıcı | Bu liste |
 | 07 | REL-03 | v0.1.0 release gate | Güncel test/typecheck/build/audit/smoke, kanıt linkleri, rollback, README ve CHANGELOG tamam; yalnızca doğrulanan sürümü etiketle | Bu liste |
