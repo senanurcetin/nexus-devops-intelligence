@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { parsePublicRepository } from '@/lib/github-public-actions';
 import { checkVercelPublicRateLimit } from '@/lib/nexus-public-rate-limit';
+import { checkVercelSharedPublicRateLimit } from '@/lib/nexus-shared-rate-limit';
 import { loadPublicPulls } from '@/lib/github-public-client';
 import { coordinatePublicQuery, publicRequestKey } from '@/lib/nexus-public-gate';
 
@@ -30,6 +31,27 @@ export async function GET(request: NextRequest) {
           'Retry-After': String(localLimit.retryAfterSeconds),
         },
       },
+    );
+  }
+  // When configured, the shared Redis counter is authoritative across
+  // serverless instances and both public API routes. Failure is fail-closed.
+  const sharedLimit = await checkVercelSharedPublicRateLimit(request.headers);
+  if (sharedLimit.kind === 'limited') {
+    return NextResponse.json(
+      { error: 'Request limit reached. Please retry later.' },
+      {
+        status: 429,
+        headers: {
+          'Cache-Control': 'no-store',
+          'Retry-After': String(sharedLimit.retryAfterSeconds),
+        },
+      },
+    );
+  }
+  if (sharedLimit.kind === 'unavailable') {
+    return NextResponse.json(
+      { error: 'Public analysis is temporarily unavailable. Please retry shortly.' },
+      { status: 503, headers: { 'Cache-Control': 'no-store', 'Retry-After': '5' } },
     );
   }
   const result = await coordinatePublicQuery(publicRequestKey('prs', repository),
