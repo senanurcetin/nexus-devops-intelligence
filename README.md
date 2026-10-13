@@ -6,7 +6,7 @@ and pull request merge state. **This is not part of Ops-Copilot.**
 > **Verified MVP development build (13 October 2026):** [PR #3](https://github.com/senanurcetin/nexus-devops-intelligence/pull/3)
 > upgraded Next.js; [PR #6](https://github.com/senanurcetin/nexus-devops-intelligence/pull/6)
 > migrated Tailwind to 4.3.3 and fixed secondary-text contrast. Clean cloud `npm ci`,
-> **64/64 tests**, full TypeScript and production build passed. Full `npm audit`
+> **67/67 tests**, full TypeScript and production build passed. Full `npm audit`
 > (including development dependencies) reported **zero findings at the time checked**.
 > Chromium 375/768/1440 responsive checks and automated axe-core A/AA tests passed.
 > **No public deployment:** Vercel WAF cross-instance rate limiting and final manual
@@ -68,6 +68,13 @@ successful PR analysis. A primary/secondary GitHub rate limit in any detail
 now returns HTTP 429/no-store and the longest validated Retry-After hint.
 Ordinary detail failures remain unknown. No automatic retries.
 See [rate-limit behavior](docs/RATE_LIMIT_BEHAVIOR.md).
+
+**PR-detail quota conservation:** [PR #16](https://github.com/senanurcetin/nexus-devops-intelligence/pull/16)
+caps concurrent GitHub PR-detail calls at **two**. Once a worker observes
+a quota response, unscheduled detail requests are not started. Already
+running requests finish so their bounded Retry-After can be preserved.
+This can increase latency for slow responses and is **not** a Vercel
+platform-wide traffic limiter. See [rate-limit behavior](docs/RATE_LIMIT_BEHAVIOR.md).
 
 ## Current scope (MVP)
 
