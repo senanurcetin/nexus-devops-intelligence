@@ -139,6 +139,25 @@ test('Next routes: 429 sends bounded Retry-After and no-store on both APIs', asy
   });
 });
 
+test('Next PR route: detail rate limit returns 429/no-store with safe retry hint', async () => {
+  await withMockGitHub(url => {
+    if (url.includes('per_page=6')) return fakeResponse(200, [{
+      number: 5, title: 'Example PR', draft: false,
+      updated_at: '2026-10-12T12:00:00Z',
+      html_url: 'https://github.com/owner/example/pull/5',
+      user: { login: 'maintainer' },
+    }]);
+    return fakeResponse(429, { message: 'untrusted upstream response' }, { 'Retry-After': '66' });
+  }, async calls => {
+    const result = await pullsGET(request('/api/public-prs'));
+    assert.equal(result.status, 429);
+    assert.equal(result.headers.get('retry-after'), '66');
+    assert.equal(result.headers.get('cache-control'), 'no-store');
+    assert.match((await result.json()).error, /rate limit/i);
+    assert.equal(calls.length, 2);
+  });
+});
+
 test('Next routes: malformed Retry-After is not echoed', async () => {
   await withMockGitHub(() => fakeResponse(429, {}, { 'Retry-After': '99999999' }), async () => {
     for (const [path, GET] of [['/api/public-actions', actionsGET], ['/api/public-prs', pullsGET]]) {
