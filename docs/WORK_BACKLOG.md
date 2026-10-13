@@ -10,7 +10,7 @@
 
 - [x] Bağımsız GitHub deposu; Ops-Copilot'dan ayrı.
 - [x] Next.js 15.5.27, Tailwind CSS 4.3.3, npm lockfile ve read-only public GitHub Actions/PR API.
-- [x] Birim, adapter, route-handler ve güvenlik başlığı testleri: **73/73 başarılı** (son manuel cloud çalışması).
+- [x] Birim, adapter, route-handler ve güvenlik başlığı testleri: **76/76 başarılı** (son manuel cloud çalışması).
 - [x] `npm ci`, TypeScript, Next.js production build ve tam `npm audit` (kontrol anında **0 bulgu**) başarılı.
 - [x] Gerçek GitHub verileriyle manuel HTTP smoke kontrolü; PR/Actions endpoint hata durumları.
 - [x] Chromium, Firefox ve WebKit'te 375/768/1440px temel responsive, form ve klavye odak kontrolleri; axe-core otomatik WCAG A/AA kontrollerinde test edilen akışlar için **0 ihlal**.
@@ -41,6 +41,8 @@ Bu kontrol sonuçları manuel test edilen commit'lere aittir. Otomatik erişileb
 
 - [x] **UX-07 — Yavaş PR analizi açıklaması ve gecikme ölçümü:** [PR #17](https://github.com/senanurcetin/nexus-devops-intelligence/pull/17) merge edildi. PR isteği **2,5 sn** sürerse kullanıcıya açıklayıcı durum ve ekran okuyucu anonsu gösteriliyor; tamamlanma/repo değişiminde temizleniyor. Kontrollü 5 PR fixture: 80 ms/ayrıntıda **243 ms**, 160 ms/ayrıntıda **482 ms** toplam. Bu değerler **gerçek GitHub SLA'sı değildir**. Chromium 375/1440px, axe A/AA 0 otomatik ihlal. [Test raporu](pr-slow-load-browser-qa-2026-10-13.md).
 - [x] **SEC-03 — Ücretsiz yerel API kotası:** [PR #19](https://github.com/senanurcetin/nexus-devops-intelligence/pull/19) ile Vercel'deki aynı işlev örneği ve kaynak IP için Actions+PR ortak **20 istek/60 saniye**, fazlasında upstream çağrısı yapılmadan **429/no-store/Retry-After**; 6 yeni test dahil **73/73** başarılı. Bu **sunucu örnekleri arası ortak kota değildir** ve Log modundaki WAF'ı tam korumaya dönüştürmez. [Kısıtlar](HOBBY_LOCAL_API_PROTECTION.md). Kullanıcı müdahalesi olmadan ücretli altyapı veya canlı dağıtım açılmadı.
+
+- [x] **SEC-04 — IP biçimiyle kota kaçışını kapatma:** [PR #20](https://github.com/senanurcetin/nexus-devops-intelligence/pull/20) ile farklı IPv6 gösterimleri ve IPv4-mapped IPv6, aynı yerel IP kotasına bağlandı. 1.024 kaynaklık bellek sınırı ve süresi dolan kayıtların yeniden kullanımı test edildi. **76/76** test, typecheck/build/audit ve gerçek HTTP smoke başarılı. Global WAF engeli devam ediyor. [Kanıt ve sınırlar](HOBBY_LOCAL_API_PROTECTION.md).
 
 ## P0 — Paylaşılabilir MVP'nin yayın kapıları
 
