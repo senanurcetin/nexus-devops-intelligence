@@ -135,6 +135,7 @@ test('Next routes: 429 sends bounded Retry-After and no-store on both APIs', asy
     for (const [path, GET] of [['/api/public-actions', actionsGET], ['/api/public-prs', pullsGET]]) {
       const response = await GET(request(path));
       assert.equal(response.status, 429);
+      assert.equal(response.headers.get('x-nexus-rate-limit-source'), 'github-upstream');
       assert.equal(response.headers.get('retry-after'), '75');
       assert.equal(response.headers.get('cache-control'), 'no-store');
       assert.match((await response.json()).error, /rate limit/i);
@@ -249,9 +250,11 @@ test('Next routes: same trusted Vercel IP shares 20/min quota across both API en
       for (let n = 0; n < 20; n++) {
         const response = await getFor(n)(requestWithIp(n));
         assert.equal(response.status, 200, `request ${n + 1} of 20`);
+        assert.equal(response.headers.get('x-nexus-rate-limit-mode'), 'local-fallback');
       }
       const blocked = await actionsGET(requestWithIp(20));
       assert.equal(blocked.status, 429);
+      assert.equal(blocked.headers.get('x-nexus-rate-limit-source'), 'local-fallback');
       assert.equal(blocked.headers.get('cache-control'), 'no-store');
       assert.ok(Number(blocked.headers.get('retry-after')) >= 1);
       assert.match((await blocked.json()).error, /request limit/i);
