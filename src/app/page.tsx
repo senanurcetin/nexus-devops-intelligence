@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react'
 import Link from 'next/link';
 import {
   Activity, AlertCircle, ArrowRight, ArrowUpRight, CheckCircle2,
-  GitBranch, GitPullRequest, RefreshCw, ShieldCheck, TriangleAlert,
+  Download, GitBranch, GitPullRequest, RefreshCw, ShieldCheck, TriangleAlert,
 } from 'lucide-react';
 import { parsePublicRepository, type PublicActionsSummary } from '@/lib/github-public-actions';
 import type { PublicPullSummary, PullAttention } from '@/lib/nexus-public-prs';
@@ -13,6 +13,7 @@ import { readPublicPanel, emptyPanel, type Panel } from '@/lib/nexus-panel-reque
 import { isPublicActionsSample, isPublicPullSample } from '@/lib/nexus-panel-validation';
 import { filteredWorkflowRuns, workflowOutcome, workflowOutcomeCount, workflowOutcomes, type WorkflowFilter } from '@/lib/nexus-workflow-visuals';
 import { filteredPublicPulls, pullBucket, pullBucketCount, pullBuckets, type PullFilter } from '@/lib/nexus-pr-visuals';
+import { createPublicSampleExport, createSampleFilename, serializePublicSampleCsv } from '@/lib/nexus-public-sample-export';
 
 const DEFAULT_REPOSITORY = 'senanurcetin/ot-sentinel';
 
@@ -57,6 +58,7 @@ export default function NexusDeveloperPreview() {
   const [formError, setFormError] = useState('');
   const [workflowFilter, setWorkflowFilter] = useState<WorkflowFilter>('all');
   const [pullFilter, setPullFilter] = useState<PullFilter>('all');
+  const [exportError, setExportError] = useState('');
   const controllers = useRef<{ actions: AbortController | null; prs: AbortController | null }>({
     actions: null, prs: null,
   });
@@ -76,7 +78,7 @@ export default function NexusDeveloperPreview() {
         .then(result => {
           if (controllers.current.actions === next && !next.signal.aborted) {
             setActions(result);
-            if (result.data) setActionsReceivedAt(new Date().toLocaleTimeString());
+            if (result.data) setActionsReceivedAt(new Date().toISOString());
           }
         })
         .finally(() => {
@@ -98,7 +100,7 @@ export default function NexusDeveloperPreview() {
         .then(result => {
           if (controllers.current.prs === next && !next.signal.aborted) {
             setPulls(result);
-            if (result.data) setPullsReceivedAt(new Date().toLocaleTimeString());
+            if (result.data) setPullsReceivedAt(new Date().toISOString());
           }
         })
         .finally(() => {
@@ -117,6 +119,7 @@ export default function NexusDeveloperPreview() {
     setSelectedRepo(trimmed);
     setWorkflowFilter('all');
     setPullFilter('all');
+    setExportError('');
     setActionsReceivedAt(null);
     setPullsReceivedAt(null);
     refreshPanel('actions', trimmed);
@@ -152,6 +155,42 @@ export default function NexusDeveloperPreview() {
   const prList = pulls.data?.pull_requests ?? [];
   const visiblePulls = filteredPublicPulls(pulls.data, pullFilter);
   const recommendations = recommendInvestigations(actions.data, pulls.data);
+  const canExport = !loading && Boolean(actions.data || pulls.data);
+
+  function downloadSample(format: 'csv' | 'json') {
+    setExportError('');
+    if (!canExport) return;
+    try {
+      const snapshot = createPublicSampleExport({
+        repository: selectedRepo,
+        actions: actions.data,
+        prs: pulls.data,
+        actionsReceivedAt, prsReceivedAt: pullsReceivedAt,
+        workflowFilter, pullFilter,
+        exportedAt: new Date().toISOString(),
+      });
+      const serialized = format === 'csv'
+        ? '\uFEFF' + serializePublicSampleCsv(snapshot)
+        : JSON.stringify(snapshot, null, 2) + '\n';
+      const file = new Blob([serialized], {
+        type: format === 'csv' ? 'text/csv;charset=utf-8' : 'application/json;charset=utf-8',
+      });
+      const blobUrl = URL.createObjectURL(file);
+      const anchor = document.createElement('a');
+      anchor.href = blobUrl;
+      anchor.download = createSampleFilename(snapshot.repository, snapshot.exported_at_utc, format);
+      document.body.appendChild(anchor);
+      try {
+        anchor.click();
+      } finally {
+        anchor.remove();
+        // Keep the object URL alive long enough for browsers to capture the download.
+        window.setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
+      }
+    } catch {
+      setExportError('Export could not be prepared from verified source data. Try again after the panels load.');
+    }
+  }
 
   return (
     <main className="nexus-devops min-h-screen bg-slate-950 text-slate-100">
@@ -223,11 +262,11 @@ export default function NexusDeveloperPreview() {
             )}
             <div className="nexus-devops-receipts" aria-label="Last successful source responses">
               <p className="nexus-devops-received-at">
-                Actions: {actionsReceivedAt ? `received at ${actionsReceivedAt} (browser local time)` :
+                Actions: {actionsReceivedAt ? `received at ${new Date(actionsReceivedAt).toLocaleTimeString()} (browser local time)` :
                   actionsLoading ? 'loading' : 'no verified response for this selection'}
               </p>
               <p className="nexus-devops-received-at">
-                PRs: {pullsReceivedAt ? `received at ${pullsReceivedAt} (browser local time)` :
+                PRs: {pullsReceivedAt ? `received at ${new Date(pullsReceivedAt).toLocaleTimeString()} (browser local time)` :
                   pullsLoading ? 'loading' : 'no verified response for this selection'}
               </p>
             </div>
@@ -276,6 +315,33 @@ export default function NexusDeveloperPreview() {
           <Card index={4} label="PRs needing inspection" value={pulls.data?.needs_attention ?? (pullsLoading ? '…' : '—')}
             detail={pulls.data ? `${pulls.data.conflicts} confirmed conflict(s); ${pulls.data.unknown} unknown status(es)` : 'Only GitHub-reported states'}
             tone={Boolean(pulls.data?.needs_attention) ? 'warning' : 'default'} />
+        </section>
+
+        <section className="nexus-devops-export mt-5 flex flex-wrap items-center justify-between gap-4 rounded-2xl p-4 sm:p-5"
+          aria-label="Export verified public sample">
+          <div className="min-w-0 flex-1">
+            <p className="text-xs font-bold uppercase tracking-widest text-[#8cc9ff]">READ-ONLY / CLIENT EXPORT</p>
+            <h2 className="mt-1 text-base font-semibold text-slate-100">Export inspected sample</h2>
+            <p className="mt-1 max-w-3xl text-xs leading-5 text-slate-300">
+              Downloads only currently visible, filtered records from verified source panels.
+              Includes repository, UTC receipt time, sample limits and applied filters.
+              No new GitHub or Redis request. This is not a repository-wide report.
+            </p>
+            {!canExport && <p className="mt-2 text-xs text-slate-400" role="status">
+              {loading ? 'Wait for the source panels to finish loading.' : 'No verified sample available to export.'}
+            </p>}
+            {exportError && <p className="mt-2 text-xs text-rose-300" role="alert">{exportError}</p>}
+          </div>
+          <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
+            <button type="button" onClick={() => downloadSample('csv')} disabled={!canExport}
+              className="nexus-devops-export-button inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-xl px-4 py-3 text-xs font-semibold sm:flex-none">
+              <Download aria-hidden="true" className="h-4 w-4" /> Export CSV
+            </button>
+            <button type="button" onClick={() => downloadSample('json')} disabled={!canExport}
+              className="nexus-devops-export-button inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-xl px-4 py-3 text-xs font-semibold sm:flex-none">
+              <Download aria-hidden="true" className="h-4 w-4" /> Export JSON
+            </button>
+          </div>
         </section>
 
         <div id="intelligence" className="nexus-devops-section mb-3 mt-9">02 / Source intelligence / sampled</div>

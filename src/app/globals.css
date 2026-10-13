@@ -666,3 +666,35 @@ body { background: #071829; color: #eff5ff; }
     flex-wrap: wrap;
   }
 }
+
+/* F-01: export is a local, source-verified browser action, not an API endpoint. */
+.nexus-devops-export {
+  min-width: 0;
+  border: 1px solid #42688c;
+  background:
+    radial-gradient(ellipse at 3% 5%, rgba(73, 167, 246, .12), transparent 45%),
+    linear-gradient(124deg, #112f4c 0%, #0b223b 100%);
+  box-shadow: inset 0 1px 0 rgba(193, 229, 255, .08), 0 12px 30px rgba(0, 8, 24, .16);
+  overflow-wrap: anywhere;
+}
+.nexus-devops-export-button {
+  border: 1px solid #6185a7;
+  background: #193e60;
+  color: #e7f4ff;
+  transition: background-color .16s, border-color .16s;
+}
+.nexus-devops-export-button:hover:not(:disabled) {
+  background: #2a5e8d;
+  border-color: #99cefc;
+}
+.nexus-devops-export-button:focus-visible {
+  outline: 2px solid #9edcff;
+  outline-offset: 3px;
+}
+.nexus-devops-export-button:disabled {
+  cursor: not-allowed;
+  opacity: .45;
+}
+@media (prefers-reduced-motion: reduce) {
+  .nexus-devops-export-button { transition: none; }
+}
