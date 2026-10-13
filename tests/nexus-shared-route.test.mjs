@@ -76,3 +76,68 @@ test('configured Redis outage returns 503/no-store before any GitHub GET', async
     assert.equal(calls, 2, 'only the Redis gate was queried');
   });
 });
+
+
+test('shared Redis counter remains authoritative after twenty per-IP calls on both routes', async () => {
+  const counters = new Map();
+  let githubCalls = 0;
+  let redisCalls = 0;
+  await withSharedGate(async (url, options) => {
+    if (String(url).endsWith('.upstash.io')) {
+      const script = JSON.parse(options.body);
+      const key = script[3];
+      const count = (counters.get(key) ?? 0) + 1;
+      counters.set(key, count);
+      redisCalls += 1;
+      return Response.json({ result: [count, 29] });
+    }
+    assert.match(String(url), /^https:\/\/api\.github\.com\/repos\/owner\/example\//);
+    githubCalls += 1;
+    if (String(url).includes('/actions/')) {
+      return Response.json({ total_count: 0, workflow_runs: [] });
+    }
+    return Response.json([]);
+  }, async () => {
+    // One shared Redis budget for both API routes. Unlike process-local throttles,
+    // Redis is consulted for the 21st request and rejects it authoritatively.
+    for (let i = 1; i <= 20; i += 1) {
+      const kind = i % 2 === 0 ? prsGET : actionsGET;
+      const path = i % 2 === 0 ? '/api/public-prs' : '/api/public-actions';
+      const response = await kind(request(path, '198.51.100.188'));
+      assert.equal(response.status, 200, `request #${i}`);
+    }
+    const twentyFirst = await prsGET(request('/api/public-prs', '198.51.100.188'));
+    assert.equal(twentyFirst.status, 429);
+    assert.equal(twentyFirst.headers.get('retry-after'), '29');
+    assert.equal(twentyFirst.headers.get('cache-control'), 'no-store');
+    assert.equal(redisCalls, 21, 'Redis is consulted even after twenty local requests');
+    assert.equal(githubCalls, 20, 'rejected request never reaches GitHub');
+    assert.equal(counters.size, 1);
+
+    const secondIp = await actionsGET(request('/api/public-actions', '198.51.100.189'));
+    assert.equal(secondIp.status, 200);
+    assert.equal(redisCalls, 22);
+    assert.equal(githubCalls, 21);
+    assert.equal(counters.size, 2);
+  });
+});
+
+test('a healthy shared backend is not shadowed by the old per-instance 20/min limiter', async () => {
+  let acceptedByRedis = 0;
+  let upstreamCalls = 0;
+  await withSharedGate(async (url) => {
+    if (String(url).endsWith('.upstash.io')) {
+      acceptedByRedis += 1;
+      return Response.json({ result: [1, 59] });
+    }
+    upstreamCalls += 1;
+    return Response.json({ total_count: 0, workflow_runs: [] });
+  }, async () => {
+    for (let i = 0; i < 23; i += 1) {
+      const response = await actionsGET(request('/api/public-actions', '192.0.2.231'));
+      assert.equal(response.status, 200, `distributed-backend acceptance ${i + 1}`);
+    }
+  });
+  assert.equal(acceptedByRedis, 23, 'all requests must consult Redis');
+  assert.equal(upstreamCalls, 23, 'local-only limiter must not reject when Redis allows');
+});
