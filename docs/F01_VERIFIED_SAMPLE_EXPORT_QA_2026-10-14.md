@@ -29,7 +29,7 @@ Two accessible browser-only actions — **Export CSV** and **Export JSON** — d
 | Chromium 143, **375px**, both sources HTTP 503 | Both export buttons disabled and no download emitted |
 | All four browser scenarios | Exactly **2 intercepted initial local API GETs**, **0 extra calls** for filtering/downloading; **0 JS exceptions**, **0 document overflow**, **0 automated axe WCAG 2/2.1 A/AA violations** (26–28 passing automated checks per fixture) |
 
-Browser fixtures were deterministic, client-intercepted data; their fake titles, run statuses and PR conflicts are **not** live statistics about the default GitHub repository. Browser scenarios used separate Chromium processes after a multi-scenario shared process closed following the first test; that shutdown is not evidence of an application error. Two additional harness corrections (GitHub `clear` source state vs `clean` visual bucket, and ISO fixture timestamp pinned to a local date) were made during testing before reporting the passing runs.
+Browser fixtures were deterministic, client-intercepted data; their fake titles, run statuses and PR conflicts are **not** live statistics about the default GitHub repository. Browser scenarios used separate Chromium processes after a multi-scenario shared process closed following the first test; that shutdown is not evidence of an application error. Two additional harness corrections (GitHub `clear` source state vs `clean` visual bucket, and the CSV test assertion changed to accept the browser's actual UTC date) were made during testing before reporting the passing runs.
 
 ## Safety and remaining acceptance
 
