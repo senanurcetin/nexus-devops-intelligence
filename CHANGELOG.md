@@ -29,6 +29,8 @@
 - [PR #11](https://github.com/senanurcetin/nexus-devops-intelligence/pull/11) handles GitHub secondary rate-limit 403 responses, including Retry-After and documented error messages, without retries; ordinary access-denied responses stay restricted.
 - Three offline API regressions bring the manual suite to **48/48**; production build, TypeScript, full npm audit and real GitHub HTTP smoke passed in a temporary cloud sandbox.
 - Added [human screen-reader acceptance checklist](docs/MANUAL_ACCESSIBILITY_ACCEPTANCE.md). Actual NVDA/VoiceOver verification and real screenshot artifact upload remain pending; the latter was blocked by secure file-transfer controls.
+- [PR #12](https://github.com/senanurcetin/nexus-devops-intelligence/pull/12) forwards safely validated 1–3600s Retry-After hints through both public APIs and the dashboard. Invalid/oversized headers are discarded, 429s remain no-store, and no automatic retries are introduced.
+- Nine offline regressions bring the suite to **57/57 passed**; manual clean install, TypeScript, production build, full npm audit (0 findings), and real-data localhost HTTP smoke passed.
 - No GitHub Actions or CircleCI jobs were configured or run.
 
 **Not yet released:** Platform-wide rate limiting, final manual cross-browser/screen-reader review and public preview deployment remain pending.
