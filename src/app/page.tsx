@@ -131,12 +131,13 @@ export default function NexusDeveloperPreview() {
     <main className="nexus-devops min-h-screen bg-slate-950 text-slate-100">
       <div className="mx-auto max-w-7xl px-5 py-10 sm:px-8 lg:py-14">
         <header className="mb-6 flex flex-wrap items-center justify-between gap-4">
-          <Link href="/"
-            className="flex items-center gap-2 text-sm font-semibold tracking-wide text-white">
-            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#4ea8ff]/15 text-[#4ea8ff]">
-              <Activity className="h-5 w-5" />
+          <Link href="/" aria-label="NEXUS Developer Intelligence home"
+            className="nexus-devops-brand inline-flex items-center gap-3 text-white">
+            <span className="nexus-devops-mark" aria-hidden="true">NX</span>
+            <span className="nexus-devops-lockup">
+              <span className="nexus-devops-company">NEXUS</span>
+              <span className="nexus-devops-sublabel">DEVOPS INTELLIGENCE</span>
             </span>
-            NEXUS <span className="font-normal text-slate-400">/ Developer Intelligence</span>
           </Link>
           <a href="https://github.com/senanurcetin/nexus-devops-intelligence" target="_blank" rel="noopener noreferrer"
             className="inline-flex items-center gap-2 text-sm text-slate-400 hover:text-[#4ea8ff]">
@@ -158,7 +159,7 @@ export default function NexusDeveloperPreview() {
               Find candidates that need investigation without triggering workflows or modifying code.
             </p>
           </div>
-          <div className="rounded-2xl border border-slate-800 bg-slate-900/75 p-5 text-sm leading-6 text-slate-400">
+          <div className="nexus-devops-evidence-note rounded-2xl border border-slate-800 bg-slate-900/75 p-5 text-sm leading-6 text-slate-400">
             <div className="mb-2 flex items-center gap-2 font-semibold text-slate-200">
               <GitBranch className="h-4 w-4 text-[#4ea8ff]" /> Limited public preview
             </div>

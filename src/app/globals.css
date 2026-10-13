@@ -99,3 +99,27 @@ body { background: #071829; color: #eff5ff; }
 @media(prefers-reduced-motion:reduce) {
   .nexus-devops-event { transition:none; }
 }
+
+/* Shared NEXUS typographic lockup, matching the portfolio's cover motif. */
+.nexus-devops-brand { text-decoration:none; flex-shrink:0; }
+.nexus-devops-mark {
+  display:inline-flex;align-items:center;justify-content:center;
+  width:41px;height:41px;border:1px solid rgba(145,195,255,.4);border-radius:11px;
+  background:linear-gradient(125deg,#256fb7,#243a7b);
+  color:#f2f8ff;font-size:.8rem;font-weight:870;letter-spacing:.025em;
+  box-shadow:0 0 0 4px rgba(78,168,255,.07);
+}
+.nexus-devops-lockup { display:flex;flex-direction:column;gap:5px; }
+.nexus-devops-company { font-size:.78rem;line-height:1;font-weight:850;letter-spacing:.21em;color:#8ac9ff; }
+.nexus-devops-sublabel { font-size:.62rem;line-height:1;font-weight:720;letter-spacing:.08em;color:#d0e4fb; }
+.nexus-devops-evidence-note {
+  background:linear-gradient(150deg,rgba(18,53,84,.78),rgba(8,31,54,.86));
+  border-color:#2d557a;
+  color:#b8d2ef;
+  box-shadow:inset 0 1px 0 rgba(184,216,255,.065);
+}
+@media(max-width:420px) {
+  .nexus-devops-mark { width:36px;height:36px; }
+  .nexus-devops-company { font-size:.7rem; }
+  .nexus-devops-sublabel { font-size:.55rem; }
+}
