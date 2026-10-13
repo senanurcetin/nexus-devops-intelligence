@@ -2,6 +2,14 @@
 
 **Status snapshot:** 13 October 2026. This file is the **current authoritative open-work register**; the older [cumulative work plan](NEXUS_WORK_PLAN_2026-10-13.md) records chronological decisions and may contain superseded unchecked tasks (for example, Preview Redis variables have since been configured). Check each external state again before executing.
 
+## F-03 shareable verified public repository selection — implemented and CI-free tested, 14 October 2026
+
+The dashboard now accepts **one strictly validated** `?repo=owner%2Frepository` query parameter. A missing value preserves the default public sample, a valid value starts **one Actions and one PR** bounded read-only request, while duplicate/invalid/overlong values produce a visible validation error and **zero API calls**. `Copy repository link` creates a canonical same-origin URL containing only the public name; on clipboard rejection a readonly selectable link is shown. Explicit repository changes support Back/Forward, including safe abort/clear on invalid history entries. Re-analyzing the same selected repository does not issue repeat GETs; panel Refresh is the deliberate refresh mechanism. **No stored samples, query-token exposure, new endpoint, paid feature or extra data collection.**
+
+Manual **155/155** tests, TypeScript/build, bundle **414,823 raw / 121,117 gzip** under review caps, npm audit **0 at inspection**, local public GitHub read-only HTTP smoke. Real Chromium **375px** valid URL/history, **375px** invalid duplicate/recovery, **1280px** default source, **375px** clipboard-denied fallback: exactly bounded intercepted API calls, **0** unexpected GETs/JS errors/document overflow/automated axe A/AA violations. [F-03 technical QA](F03_SHAREABLE_REPOSITORY_QA_2026-10-14.md).
+
+**GitHub only**: the owner-approved SSO Preview remains on earlier `599ced7`; Production on `74cd0e3`. **F-01/F-02/F-03 not deployed**. Real authenticated Preview visual acceptance, human device/Safari/SR testing, and independent Vercel multi-instance Redis issue #7 remain open. User deferred additional screenshots.
+
 ## F-02 source-backed investigation actions — implemented and locally QA'd, 14 October 2026
 
 F-02 adds explicit **GitHub record provenance, observed signal, triage severity rationale, next verification step, and copyable canonical source links** to the already bounded five-item investigation queue. `high` remains reserved for reported PR conflict / completed GitHub Actions failure; `medium` for reported blocked/unstable/behind; `info` for unknown merge state, which is explicitly **not** a verified blocker. No false review/check outcomes, root-cause AI or GitHub write actions. Clipboard denial shows an honest fallback without copying anything or issuing requests. [F-02 QA report](F02_EVIDENCE_FIRST_INVESTIGATIONS_QA_2026-10-14.md).
@@ -86,7 +94,7 @@ Manual **149/149 Node tests**, TS check and production build, JS bundle **412,00
 | --- | --- | --- |
 | **F-01** | **Implemented + offline QA passed (PR #42):** filtered current verified sample CSV/JSON, UTC receipt/export times, 10/5 bounds | CSV injection/file-name hardening and 0 new network calls verified in 144 tests + actual Chromium downloads. **Not yet deployed or human accepted.** |
 | **F-02** | **Implemented, GitHub-only:** canonical source provenance, observed GitHub signal, severity reasoning, verify-next guidance and copyable deep links | **149/149** tests + Chromium clipboard/fallback/axe passed; no new network or GitHub writes. [F-02 QA](F02_EVIDENCE_FIRST_INVESTIGATIONS_QA_2026-10-14.md). **Not deployed or human signed off.** |
-| **F-03** | Optional repository shareable view / remembered selection | Validate public `owner/repository` strictly; do not expose credentials, query arbitrary URLs or auto-repeat expensive requests |
+| **F-03** | **Implemented, GitHub-only:** validated `?repo=owner%2Frepo`, history Back/Forward, safe copied same-origin public link | **155/155** tests and Chromium direct/invalid/history/copy denial QA; 0 redundant GETs. [F-03 QA](F03_SHAREABLE_REPOSITORY_QA_2026-10-14.md). **Not deployed or human signed off.** |
 | **F-04** | Real per-PR checks and reviews / detailed workflow failure context | **Not currently in the API model.** Requires new GitHub REST calls with explicit anonymous rate-limit and Upstash budget review. Do not fabricate branch staleness, required-review status or failure root cause from `mergeable_state`. Can defer if no safe budget. |
 | **F-05** | Historical trends / cross-run reliability analytics | **Not supported by the existing 10-run sample.** Only add if a documented, budget-reviewed pagination/time-window source exists; otherwise preserve categorical sample composition and avoid a bogus trend line |
 

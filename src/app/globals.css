@@ -733,3 +733,26 @@ body { background: #071829; color: #eff5ff; }
 @media (prefers-reduced-motion: reduce) {
   .nexus-devops-queue-action { scroll-behavior: auto; }
 }
+
+/* F-03: low-cost, accessible share control; no server-side share endpoint. */
+.nexus-devops-share {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.nexus-devops-share-button {
+  border: 1px solid #4b7ba6;
+  background: rgba(40, 95, 145, .28);
+  color: #cce9ff;
+}
+.nexus-devops-share-button:hover:not(:disabled) {
+  border-color: #9ed5ff;
+  background: rgba(56, 117, 174, .45);
+}
+.nexus-devops-share-button:focus-visible {
+  outline: 2px solid #9edcff;
+  outline-offset: 3px;
+}
+.nexus-devops-share-button:disabled {
+  opacity: .45;
+  cursor: not-allowed;
+}

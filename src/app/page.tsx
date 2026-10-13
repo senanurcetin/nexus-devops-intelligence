@@ -14,6 +14,7 @@ import { isPublicActionsSample, isPublicPullSample } from '@/lib/nexus-panel-val
 import { filteredWorkflowRuns, workflowOutcome, workflowOutcomeCount, workflowOutcomes, type WorkflowFilter } from '@/lib/nexus-workflow-visuals';
 import { filteredPublicPulls, pullBucket, pullBucketCount, pullBuckets, type PullFilter } from '@/lib/nexus-pr-visuals';
 import { createPublicSampleExport, createSampleFilename, serializePublicSampleCsv } from '@/lib/nexus-public-sample-export';
+import { buildRepositoryShareUrl, readRepositoryLink } from '@/lib/nexus-repository-link';
 
 const DEFAULT_REPOSITORY = 'senanurcetin/ot-sentinel';
 
@@ -56,6 +57,9 @@ export default function NexusDeveloperPreview() {
   const [pullsReceivedAt, setPullsReceivedAt] = useState<string | null>(null);
   const loading = actionsLoading || pullsLoading;
   const [formError, setFormError] = useState('');
+  const [shareStatus, setShareStatus] = useState('');
+  const [shareFallback, setShareFallback] = useState('');
+  const activeRepositoryRef = useRef<string | null>(null);
   const [workflowFilter, setWorkflowFilter] = useState<WorkflowFilter>('all');
   const [pullFilter, setPullFilter] = useState<PullFilter>('all');
   const [exportError, setExportError] = useState('');
@@ -118,7 +122,10 @@ export default function NexusDeveloperPreview() {
 
   const load = useCallback((repo: string) => {
     const trimmed = repo.trim();
+    activeRepositoryRef.current = trimmed;
     setSelectedRepo(trimmed);
+    setShareStatus('');
+    setShareFallback('');
     setWorkflowFilter('all');
     setPullFilter('all');
     setExportError('');
@@ -129,26 +136,93 @@ export default function NexusDeveloperPreview() {
     refreshPanel('prs', trimmed);
   }, [refreshPanel]);
 
+  const clearInvalidSelection = useCallback(() => {
+    controllers.current.actions?.abort();
+    controllers.current.prs?.abort();
+    controllers.current = { actions: null, prs: null };
+    if (pullsSlowTimer.current !== null) clearTimeout(pullsSlowTimer.current);
+    pullsSlowTimer.current = null;
+    activeRepositoryRef.current = null;
+    setActions(emptyPanel());
+    setPulls(emptyPanel());
+    setActionsLoading(false);
+    setPullsLoading(false);
+    setPullsSlow(false);
+    setActionsReceivedAt(null);
+    setPullsReceivedAt(null);
+    setWorkflowFilter('all');
+    setPullFilter('all');
+    setCopyStatus(null);
+    setExportError('');
+    setShareStatus('');
+    setShareFallback('');
+    setRepository('');
+    setSelectedRepo('');
+    setFormError('Invalid repository in shared link. Enter a public owner/repository to continue.');
+  }, []);
+
   useEffect(() => {
-    load(DEFAULT_REPOSITORY);
+    function syncLocation() {
+      const selected = readRepositoryLink(window.location.search);
+      if (selected.kind === 'invalid') {
+        clearInvalidSelection();
+        return;
+      }
+      const nextRepo = selected.kind === 'valid' ? selected.repository : DEFAULT_REPOSITORY;
+      setRepository(nextRepo);
+      setFormError('');
+      setShareStatus('');
+      setShareFallback('');
+      // Browser Back/Forward over an unchanged selection must not consume
+      // another Redis origin admission or duplicate any GitHub GET.
+      if (activeRepositoryRef.current !== nextRepo) load(nextRepo);
+    }
+    syncLocation();
+    window.addEventListener('popstate', syncLocation);
     return () => {
+      window.removeEventListener('popstate', syncLocation);
       controllers.current.actions?.abort();
       controllers.current.prs?.abort();
+      activeRepositoryRef.current = null;
       if (pullsSlowTimer.current !== null) clearTimeout(pullsSlowTimer.current);
     };
-  }, [load]);
+  }, [load, clearInvalidSelection]);
 
   function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const nextRepo = repository.trim();
     try {
       parsePublicRepository(nextRepo);
+      const shareUrl = buildRepositoryShareUrl(window.location.href, nextRepo);
+      if (nextRepo !== activeRepositoryRef.current) {
+        window.history.pushState(null, '', shareUrl);
+        load(nextRepo);
+      } else {
+        // A second click on the same already-selected repository changes
+        // only the shareable URL; per-panel Refresh remains user-initiated.
+        window.history.replaceState(null, '', shareUrl);
+      }
+      setRepository(nextRepo);
+      setFormError('');
+      setShareStatus('');
+      setShareFallback('');
     } catch {
       setFormError('Enter a public GitHub repository as owner/repository.');
-      return;
     }
-    setFormError('');
-    void load(nextRepo);
+  }
+
+  async function copyRepositoryLink() {
+    if (!activeRepositoryRef.current) return;
+    const url = buildRepositoryShareUrl(window.location.href, activeRepositoryRef.current);
+    try {
+      if (!navigator.clipboard?.writeText) throw new Error('Clipboard unavailable');
+      await navigator.clipboard.writeText(url);
+      setShareStatus('Repository link copied. It opens a fresh public sample, not saved results.');
+      setShareFallback('');
+    } catch {
+      setShareStatus('Clipboard unavailable. Select and copy the link below.');
+      setShareFallback(url);
+    }
   }
 
   const validRuns = actions.data?.inspected_runs ?? 0;
@@ -291,7 +365,7 @@ export default function NexusDeveloperPreview() {
           <form onSubmit={onSubmit} aria-busy={loading} className="flex flex-col gap-3 sm:flex-row sm:items-end">
             <label className="flex-1 text-sm font-medium text-slate-300">
               Public GitHub repository
-              <input value={repository} onChange={event => { setRepository(event.target.value); setFormError(''); }}
+              <input value={repository} onChange={event => { setRepository(event.target.value); setFormError(''); setShareStatus(''); setShareFallback(''); }}
                 maxLength={200} required autoComplete="off" placeholder="owner/repository"
                 aria-invalid={Boolean(formError)} aria-describedby={formError ? 'repository-error' : 'repository-hint'}
                 className="mt-2 block w-full rounded-xl border border-[#365b81] bg-[#071829] px-4 py-3 text-base text-slate-100 outline-none focus:border-[#4ea8ff] focus:ring-2 focus:ring-[#4ea8ff]/20" />
@@ -305,8 +379,21 @@ export default function NexusDeveloperPreview() {
           {formError ? <p id="repository-error" className="mt-3 text-sm text-rose-300" role="alert">{formError}</p>
             : <p id="repository-hint" className="mt-3 text-xs text-slate-400">Use an owner/repository name; public repositories only.</p>}
           <p className="mt-3 text-xs text-slate-400" aria-live="polite">
-            {loading ? 'Reading public GitHub REST API records…' : `Selected: ${selectedRepo}`}
+            {loading ? 'Reading public GitHub REST API records…' : selectedRepo ? `Selected: ${selectedRepo}` : 'No repository selected.'}
           </p>
+          <div className="nexus-devops-share mt-4 flex flex-wrap items-center gap-3 border-t border-slate-700/60 pt-4">
+            <button type="button" disabled={!selectedRepo} onClick={() => { void copyRepositoryLink(); }}
+              className="nexus-devops-share-button inline-flex min-h-10 items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold">
+              <Copy aria-hidden="true" className="h-4 w-4" /> Copy repository link
+            </button>
+            <p className="min-w-0 flex-1 text-xs leading-5 text-slate-400">
+              Share only this public repository selection. Opening a link starts a new sample, not a saved report.
+            </p>
+          </div>
+          {shareStatus && <p role="status" aria-live="polite" className="mt-2 text-xs text-[#aedbff]">{shareStatus}</p>}
+          {shareFallback && <input aria-label="Shareable repository link" readOnly
+            value={shareFallback} onFocus={event => event.currentTarget.select()}
+            className="mt-2 block w-full min-w-0 rounded-lg border border-slate-600 bg-slate-950 px-3 py-2 text-xs text-slate-200" />}
         </section>
 
         <nav className="nexus-devops-command-nav" aria-label="Dashboard sections">
