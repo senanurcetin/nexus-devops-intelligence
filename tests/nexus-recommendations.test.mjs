@@ -48,3 +48,23 @@ test('limits suggestions to five and keeps high-priority confirmed failures firs
   assert.equal(list.length,5);
   assert.deepEqual(list.map(x=>x.key), ['pr-5','run-7','run-8','pr-2','pr-3']);
 });
+
+test('recommends timed-out and startup-failure runs, but not cancelled/skipped ones', () => {
+  const a = summarizePublicActions(repository, { total_count: 4, workflow_runs: [
+    run(20, 'timed_out'), run(21, 'startup_failure'), run(22, 'cancelled'), run(23, 'skipped'),
+  ] });
+  const list = recommendInvestigations(a, null);
+  assert.deepEqual(list.map(x => x.key), ['run-20', 'run-21']);
+  assert.match(list[0].title, /timed-out/i);
+  assert.match(list[0].explanation, /"timed_out"/);
+  assert.ok(list.every(x => x.severity === 'high'));
+});
+
+test('ongoing workflow runs never receive a completed-failure recommendation', () => {
+  const a = summarizePublicActions(repository, { total_count: 1, workflow_runs: [
+    { ...run(50, 'failure'), status: 'in_progress' },
+  ] });
+  assert.deepEqual(recommendInvestigations(a, null), []);
+  assert.equal(a.failed_runs, 0);
+  assert.equal(a.pending_runs, 1);
+});
