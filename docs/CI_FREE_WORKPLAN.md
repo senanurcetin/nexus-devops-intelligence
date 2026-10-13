@@ -13,6 +13,8 @@
 - [x] **Bağımsız paneller ve WAF 429 gösterimi:** [PR #8](https://github.com/senanurcetin/nexus-devops-intelligence/pull/8) birleştirildi. 6 yeni test dahil **39/39 başarılı**, TypeScript/build geçti ve full npm audit 0 bulgu gösterdi. Chromium 375/768/1440 üzerinde mocked Actions 503 + geciken PR 429 davranışı, axe A/AA 0 ihlal. [QA kanıtı](independent-panel-qa-2026-10-13.md).
 - [x] **Güvenlik HTTP başlıkları:** [PR #9](https://github.com/senanurcetin/nexus-devops-intelligence/pull/9) `main` dalına birleştirildi. 2 yeni test dahil **41/41 başarılı**, TypeScript/build/tam npm audit ve canlı veriye dayalı HTTP smoke testi geçti. CSP yalnızca frame/object/base politikalarını içeriyor; tam script/style CSP veya WAF etkinleştirmesi değildir.
 - [x] **Firefox tarayıcı kontrolü:** Firefox 157 + axe-core, 375/768/1440 genişliklerde HTTP 200, yatay taşma yok, form doğrulaması ve klavye odağı başarılı; otomatik WCAG A/AA **0 ihlal**. [Kanıt](firefox-browser-qa-2026-10-13.md). API yanıtları kontrollü 503 mock idi; gerçek API smoke testi ayrı.
+- [x] **Actions sonuç sınıflandırması:** [PR #10](https://github.com/senanurcetin/nexus-devops-intelligence/pull/10) ile `cancelled/skipped/neutral` bekleyen sayılmıyor, tamamlanmış `timed_out/startup_failure` hata sayılıyor. 4 yeni test dahil **45/45** başarılı, TypeScript/build/HTTP smoke geçti.
+- [x] **WebKit motoru:** WebKit 27.2 ve axe-core 4.11 ile 375/768/1440 px'de yatay taşma ve JavaScript hatası yok, klavye odağı ve form hataları doğru, otomatik WCAG A/AA **0 ihlal**. [Kanıt](webkit-browser-qa-2026-10-13.md).
 - [ ] **Yayın engelleri devam ediyor:** Vercel genelinde API hız sınırı ([issue #7](https://github.com/senanurcetin/nexus-devops-intelligence/issues/7)), kapsamlı manuel ekran okuyucu/cross-browser kontrolü ve manuel preview uçtan uca doğrulaması.
 - [x] **Tailwind CSS 4.3.3 geçişi:** [PR #6](https://github.com/senanurcetin/nexus-devops-intelligence/pull/6) birleştirildi; [issue #4](https://github.com/senanurcetin/nexus-devops-intelligence/issues/4) kapatıldı. Tam `npm audit` (geliştirme bağımlılıkları dahil) kontrol anında **0 bulgu** verdi; 33/33 test, typecheck ve build başarılı.
 
@@ -26,7 +28,7 @@
 | Durum sınıflandırması ve öneriler | KODLANDI | `src/lib/` |
 | Bağımlılık kilidi | TAMAM | `package-lock.json`, commit `4b87e6d` |
 | Temiz kurulum | BAŞARILI | Bulutta `npm ci --no-audit --no-fund`, 107 paket |
-| Unit testler | BAŞARILI | Son cloud çalıştırmasında 41/41 |
+| Unit testler | BAŞARILI | Son cloud çalıştırmasında 45/45 |
 | TypeScript + Next.js production build | BAŞARILI | Manuel `npm run typecheck` ve `npm run build` |
 | Gerçek HTTP smoke | BAŞARILI | Ana sayfa 200, hatalı input 400, 10 workflow ve 5 PR örneği |
 | GitHub Actions / CircleCI | KULLANILMADI | Depoda workflow config yok |
