@@ -550,3 +550,49 @@ body { background: #071829; color: #eff5ff; }
 @media (prefers-reduced-motion:reduce) {
   .nexus-devops-command-link, .nexus-devops-queue-item { transition: none; }
 }
+
+/* Q-04: preserve all verified GitHub evidence when titles and repositories are
+   long / unbroken. No clipping or artificial ellipses in primary source data. */
+.nexus-devops-queue-item,
+.nexus-devops-event,
+.nexus-devops-hero,
+.nexus-devops-insights,
+.nexus-devops-pr-insights,
+.nexus-devops-evidence,
+.nexus-devops-receipts,
+.nexus-devops-card,
+.nexus-devops-search {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.nexus-devops-queue-item > div,
+.nexus-devops-event > div,
+.nexus-devops-evidence > div,
+.nexus-devops-source-title {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.nexus-devops-source-title { white-space: normal; }
+.nexus-devops-run-actions,
+.nexus-devops-evidence-controls {
+  min-width: 0;
+  max-width: 100%;
+}
+/* Tile density adapts to available *text* size, including 200%/400% zoom. */
+.nexus-devops-run-sequence ol,
+.nexus-devops-pr-sequence ol {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 3rem), 1fr));
+}
+.nexus-devops-run-tick,
+.nexus-devops-pr-tick {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  text-align: center;
+}
+.nexus-devops-brand { min-width: 0; max-width: 100%; flex-shrink: 1; }
+.nexus-devops-mark { flex-shrink: 0; }
+.nexus-devops-lockup { min-width: 0; overflow-wrap: anywhere; }
+@media (max-width: 420px) {
+  .nexus-devops-company,
+  .nexus-devops-sublabel { overflow-wrap: anywhere; }
+}
