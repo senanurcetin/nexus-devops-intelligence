@@ -2,6 +2,12 @@
 
 **Status snapshot:** 13 October 2026. This file is the **current authoritative open-work register**; the older [cumulative work plan](NEXUS_WORK_PLAN_2026-10-13.md) records chronological decisions and may contain superseded unchecked tasks (for example, Preview Redis variables have since been configured). Check each external state again before executing.
 
+## F-01 client sample export — implemented and CI-free tested, 14 October 2026
+
+[PR #42](https://github.com/senanurcetin/nexus-devops-intelligence/pull/42) adds a **browser-only CSV/JSON download** of the *currently visible filtered verified* workflow/PR sample. Public `owner/repo`, source-specific response UTC receipt times, export time, 10/5 sample limits, inspected/exported counts and applied filters are explicit. A failed source is omitted; an empty but verified source retains metadata. CSV formula cells and filenames are sanitized, source fields are whitelisted, no API route or paid dependency added. **Manual QA: 144/144 Node tests**, TS/build, `npm run inspect:budget` **407,837 raw / 119,283 gzip bytes** (within existing caps), npm audit 0 at check and read-only GitHub local HTTP smoke. Chromium 143 at 375px checked real CSV/JSON downloads for verified/filtered, partial-error, verified empty and both-error cases; **0 unexpected GETs**, document overflow, browser errors or automatic axe A/AA violations. [QA runbook](F01_VERIFIED_SAMPLE_EXPORT_QA_2026-10-14.md).
+
+**Release status: GitHub only.** The existing SSO Preview deployment `dpl_Beyxk5vGuDcvx5XDD4gVdsbUX9tg` still serves **`599ced7`**, and Production still serves old **`74cd0e3`**, so neither shows this feature. **No redeployment is authorized by merging PR #42.** R-04 current authenticated Preview acceptance, R-05 human accessibility and R-06 shared Redis origin risk remain open. User deferred additional screenshot collection.
+
 ## Current release-control update — 14 October 2026
 
 **R-01: DONE (metadata and exact-source offline testing), but deployment NOT authorized.** Reviewed proposed exact candidate `599ced76605c25161b182b2d5bfbadbd091bfb53`; a disposable Node 24 Sandbox checked that exact SHA and passed **135/135 Node tests, TypeScript, production build, local JS budget guard (401,241 raw/117,432 gzip), npm audit 0 at check, and read-only public GitHub/local HTTP smoke**. This was **not** a protected Preview or Production deployment. Current older Production `74cd0e3` and protected Preview `e745c61` remain unchanged.
@@ -72,7 +78,7 @@
 
 | ID | Feature | Correctness guard / cost gate |
 | --- | --- | --- |
-| **F-01** | Client-side **CSV/JSON export** of the *currently verified sample*, including repository and retrieval-time metadata | Sanitize filenames/cells (spreadsheet formula injection), never export tokens; clearly label at most 10 runs / 5 PRs; **0 new network calls** |
+| **F-01** | **Implemented + offline QA passed (PR #42):** filtered current verified sample CSV/JSON, UTC receipt/export times, 10/5 bounds | CSV injection/file-name hardening and 0 new network calls verified in 144 tests + actual Chromium downloads. **Not yet deployed or human accepted.** |
 | **F-02** | Improved investigation workflows: source provenance, severity explanation and copyable GitHub deep links | Deterministic descriptions only; keep sample/unknown distinctions and no writes to GitHub |
 | **F-03** | Optional repository shareable view / remembered selection | Validate public `owner/repository` strictly; do not expose credentials, query arbitrary URLs or auto-repeat expensive requests |
 | **F-04** | Real per-PR checks and reviews / detailed workflow failure context | **Not currently in the API model.** Requires new GitHub REST calls with explicit anonymous rate-limit and Upstash budget review. Do not fabricate branch staleness, required-review status or failure root cause from `mergeable_state`. Can defer if no safe budget. |
