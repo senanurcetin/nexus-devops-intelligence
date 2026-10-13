@@ -270,3 +270,45 @@ body { background: #071829; color: #eff5ff; }
   .nexus-devops-run-tick,.nexus-devops-filter { transition: none; }
   .nexus-devops-run-tick:hover { transform: none; }
 }
+
+/* PR sample analytics: categorical, source-linked statuses instead of a speculative risk score. */
+.nexus-devops-pr-insights {
+  border: 1px solid #345c81;
+  background:
+    radial-gradient(ellipse at 4% 10%, rgba(111,173,236,.13), transparent 44%),
+    linear-gradient(148deg, #102e4b 0%, #0c223b 58%, #101d34 100%);
+  box-shadow: 0 20px 44px rgba(0,7,22,.21), inset 0 1px 0 rgba(197,224,255,.055);
+}
+.nexus-devops-pr-bar {
+  display:flex;overflow:hidden;width:100%;height:18px;
+  border:1px solid rgba(160,197,234,.17);border-radius:999px;
+  background:rgba(4,13,26,.8);gap:3px;
+}
+.nexus-devops-pr-fill { display:block;height:100%;min-width:0; }
+.nexus-devops-pr-fill--conflict { background:#f58398; }
+.nexus-devops-pr-fill--restrictions { background:#f6bd75; }
+.nexus-devops-pr-fill--unverified { background:#a6b8d6; }
+.nexus-devops-pr-fill--clean { background:#60dbae; }
+.nexus-devops-pr-fill--draft { background:#7998c0; }
+.nexus-devops-pr-dot { display:inline-block;width:8px;height:8px;flex:0 0 8px;border-radius:50%; }
+.nexus-devops-pr-sequence {
+  border:1px solid #2e506e;border-radius:14px;padding:17px;background:rgba(4,18,33,.42);
+}
+.nexus-devops-pr-tick {
+  display:flex;align-items:center;justify-content:center;min-height:46px;
+  width:100%;min-width:0;overflow:hidden;text-overflow:ellipsis;
+  border:1px solid rgba(231,240,251,.22);border-radius:9px;
+  background:rgba(26,63,91,.57);font-size:.72rem;font-weight:760;
+  font-variant-numeric:tabular-nums;
+  transition:transform .16s,border-color .16s;
+}
+.nexus-devops-pr-tick:hover { transform:translateY(-2px);border-color:#e1f0ff; }
+.nexus-devops-pr-tick--conflict { color:#ffc7d1;border-bottom:3px solid #f58398; }
+.nexus-devops-pr-tick--restrictions { color:#ffddae;border-bottom:3px solid #f6bd75; }
+.nexus-devops-pr-tick--unverified { color:#dbe5f8;border-bottom:3px solid #a6b8d6; }
+.nexus-devops-pr-tick--clean { color:#c2ffe3;border-bottom:3px solid #60dbae; }
+.nexus-devops-pr-tick--draft { color:#d1e2fc;border-bottom:3px solid #7998c0; }
+@media(prefers-reduced-motion:reduce) {
+  .nexus-devops-pr-tick { transition:none; }
+  .nexus-devops-pr-tick:hover { transform:none; }
+}
