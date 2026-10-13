@@ -1,0 +1,67 @@
+# NEXUS DevOps Intelligence — Öncelikli Çalışma Listesi
+
+**Güncelleme:** 13 Ekim 2026  
+**Repo:** https://github.com/senanurcetin/nexus-devops-intelligence  
+**Amaç:** NEXUS'u bağımsız, güvenli, mobil uyumlu ve paylaşılabilir salt okunur bir GitHub DevOps Intelligence MVP'sine dönüştürmek.
+
+> Çalışma modeli: **GitHub Actions, CircleCI veya başka hosted CI kullanılmayacak.** Kullanıcının bilgisayarına kurulum istenmeyecek. Kod GitHub üzerinden; testler gerekirse kısa süreli, manuel başlatılan bulut ortamında. Vercel'de Git-push auto-deploy etkinleştirilmeyecek.
+
+## Doğrulanmış başlangıç noktası
+
+- [x] Bağımsız GitHub deposu; Ops-Copilot'dan ayrı.
+- [x] Next.js 15.5.27, Tailwind CSS 4.3.3, npm lockfile ve read-only public GitHub Actions/PR API.
+- [x] Birim, adapter, route-handler ve güvenlik başlığı testleri: **41/41 başarılı** (son manuel cloud çalışması).
+- [x] `npm ci`, TypeScript, Next.js production build ve tam `npm audit` (kontrol anında **0 bulgu**) başarılı.
+- [x] Gerçek GitHub verileriyle manuel HTTP smoke kontrolü; PR/Actions endpoint hata durumları.
+- [x] Chromium ve Firefox'ta 375/768/1440px temel responsive, form ve klavye odak kontrolleri; axe-core otomatik WCAG A/AA kontrollerinde test edilen akışlar için **0 ihlal**.
+- [x] [PR #9](https://github.com/senanurcetin/nexus-devops-intelligence/pull/9): anti-framing, MIME sniffing, referrer/permissions ve sınırlı CSP güvenlik başlıkları.
+- [x] GitHub'da **CI workflow dosyası yok**; hiçbir CI koşulu aranmayacak.
+- [ ] **Vercel canlı/preview deployment yok.** Halka açık URL doğrulanmadı.
+
+Bu kontrol sonuçları manuel test edilen commit'lere aittir. Otomatik erişilebilirlik raporu tam WCAG sertifikası, npm audit sonucu ise sürekli güvenlik garantisi değildir.
+
+## P0 — Paylaşılabilir MVP'nin yayın kapıları
+
+| Sıra | ID | İş | Kabul / bitiş kriteri | Takip |
+| --- | --- | --- | --- | --- |
+| 01 | SEC-01 | Vercel Hobby WAF fiyat/kota onayı, gerçek mevcut kullanım kontrolü | İlk rate-limit kuralının fiyatlandırma onayı incelenecek; izin/ücret riski kayda alınacak. **Onaysız aktivasyon yok** | [#7](https://github.com/senanurcetin/nexus-devops-intelligence/issues/7) |
+| 02 | SEC-02 | Tek WAF rate-limit kuralı ile iki anonim API'yi koruma | Hem `/api/public-actions` hem `/api/public-prs` kapsamda; normal istekler geçiyor, yoğun trafikte 429; bölge bazlı sayaç sınırlaması ve rollback belgelenmiş | [#7](https://github.com/senanurcetin/nexus-devops-intelligence/issues/7) |
+| 03 | QA-01 | Ekran okuyucu ve kapsamlı klavye akışı | NVDA/VoiceOver ile repo arama, hata/boş/yükleniyor/sonuç durumları anlamlı okunuyor; klavye tuzağı yok, odak sırası doğrulandı | [#5](https://github.com/senanurcetin/nexus-devops-intelligence/issues/5) |
+| 04 | QA-02 | Tarayıcılar arası son kalite kontrolü | Chromium ve Firefox geçmiş testleri korunacak; imkan varsa Safari/WebKit ve gerçek ekran görüntüsü üzerinden görsel denetim; açık önemli hata yok | [#5](https://github.com/senanurcetin/nexus-devops-intelligence/issues/5) |
+| 05 | REL-01 | Manuel, commit-SHA'ya bağlı Vercel preview oluşturma | Ayrı NEXUS projesi, Git auto-deploy kapalı; proje erişim/SSO koruması ve hesap kotaları gözden geçirilmiş; kaynak SHA kaydedilmiş | [Yayın prosedürü](vercel-hobby-waf-release-runbook.md) |
+| 06 | REL-02 | Preview URL üzerinde uçtan uca test | 200 ana sayfa; 400 hatalı repo; gerçek Actions ve PR örneği; 404/429/5xx kullanıcı mesajı; WAF, cache ve güvenlik başlıkları; mobil/masaüstü tarayıcı | Bu liste |
+| 07 | REL-03 | v0.1.0 release gate | Güncel test/typecheck/build/audit/smoke, kanıt linkleri, rollback, README ve CHANGELOG tamam; yalnızca doğrulanan sürümü etiketle | Bu liste |
+
+**Önemli:** SEC-01 ve SEC-02 etkinleştirilmeden veya koruma stratejisi başka şekilde doğrulanmadan uygulamayı geniş halk erişimine açma. Preview oluşturmak production yayın değildir. Vercel SSO korumasını sırf paylaşmak için sessizce kapatma.
+
+## P1 — Ürün kalitesi ve operasyonel dayanıklılık
+
+| Sıra | ID | İş | Kabul / bitiş kriteri |
+| --- | --- | --- | --- |
+| 08 | API-04 | Trafik altında GitHub anonim rate-limit davranışı | 403 quota=0, 429, timeout, abort, 503 senaryoları; kontrollü retry/backoff ve kullanıcı dostu durum; gereksiz fan-out yok |
+| 09 | API-05 | Eşzamanlı istek koruması ve kapsam belgesi | Process-local 12 unique inflight sınırının ve WAF bölgesel sayaçlarının sınırları net; cache/HTTP hata davranışı doğrulanmış |
+| 10 | UX-05 | Veri kaynağı ve örneklem şeffaflığı | Actions (en çok 10 run) / PR (en çok 5) açıkça örneklem; 'faturalanan CI dakikası' veya 'kesin merge-ready' gibi iddialar yok |
+| 11 | UX-06 | Boş / hata / yavaş bağlantı / repo değiştirme akışları | İki panel bağımsız; stale result gösterilmiyor; retry ve ekran okuyucu anonsları test edilmiş |
+| 12 | QA-03 | Kalıcı manuel QA prosedürü ve rapor | `npm ci`, `npm test`, `npm run typecheck`, `npm run build`, `npm audit`, `npm run smoke:http` tek belgede; hiçbir hosted CI tetiklenmiyor |
+| 13 | OBS-01 | Operasyonel gözlemlenebilirlik planı | Token/PII/log sızıntısı olmadan hata yüzdeleri, GitHub 429/5xx oranı, Vercel istek kotası için ölçüm/kontrol prosedürü |
+| 14 | DOC-01 | README, güvenlik politikası ve ürün ekran görüntüleri | Kullanıcı kurulum zorunluluğu yok; gerçek doğrulanmış ekran görüntüleri; MVP sınırları, destek ve güvenlik bildirimleri belgeli |
+
+## P2 — MVP sonrasına bırakılacak genişleme
+
+- [ ] **EXT-01** — Sadece gerekli izinlerle private repository desteği için GitHub App; kullanıcı yetkilendirmesi ve gizli veri güvenliği.
+- [ ] **EXT-02** — CircleCI pipeline **çalıştırmadan** sadece veri okuyan API entegrasyonu; ayrı ve onaylı.
+- [ ] **EXT-03** — GitHub Actions hata trendleri, geçmiş metrikler ve örneklem kapsamı; doğru saklama/retention tasarımı.
+- [ ] **EXT-04** — Kanıt bağlantılı AI hata inceleme önerileri; log redaksiyonu, doğrulanabilirlik ve maliyet limiti.
+- [ ] **EXT-05** — Portfolyo/ürün sayfası, ürün analitiği, kullanıcı geri bildirimi ve ancak talep doğrulanınca ticari paketleme.
+
+## Çalışma sırası / işleme kuralı
+
+1. Başlangıç için **SEC-01** fiyat/kota kontrolleri ile **QA-01** manuel erişilebilirlik denetiminin hazırlığını paralel yürüt.
+2. Kullanıcı veya platform onayı gerektirmeyen test, belge, güvenlik düzeltmesi gibi görevleri GitHub feature branch → manuel cloud test → PR → doğrulanmış merge akışıyla ilerlet.
+3. WAF etkinleştirme ve paylaşılabilir deployment gibi **hesapta kullanım/ücret/erişim etkisi olan** işleri ancak gerçek fiyatlandırma ve kota koşulları netleştikten sonra uygula.
+4. Her tamamlanan satırda gerçek test kanıtı, commit/PR ve varsa issue numarasını kaydet; başlıktaki test sayısını yeni doğrulama sonuçlarına göre güncelle.
+5. CI dosyası ekleme, CI job çalıştırma, Git-push auto-deploy açma, Ops-Copilot dosyalarını değiştirme veya kullanıcıdan PC kurulumu isteme.
+
+## MVP için tamamlandı tanımı
+
+**Güvenli paylaşılabilir preview:** P0 görevleri doğrulanmış, Vercel maliyet ve rate-limit koruması incelenmiş, canlı URL'de her iki API ile gerçek kullanıcı akışı çalışıyor; uygulama, commit SHA ve değişiklik kaydı eşleşiyor. `v0.1.0` etiketini yalnızca bu kapılar tamamlandıktan sonra oluştur.
