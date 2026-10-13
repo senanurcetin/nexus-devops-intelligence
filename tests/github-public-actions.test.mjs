@@ -48,3 +48,31 @@ test('rejects inconsistent totals, duplicate run IDs and invalid timestamps', ()
     { total_count: 1, workflow_runs: [workflow(0)] },
   ]) assert.throws(() => summarizePublicActions(repo, data));
 });
+
+test('completed cancelled, skipped and neutral outcomes are not pending runs', () => {
+  const items = [
+    workflow(1, 'success'), workflow(2, 'failure'), workflow(3, 'timed_out'),
+    workflow(4, 'startup_failure'), workflow(5, 'cancelled'), workflow(6, 'skipped'),
+    workflow(7, 'neutral'), { ...workflow(8, null), status: 'queued' },
+    { ...workflow(9, null), status: 'in_progress' },
+    { ...workflow(10, null), status: 'waiting' },
+  ];
+  const result = summarizePublicActions(repo, { total_count: 10, workflow_runs: items });
+  assert.equal(result.inspected_runs, 10);
+  assert.equal(result.successful_runs, 1);
+  assert.equal(result.failed_runs, 3);
+  assert.equal(result.pending_runs, 3);
+  assert.equal(result.other_completed_runs, 3);
+  assert.equal(result.successful_runs + result.failed_runs + result.pending_runs +
+    result.other_completed_runs, result.inspected_runs);
+});
+
+test('completed runs without a conclusion are unknown outcomes, not pending', () => {
+  const r = summarizePublicActions(repo, {
+    total_count: 2,
+    workflow_runs: [workflow(1, null), { ...workflow(2, null), status: 'requested' }],
+  });
+  assert.equal(r.pending_runs, 1);
+  assert.equal(r.other_completed_runs, 1);
+  assert.equal(r.failed_runs, 0);
+});
