@@ -273,7 +273,8 @@ test('PRs: multiple detail limits select the longest safe Retry-After', async ()
   const result = await loadPublicPulls(repo, fetcher);
   assert.equal(result.status, 429);
   assert.equal(result.retryAfterSeconds, 240);
-  assert.equal(calls.length, 4);
+  assert.equal(calls.length, 3, 'no third detail is scheduled after a quota response');
+  assert.ok(!calls.some(call => call.url.endsWith('/pulls/8')));
 });
 
 test('PRs: all detail wait hints invalid return 429 without forwarding a header', async () => {
