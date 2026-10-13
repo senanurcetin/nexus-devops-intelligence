@@ -15,6 +15,7 @@ export type PublicActionsSummary = {
   successful_runs: number;
   failed_runs: number;
   pending_runs: number;
+  other_completed_runs: number;
   runs: PublicWorkflowRun[];
   scope_note: string;
 };
@@ -30,6 +31,14 @@ export function parsePublicRepository(value: unknown): [string, string] {
   }
   return parts;
 }
+
+/** GitHub conclusions that definitively indicate a failed workflow run. */
+export function isConfirmedWorkflowFailure(conclusion: string | null): boolean {
+  return conclusion === 'failure' || conclusion === 'timed_out' ||
+    conclusion === 'startup_failure';
+}
+
+const IN_PROGRESS_STATUSES = new Set(['queued', 'in_progress', 'requested', 'waiting', 'pending']);
 
 export function summarizePublicActions(repository: string, payload: unknown): PublicActionsSummary {
   parsePublicRepository(repository);
@@ -70,16 +79,19 @@ export function summarizePublicActions(repository: string, payload: unknown): Pu
       html_url: expected,
     };
   });
-  const failed = runs.filter(r => r.conclusion === 'failure').length;
-  const successful = runs.filter(r => r.conclusion === 'success').length;
+  const failed = runs.filter(r => r.status === 'completed' && isConfirmedWorkflowFailure(r.conclusion)).length;
+  const successful = runs.filter(r => r.status === 'completed' && r.conclusion === 'success').length;
+  const pending = runs.filter(r => IN_PROGRESS_STATUSES.has(r.status)).length;
+  const otherCompleted = runs.length - failed - successful - pending;
   return {
     repository,
     total_matching_runs: data.total_count as number,
     inspected_runs: runs.length,
     successful_runs: successful,
     failed_runs: failed,
-    pending_runs: runs.length - successful - failed,
+    pending_runs: pending,
+    other_completed_runs: otherCompleted,
     runs,
-    scope_note: 'Public workflows only. A sample of up to 10 recent runs; not billed minutes, monthly costs or a full historical audit.',
+    scope_note: 'Public workflows only. Sample of up to 10 runs; completed cancelled/skipped/neutral runs are not pending or failures. Not billed minutes, monthly costs or a full historical audit.',
   };
 }
