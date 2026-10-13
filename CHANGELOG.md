@@ -2,6 +2,8 @@
 
 ## Unreleased — 13 October 2026
 
+- [PR #21](https://github.com/senanurcetin/nexus-devops-intelligence/pull/21) corrects the PRs needing inspection metric to include unknown merge states without inventing conflicts or counting drafts/clean PRs. Two additional unit tests plus Next.js route assertion; manual **78/78** tests, TypeScript/build, audit (0 findings) and real GitHub HTTP smoke passed. Controlled Chromium 375/1440px displayed the correct card value; axe A/AA 0 automated violations, 26 passes/viewport. [QA record](docs/pr-inspection-count-browser-qa-2026-10-13.md).
+
 - Established a standalone public Next.js repository independent from Ops-Copilot.
 - Implemented bounded anonymous read-only GitHub Actions and PR APIs, and evidence-linked investigation recommendations.
 - Committed `package-lock.json`; verified a clean cloud installation using `npm ci`.
