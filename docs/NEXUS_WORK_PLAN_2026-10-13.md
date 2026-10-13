@@ -89,7 +89,7 @@
 
 ## Immediate next execution
 
-1. Confirm Upstash Free / $0 and command allowance without viewing secret values.
+1. **Free Tier confirmed** on owner console (EU-CENTRAL-1). Monthly consumption/remaining command allowance is still unverified; do not require secrets or upgrades.
 2. Verify whether protected preview of pinned `e647bae` is available on the Hobby project. If not, document the blocker and prepare QA evidence without bypassing SSO.
 3. Conduct bounded genuine cross-instance Redis attribution test once the **correct code** is deployed with approval.
 4. Update issue #7 with measured evidence; begin human/real-device items from issue #5.
@@ -102,7 +102,8 @@
 - [x] Vercel recent runtime error summary reported no clusters for the past 24 hours at inspection. Do not mistake this for proof of zero individual application errors or availability SLA.
 - [x] Implemented and merged [PR #26](https://github.com/senanurcetin/nexus-devops-intelligence/pull/26), application-only release diagnostics: `X-Nexus-Rate-Limit-Source` distinguishes `shared-redis` from `local-fallback`, `github-upstream` and `shared-redis-unavailable`. `X-Nexus-Rate-Limit-Mode` marks the currently selected origin admission layer on responses. No tokens, IPs, keys, counter values or paid dependencies are exposed. No Vercel deployment triggered.
 - [x] CI-free temporary Vercel Sandbox checks for PR #26: **90/90 Node tests**, TS check, production build, full npm audit (**0 findings** at time of execution), read-only GitHub HTTP smoke. The sandbox was ephemeral.
-- [ ] **Owner action — confirm Upstash Free $0 usage/plan:** The Vercel integration has no Upstash account usage connector, so direct account billing, commands consumed and storage usage cannot be verified by reading Vercel env variable metadata. Use redacted Upstash billing/usage dashboard, **never** a secret token.
+- [x] **Upstash Free plan confirmed by owner-visible console:** Upstash database screen explicitly displays `Free Tier` and region `EU-CENTRAL-1`; `Upgrade` is the optional paid-plan action. **Do not click Upgrade**. This is evidence of plan selection, not independently verified invoices, quota consumption or auto-upgrade settings; no billing/account secrets were accessed.
+- [ ] **Actual Upstash consumption still unknown:** Commands used this month, storage usage, and remaining quota were not displayed on that screen. Inspect only when the dashboard provides safe aggregate figures; this is not a blocker for CI-free pre-release code/preview preparation.
 - [ ] **Preview credentials:** Any Redis-capable protected preview requires owner-managed **Preview-scoped** sensitive environment variables (or an approved isolated Free test database). Never copy production secrets into Preview without owner review. No preview deployment has been initiated.
 - [ ] **Manual protected release approval:** Current `main` contains the Redis-authoritative and provenance fixes, but current production still runs `74cd0e3`. Do not deploy automatically or use the production alias merely to bypass absent preview readiness. After approval, manually release a precisely identified and revalidated commit, test on the actual deployment and preserve the previous deployment ID for rollback.
 
