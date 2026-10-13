@@ -19,7 +19,8 @@
 - The list can require up to **five** additional, bounded detail requests for non-draft PRs. If **any** detail request returns a GitHub primary/secondary rate-limit indication (403/429), the **whole PR endpoint returns 429/no-store** instead of silently treating that quota failure as an ordinary unknown merge status.
 - If several details report valid numerical `Retry-After` values, the API exposes the **largest** safe 1–3600-second wait, never arbitrary GitHub error text or invalid headers.
 - Individual **non-rate-limit** detail errors (503, timeout, invalid payload) stay **unknown**. A failed detail must never be reported as merge-ready.
-- The bounded detail fan-out still starts requests concurrently; this change **does not claim to prevent further concurrent detail fetches** after a rate limit is discovered or replace Vercel WAF enforcement.
+- Non-draft detail requests now use a **two-worker pool**; no more than **two** are active at once, and there are **at most five** total when no limit is reported. Once any worker observes a quota result, it stops taking new PRs. The other request already in flight is allowed to finish so its safe `Retry-After` value can be considered. The pool does not cancel an already-started GET or prevent requests that began **before** the quota response was observed.
+- This conservative approach can add latency for slow upstream responses (up to three waves of detail requests) and is **not** a cross-instance rate limiter or a replacement for Vercel WAF.
 
 ## Cache and privacy
 
@@ -31,7 +32,7 @@
 ## Manual verification
 
 - `npm ci --no-audit --no-fund` — passed
-- `npm test` — **57/57 passed**, including nine new tests for bounded Retry-After parsing, Actions and PR response handling, Next.js route headers, and the browser panel adapter
+- `npm test` — **67/67 passed**, including three new deterministic tests for the maximum two concurrent detail GETs, stopping unscheduled work after an observed quota response, and choosing the longest safe wait from already in-flight responses
 - `npm run typecheck`, `npm run build` — passed
 - Full `npm audit --json` — **0 findings at verification time**
 - Production localhost `npm run smoke:http` — passed using live public GitHub samples
