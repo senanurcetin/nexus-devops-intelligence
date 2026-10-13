@@ -43,11 +43,13 @@ export default function NexusDeveloperPreview() {
   const [pulls, setPulls] = useState<Panel<PublicPullSummary>>(emptyPanel);
   const [actionsLoading, setActionsLoading] = useState(false);
   const [pullsLoading, setPullsLoading] = useState(false);
+  const [pullsSlow, setPullsSlow] = useState(false);
   const loading = actionsLoading || pullsLoading;
   const [formError, setFormError] = useState('');
   const controllers = useRef<{ actions: AbortController | null; prs: AbortController | null }>({
     actions: null, prs: null,
   });
+  const pullsSlowTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const refreshPanel = useCallback((kind: 'actions' | 'prs', repo: string) => {
     controllers.current[kind]?.abort();
@@ -65,14 +67,26 @@ export default function NexusDeveloperPreview() {
           if (controllers.current.actions === next && !next.signal.aborted) setActionsLoading(false);
         });
     } else {
+      // An optional slow-load hint is tied to this request generation. Do not
+      // carry a timer or stale waiting message over when switching repositories.
+      if (pullsSlowTimer.current !== null) clearTimeout(pullsSlowTimer.current);
+      setPullsSlow(false);
       setPullsLoading(true);
       setPulls(emptyPanel());
+      pullsSlowTimer.current = setTimeout(() => {
+        if (controllers.current.prs === next && !next.signal.aborted) setPullsSlow(true);
+      }, 2500);
       void readPublicPanel<PublicPullSummary>(`/api/public-prs?${params}`, next.signal)
         .then(result => {
           if (controllers.current.prs === next && !next.signal.aborted) setPulls(result);
         })
         .finally(() => {
-          if (controllers.current.prs === next && !next.signal.aborted) setPullsLoading(false);
+          if (controllers.current.prs === next && !next.signal.aborted) {
+            if (pullsSlowTimer.current !== null) clearTimeout(pullsSlowTimer.current);
+            pullsSlowTimer.current = null;
+            setPullsSlow(false);
+            setPullsLoading(false);
+          }
         });
     }
   }, []);
@@ -89,6 +103,7 @@ export default function NexusDeveloperPreview() {
     return () => {
       controllers.current.actions?.abort();
       controllers.current.prs?.abort();
+      if (pullsSlowTimer.current !== null) clearTimeout(pullsSlowTimer.current);
     };
   }, [load]);
 
@@ -255,7 +270,10 @@ export default function NexusDeveloperPreview() {
                 </a>
               </div>
             </div>
-            <span role="status" className="sr-only">{pulls.data ? `Loaded ${pulls.data.inspected_prs} pull requests.` : pullsLoading ? 'Loading pull requests.' : ''}</span>
+            <span role="status" className="sr-only">{pulls.data ? `Loaded ${pulls.data.inspected_prs} pull requests.` : pullsSlow ? 'Pull request checks are taking longer than usual. GitHub requests are limited to two at a time.' : pullsLoading ? 'Loading pull requests.' : ''}</span>
+             {pullsSlow && pullsLoading && <p className="mx-5 mt-4 rounded-lg border border-amber-500/30 bg-amber-400/10 px-4 py-3 text-sm text-amber-200">
+               Still waiting for GitHub PR details. NEXUS checks at most two at a time to reduce API load; the Actions panel remains usable.
+             </p>}
             {pulls.error && <p className="m-5 flex gap-2 rounded-xl bg-rose-950/30 p-4 text-sm text-rose-300" role="alert">
               <AlertCircle className="h-4 w-4 shrink-0" />{pulls.error}</p>}
             <ul className="divide-y divide-slate-800/80">
