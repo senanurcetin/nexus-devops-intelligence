@@ -641,3 +641,28 @@ body { background: #071829; color: #eff5ff; }
     min-height: 40px;
   }
 }
+
+/* Extreme text-only zoom: prevent grid items and small status pills from
+   imposing an intrinsic minimum width on the 320 CSS-pixel page. */
+@media (max-width: 640px) {
+  .nexus-devops-hero {
+    grid-template-columns: minmax(0, 1fr);
+    min-width: 0;
+    max-width: 100%;
+  }
+  .nexus-devops-hero > div {
+    min-width: 0;
+    max-width: 100%;
+  }
+  .nexus-devops-eyebrow { display: block; overflow-wrap: anywhere; }
+  .nexus-devops-hero .inline-flex {
+    max-width: 100%;
+    flex-wrap: wrap;
+    white-space: normal;
+  }
+  .nexus-devops-hero-facts > span {
+    max-width: 100%;
+    min-width: 0;
+    flex-wrap: wrap;
+  }
+}
