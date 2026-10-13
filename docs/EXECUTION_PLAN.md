@@ -6,13 +6,13 @@
 
 ## Kesinleşmiş başlangıç durumu
 
-- [x] Son manuel bulut kontrolünde **45/45 otomatik test başarılı**, TypeScript ve Next.js production build başarılı.
+- [x] Son manuel bulut kontrolünde **48/48 otomatik test başarılı**, TypeScript ve Next.js production build başarılı.
 - [x] Son tam `npm audit --json` raporunda **0 bulgu**. Bu, gelecekteki açıkları garanti etmez.
 - [x] Gerçek public GitHub Actions ve PR REST API için localhost HTTP smoke başarılı.
 - [x] Chromium, Firefox ve Playwright WebKit motorlarında **375/768/1440 px** için temel responsive, form, klavye odağı ve otomatik axe-core WCAG A/AA testleri başarılı. Bu, tam WCAG veya ekran okuyucu onayı değildir.
 - [x] Workflow sonuç sınıflandırma düzeltmesi [PR #10](https://github.com/senanurcetin/nexus-devops-intelligence/pull/10) üzerinden merge edildi.
 - [ ] **Kamuya açık Vercel deployment yok; WAF rate-limit etkinleştirilmedi.** Aktif yayın hazırlığı bu iki durumu karıştırmamalıdır.
-- [ ] Son WebKit gerçek veri ekran görüntüleri bulutta alındı fakat geçici oturum sona ermeden GitHub'a aktarılmadı; repo içinde doğrulanmış görsel dosyaları yok.
+- [ ] Gerçek GitHub verileriyle 375 ve 1100 px yeni mobil/masaüstü görüntüleri bulutta üretildi; aktarım güvenlik kontrolü tarafından engellendiğinden **GitHub'da ikili ekran görüntüsü henüz yok**. Kanıtın kalıcı yayını açık.
 
 ## Faz 1 — Güvenlik ve API dayanıklılığı (P0/P1 paralel)
 
@@ -23,7 +23,8 @@
 - [ ] **Maliyet/izin bilgisi netleşmeden WAF kuralını etkinleştirme; canlı dağıtım yapma.**
 
 ### API-04/05: Kod üzerinde güvenli devam işleri
-- [ ] 403 kota bitti, 429, 503, ağ kesintisi, timeout, abort ve birden fazla paralel istek regresyon testlerini genişlet.
+- [x] [PR #11](https://github.com/senanurcetin/nexus-devops-intelligence/pull/11) ile GitHub'ın **ikincil 403 hız sınırı** (Retry-After veya secondary-limit mesajı) doğru HTTP 429 olarak sınıflandırılıyor, otomatik retry yapılmıyor ve olağan 401/403 erişim yasağından ayrılıyor. 3 yeni testle **48/48** başarılı; typecheck/build/tam audit/gerçek HTTP smoke geçti.
+- [ ] Timeout, abort, parallel request ve platform-level WAF senaryolarını gerektiği ölçüde genişlet; aşırı gerçek trafik üretme.
 - [ ] Önbellek, istemci retry davranışı ve 12 farklı process-local in-flight sınırını kaynak kullanımını artırmadan test et.
 - [ ] GitHub API rate-limit yanıtının kullanıcıya güvenli ve anlaşılır biçimde gösterildiğini doğrula.
 - [ ] Her değişiklik için ayrı branch/PR, `npm ci`, `npm test`, `npm run typecheck`, `npm run build`, tam `npm audit` ve manuel HTTP smoke.
@@ -34,6 +35,7 @@
 
 ### QA-01/02 — [Issue #5](https://github.com/senanurcetin/nexus-devops-intelligence/issues/5)
 - [x] Üç tarayıcı motorunda temel responsive, form, klavye odağı ve otomatik axe kontrolleri.
+- [x] [Manuel ekran okuyucu kabul listesi](MANUAL_ACCESSIBILITY_ACCEPTANCE.md) hazır; insan testi yapılmış sayılmıyor.
 - [ ] NVDA veya VoiceOver ile gerçek ekran okuyucu kontrolü: arama, iki panelin loading/error/empty/success durumları, yeni repo seçimi ve hata anonsu.
 - [ ] Tam klavye ile uçtan uca dolaşma, görünür odak, yeni sekme bağlantıları ve gerektiğinde gerçek cihaz görsel kontrolü.
 - [ ] Kullanıcı deneyimi için farklı ağ gecikmeleri, stale-result yarışları, 404/429/5xx ve sıfır kayıt davranışlarını manuel browser ile tekrar denetle.
@@ -81,7 +83,7 @@
 
 ## Sıradaki uygulanabilir iki iş
 
-1. **API hata ve kota regresyonları:** WAF aktivasyonu gerektirmeyen otomatik test ve kullanıcıya dönen güvenli hata davranışı.
-2. **Ekran görüntüsü aktarımı + erişilebilirlik kontrol listesi:** gerçek browser artefaktlarının kalıcı depoya alınması ve ekran okuyucu için insan doğrulama adımları.
+1. **API-04 takip işi:** İkincil kota sınıflandırması tamamlandı; paralel istek/backoff incelemesi ve platform WAF gerçek doğrulaması açık.
+2. **QA-01/02 takip işi:** [İnsan testçisi kontrol listesi](MANUAL_ACCESSIBILITY_ACCEPTANCE.md) hazır; görseller bulutta üretildi, aktarım güvenlik koruması nedeniyle engellendi. Yetkili dosya aktarımı/gerçek cihaz yakalaması açık.
 
 **Halka açık yayın engeli:** [WAF issue #7](https://github.com/senanurcetin/nexus-devops-intelligence/issues/7) kapanmadan ve kalan yayın şartları doğrulanmadan canlı prod/preview yayını yapılmış veya tamamlanmış olarak raporlanamaz.
