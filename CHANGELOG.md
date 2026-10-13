@@ -31,6 +31,8 @@
 - Added [human screen-reader acceptance checklist](docs/MANUAL_ACCESSIBILITY_ACCEPTANCE.md). Actual NVDA/VoiceOver verification and real screenshot artifact upload remain pending; the latter was blocked by secure file-transfer controls.
 - [PR #12](https://github.com/senanurcetin/nexus-devops-intelligence/pull/12) forwards safely validated 1–3600s Retry-After hints through both public APIs and the dashboard. Invalid/oversized headers are discarded, 429s remain no-store, and no automatic retries are introduced.
 - Nine offline regressions bring the suite to **57/57 passed**; manual clean install, TypeScript, production build, full npm audit (0 findings), and real-data localhost HTTP smoke passed.
+- [PR #13](https://github.com/senanurcetin/nexus-devops-intelligence/pull/13) validates repository inputs before the process-local request gate, preserving 400/no-store under saturation and 503/no-store for legitimate overload.
+- Two new Next.js route regression tests: **59/59 manually verified**, TypeScript/build/audit and production HTTP checks passed.
 - No GitHub Actions or CircleCI jobs were configured or run.
 
 **Not yet released:** Platform-wide rate limiting, final manual cross-browser/screen-reader review and public preview deployment remain pending.
