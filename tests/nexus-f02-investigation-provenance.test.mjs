@@ -68,7 +68,8 @@ test('F-02: unknown is informational; sort high first with five-item cap',()=>{
 
 test('F-02: accessible clipboard feedback and original source links do not issue a fallback request',()=>{
  const page=readFileSync('src/app/page.tsx','utf8');
- assert.ok(page.includes('navigator.clipboard?.writeText(url)'));
+ assert.ok(page.includes('if (!navigator.clipboard?.writeText)'));
+ assert.ok(page.includes('await navigator.clipboard.writeText(url)'));
  assert.ok(page.includes("Copy GitHub link for ' + item.sourceLabel"));
  assert.ok(page.includes('role="status" aria-live="polite"'));
  assert.ok(page.includes('Clipboard unavailable. Use Review source'));
