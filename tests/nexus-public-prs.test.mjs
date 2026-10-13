@@ -44,6 +44,30 @@ test('draft state wins; missing, mismatched and pending details remain unknown',
   assert.equal(result.conflicts, 0);
 });
 
+test('unverified PRs contribute to needs_attention but drafts and clean PRs do not', () => {
+  const result = summarizePublicPullRequests(repo,
+    [pr(1), pr(2, { draft: true }), pr(3), pr(4), pr(5)],
+    [null, null, detail(3), detail(4, { mergeable_state: 'blocked' }),
+      detail(5, { mergeable: null, mergeable_state: 'unknown' })],
+  );
+  assert.deepEqual(result.pull_requests.map(item => item.attention),
+    ['unknown', 'draft', 'clear', 'blocked', 'unknown']);
+  assert.equal(result.inspected_prs, 5);
+  assert.equal(result.unknown, 2);
+  assert.equal(result.conflicts, 0);
+  assert.equal(result.needs_attention, 3,
+    'unverified and confirmed restricted PRs both require human inspection');
+});
+
+test('an entirely unverified PR sample is counted without inventing conflicts', () => {
+  const result = summarizePublicPullRequests(repo,
+    [pr(7), pr(8), pr(9)], [null, null, null]);
+  assert.equal(result.needs_attention, 3);
+  assert.equal(result.unknown, 3);
+  assert.equal(result.conflicts, 0);
+  assert.ok(result.pull_requests.every(item => item.attention === 'unknown'));
+});
+
 test('rejects unsafe repo names, forged PR links, corrupt list shapes and mismatched slots', () => {
   const good = [pr(1)];
   for (const name of ['http://evil.test/x', '../project', 'owner/project?x=1']) {
