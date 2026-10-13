@@ -6,7 +6,7 @@ and pull request merge state. **This is not part of Ops-Copilot.**
 > **Verified MVP development build (13 October 2026):** [PR #3](https://github.com/senanurcetin/nexus-devops-intelligence/pull/3)
 > upgraded Next.js; [PR #6](https://github.com/senanurcetin/nexus-devops-intelligence/pull/6)
 > migrated Tailwind to 4.3.3 and fixed secondary-text contrast. Clean cloud `npm ci`,
-> **45/45 tests**, full TypeScript and production build passed. Full `npm audit`
+> **48/48 tests**, full TypeScript and production build passed. Full `npm audit`
 > (including development dependencies) reported **zero findings at the time checked**.
 > Chromium 375/768/1440 responsive checks and automated axe-core A/AA tests passed.
 > **No public deployment:** Vercel WAF cross-instance rate limiting and final manual
@@ -30,6 +30,17 @@ corrected GitHub Actions outcome breakdowns: cancelled/skipped/neutral runs
 are no longer counted as pending, and completed timeout/startup-failure runs
 are correctly included in confirmed failures. The figures remain a sample
 rather than billed CI minutes.
+
+**GitHub quota handling:** [PR #11](https://github.com/senanurcetin/nexus-devops-intelligence/pull/11)
+correctly interprets primary and secondary GitHub rate-limit HTTP 403 responses
+as HTTP 429 without automatically retrying and distinguishes ordinary 403
+restrictions. The 48-test suite, typecheck, production build, full npm audit
+and manual HTTP smoke passed in a temporary cloud sandbox.
+
+**Human accessibility checks:** The [manual screen-reader acceptance list](docs/MANUAL_ACCESSIBILITY_ACCEPTANCE.md)
+is prepared, but has **not** been performed by an NVDA/VoiceOver tester.
+Real-data browser screenshots are not committed because the file transfer
+was blocked; automated browser checks do not constitute human sign-off.
 
 ## Current scope (MVP)
 
