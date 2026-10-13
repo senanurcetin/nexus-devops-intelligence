@@ -10,7 +10,7 @@
 
 - [x] Bağımsız GitHub deposu; Ops-Copilot'dan ayrı.
 - [x] Next.js 15.5.27, Tailwind CSS 4.3.3, npm lockfile ve read-only public GitHub Actions/PR API.
-- [x] Birim, adapter, route-handler ve güvenlik başlığı testleri: **48/48 başarılı** (son manuel cloud çalışması).
+- [x] Birim, adapter, route-handler ve güvenlik başlığı testleri: **57/57 başarılı** (son manuel cloud çalışması).
 - [x] `npm ci`, TypeScript, Next.js production build ve tam `npm audit` (kontrol anında **0 bulgu**) başarılı.
 - [x] Gerçek GitHub verileriyle manuel HTTP smoke kontrolü; PR/Actions endpoint hata durumları.
 - [x] Chromium, Firefox ve WebKit'te 375/768/1440px temel responsive, form ve klavye odak kontrolleri; axe-core otomatik WCAG A/AA kontrollerinde test edilen akışlar için **0 ihlal**.
@@ -28,6 +28,8 @@ Bu kontrol sonuçları manuel test edilen commit'lere aittir. Otomatik erişileb
 - [x] **API-04 (ikincil rate limit):** [PR #11](https://github.com/senanurcetin/nexus-devops-intelligence/pull/11) tamamlandı; GitHub secondary-limit 403, normal 403 ve Retry-After senaryolarına 3 yeni test eklendi. **48/48** başarılı; yeni isteği otomatik tekrarlamıyor.
 - [x] **QA-01 hazırlık:** [Ekran okuyucu kabul kontrol listesi](MANUAL_ACCESSIBILITY_ACCEPTANCE.md) hazır. İnsan NVDA/VoiceOver kontrolü yapılmadı.
 - [ ] **DOC-01 ekran görüntüsü:** Gerçek public GitHub verileriyle mobil/masaüstü görüntüler bulutta üretildi; güvenlik kontrolü dosya transferini engellediği için GitHub'a henüz eklenmedi.
+
+- [x] **API-04 (bekleme süresi):** [PR #12](https://github.com/senanurcetin/nexus-devops-intelligence/pull/12) ile güvenli `Retry-After` kullanıcıya gösteriliyor, geçersiz değerler atılıyor ve hata yanıtları `no-store` kalıyor. 9 regresyon testi dahil **57/57 başarılı**. [Davranış notu](RATE_LIMIT_BEHAVIOR.md).
 
 ## P0 — Paylaşılabilir MVP'nin yayın kapıları
 
