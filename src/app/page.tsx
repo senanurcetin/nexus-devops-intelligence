@@ -512,7 +512,7 @@ export default function NexusDeveloperPreview() {
                 </h2>
                 <p className="mt-1 text-xs text-slate-400">Recent runs · GitHub REST API</p>
               </div>
-              <div className="flex shrink-0 items-center gap-3">
+              <div className="nexus-devops-evidence-controls flex flex-wrap items-center gap-3">
                 <button type="button" onClick={() => refreshPanel('actions', selectedRepo)}
                   disabled={actionsLoading} aria-label="Refresh GitHub Actions" title="Refresh GitHub Actions"
                   className="inline-flex min-h-10 min-w-10 items-center justify-center rounded-lg border border-slate-700 text-slate-300 hover:border-[#4ea8ff] hover:text-[#4ea8ff] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#4ea8ff] disabled:cursor-wait disabled:opacity-50">
@@ -547,12 +547,12 @@ export default function NexusDeveloperPreview() {
             )}
             <ul className="divide-y divide-slate-800/80">
               {visibleRuns.map(run => (
-                <li key={run.id} className="nexus-devops-event flex items-center justify-between gap-3 p-5">
+                <li key={run.id} className="nexus-devops-event flex flex-wrap items-start justify-between gap-3 p-5">
                   <div className="min-w-0">
-                    <p className="truncate text-sm font-medium text-slate-200">{run.name}</p>
+                    <p className="nexus-devops-source-title text-sm font-medium text-slate-200">{run.name}</p>
                     <p className="mt-1 text-xs text-slate-400">{run.event} · {run.created_at.slice(0, 10)} · #{run.id}</p>
                   </div>
-                  <div className="flex shrink-0 items-center gap-3">
+                  <div className="nexus-devops-run-actions ml-auto flex flex-wrap items-center gap-3">
                     <span className={'text-xs nexus-devops-outcome-text--' + workflowOutcome(run)}>
                       {run.conclusion ?? run.status}
                     </span>
@@ -581,7 +581,7 @@ export default function NexusDeveloperPreview() {
                 </h2>
                 <p className="mt-1 text-xs text-slate-400">Recent open pull requests · GitHub-reported merge states</p>
               </div>
-              <div className="flex shrink-0 items-center gap-3">
+              <div className="nexus-devops-evidence-controls flex flex-wrap items-center gap-3">
                 <button type="button" onClick={() => refreshPanel('prs', selectedRepo)}
                   disabled={pullsLoading} aria-label="Refresh pull requests" title="Refresh pull requests"
                   className="inline-flex min-h-10 min-w-10 items-center justify-center rounded-lg border border-slate-700 text-slate-300 hover:border-[#4ea8ff] hover:text-[#4ea8ff] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#4ea8ff] disabled:cursor-wait disabled:opacity-50">
@@ -622,7 +622,7 @@ export default function NexusDeveloperPreview() {
                 <li key={pr.number} className="nexus-devops-event p-5">
                   <div className="flex flex-wrap items-start justify-between gap-2">
                     <a href={pr.html_url} target="_blank" rel="noopener noreferrer"
-                      className="max-w-full min-w-0 flex-1 text-sm font-medium text-slate-200 hover:text-[#4ea8ff]">
+                      className="nexus-devops-source-title max-w-full min-w-0 flex-1 text-sm font-medium text-slate-200 hover:text-[#4ea8ff]">
                       #{pr.number} · {pr.title} <ArrowUpRight className="inline h-3.5 w-3.5" />
                     </a>
                     <span className={'shrink-0 rounded-full px-2.5 py-1 text-xs ' + attentionMeta[pr.attention].className}>
