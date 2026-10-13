@@ -28,6 +28,9 @@ test('NEXUS dashboard keeps app functionality while using sapphire brand identit
   assert.ok(css.includes('.nexus-devops-received-at'));
   assert.ok(page.includes('PARTIAL DATA · REVIEW PANEL ERRORS'));
   assert.ok(page.includes('BOTH SOURCE PANELS UNAVAILABLE'));
+  assert.ok(page.includes('Retry both GitHub source panels'));
+  assert.ok(page.includes('onClick={() => load(selectedRepo)}'));
+  assert.ok(css.includes('.nexus-devops-retry'));
   assert.ok(page.includes("actions.error && pulls.error ? 'failed'"));
   assert.ok(css.includes('data-state="failed"'));
   assert.ok(page.includes('BOTH SOURCE PANELS LOADED'));
