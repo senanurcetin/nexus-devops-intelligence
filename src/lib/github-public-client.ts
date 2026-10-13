@@ -1,5 +1,6 @@
 import { parsePublicRepository, summarizePublicActions, type PublicActionsSummary } from './github-public-actions.ts';
 import { summarizePublicPullRequests, type PublicPullSummary } from './nexus-public-prs.ts';
+import { safeRetryAfterSeconds } from './nexus-retry-after.ts';
 
 /** GitHub REST read-only adapter: testable without Next.js or a real network. */
 export type GitHubFetcher = (
@@ -8,7 +9,7 @@ export type GitHubFetcher = (
 ) => Promise<Pick<Response, 'ok' | 'status' | 'json'> & { headers?: Pick<Headers, 'get'> }>;
 
 export type ApiError = { error: string };
-export type ApiResult<T> = { status: number; body: T | ApiError };
+export type ApiResult<T> = { status: number; body: T | ApiError; retryAfterSeconds?: number };
 
 const requestHeaders = {
   Accept: 'application/vnd.github+json',
@@ -20,7 +21,8 @@ const fail = (status: number, error: string): ApiResult<never> => ({ status, bod
 
 type FetchResult =
   | { kind: 'ok'; data: unknown }
-  | { kind: 'not_found' | 'rate_limited' | 'denied' | 'unavailable' | 'timeout' | 'invalid' | 'network' };
+  | { kind: 'rate_limited'; retryAfterSeconds: number | null }
+  | { kind: 'not_found' | 'denied' | 'unavailable' | 'timeout' | 'invalid' | 'network' };
 
 async function githubGet(url: string, fetcher: GitHubFetcher): Promise<FetchResult> {
   let response: Awaited<ReturnType<GitHubFetcher>>;
@@ -37,14 +39,15 @@ async function githubGet(url: string, fetcher: GitHubFetcher): Promise<FetchResu
     return { kind: 'network' };
   }
   if (response.status === 404) return { kind: 'not_found' };
-  if (response.status === 429) return { kind: 'rate_limited' };
+  if (response.status === 429) return {
+    kind: 'rate_limited', retryAfterSeconds: safeRetryAfterSeconds(response.headers?.get('retry-after')),
+  };
   if (response.status === 403) {
     // GitHub secondary limits may return 403 with a nonzero primary quota.
     // Never automatically retry these responses: doing so can prolong a limit.
-    if (response.headers?.get('x-ratelimit-remaining') === '0' ||
-        response.headers?.get('retry-after') !== null &&
-        response.headers?.get('retry-after') !== undefined) {
-      return { kind: 'rate_limited' };
+    const retryAfter = response.headers?.get('retry-after');
+    if (response.headers?.get('x-ratelimit-remaining') === '0' || retryAfter != null) {
+      return { kind: 'rate_limited', retryAfterSeconds: safeRetryAfterSeconds(retryAfter) };
     }
     try {
       const body: unknown = await response.json();
@@ -52,7 +55,7 @@ async function githubGet(url: string, fetcher: GitHubFetcher): Promise<FetchResu
         ? (body as { message?: unknown }).message : null;
       if (typeof message === 'string' &&
           /secondary rate limit|API rate limit exceeded|rate limit exceeded/i.test(message)) {
-        return { kind: 'rate_limited' };
+        return { kind: 'rate_limited', retryAfterSeconds: null };
       }
     } catch {
       // GitHub may return HTML or invalid JSON; never expose an upstream body.
@@ -71,7 +74,10 @@ async function githubGet(url: string, fetcher: GitHubFetcher): Promise<FetchResu
 function upstreamError(result: Exclude<FetchResult, { kind: 'ok' }>, subject: string): ApiResult<never> {
   switch (result.kind) {
     case 'not_found': return fail(404, `Public repository or ${subject} not found.`);
-    case 'rate_limited': return fail(429, 'GitHub API rate limit reached. Please try later.');
+    case 'rate_limited': return {
+      ...fail(429, 'GitHub API rate limit reached. Please try later.'),
+      ...(result.retryAfterSeconds === null ? {} : { retryAfterSeconds: result.retryAfterSeconds }),
+    };
     case 'denied': return fail(503, 'GitHub API access is restricted or rate-limited.');
     case 'timeout': return fail(504, `GitHub ${subject} request timed out.`);
     case 'invalid': return fail(502, `GitHub returned invalid ${subject} JSON.`);

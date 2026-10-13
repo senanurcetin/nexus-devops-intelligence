@@ -191,3 +191,37 @@ test('PRs: malformed detail never makes a PR look safely mergeable', async () =>
   assert.equal(result.status, 200);
   assert.equal(result.body.pull_requests[0].attention, 'unknown');
 });
+
+test('Actions: bounded GitHub Retry-After hint passes through a 429 without retry', async () => {
+  const { fetcher, calls } = fakeFetcher(() => ({
+    ...answer(429, { message: 'secret upstream details' }),
+    headers: { get: key => key === 'retry-after' ? '90' : null },
+  }));
+  const result = await loadPublicActions(repo, fetcher);
+  assert.equal(result.status, 429);
+  assert.equal(result.retryAfterSeconds, 90);
+  assert.equal(calls.length, 1);
+  assert.doesNotMatch(result.body.error, /secret/);
+});
+
+test('PRs: secondary 403 limit includes numeric Retry-After without requesting details', async () => {
+  const { fetcher, calls } = fakeFetcher(() => ({
+    ...answer(403, { message: 'You have exceeded a secondary rate limit.' }),
+    headers: { get: key => key === 'retry-after' ? '120' : null },
+  }));
+  const result = await loadPublicPulls(repo, fetcher);
+  assert.equal(result.status, 429);
+  assert.equal(result.retryAfterSeconds, 120);
+  assert.equal(calls.length, 1);
+});
+
+test('Actions: untrusted Retry-After header is not forwarded', async () => {
+  for (const header of ['720000', '-1', 'Wed, 21 Oct 2026 07:28:00 GMT']) {
+    const result = await loadPublicActions(repo, async () => ({
+      ...answer(429, null),
+      headers: { get: key => key === 'retry-after' ? header : null },
+    }));
+    assert.equal(result.status, 429);
+    assert.equal(result.retryAfterSeconds, undefined);
+  }
+});
