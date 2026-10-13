@@ -136,3 +136,13 @@
 - [x] Test procedure: [PROTECTED_REDIS_PREVIEW_QA_2026-10-13.md](https://github.com/senanurcetin/nexus-devops-intelligence/blob/main/docs/PROTECTED_REDIS_PREVIEW_QA_2026-10-13.md).
 - [ ] **External gate:** Preview-scoped **Sensitive** Upstash Redis REST credentials are still absent; do not copy production credentials or relax SSO without user-approved secure provisioning. Account owner showed `EU-CENTRAL-1 / Free Tier`, but actual usage remains unknown.
 - [ ] **Release gate:** no manual Preview deployment or real Redis shared-counter test was performed by this PR. A reviewed, exact-SHA and properly protected Preview deployment is required before executing the one-request preflight and separately authorized bounded probe. Multi-instance proof and the production rollout remain unverified; issues #7 and #5 stay open.
+
+### P0.2 live Preview preflight — 13 October 2026
+
+- [x] The owner enabled **Sensitive** `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` for **both Production and Preview**. Rechecked using Vercel environment **metadata only**; no credential values were retrieved.
+- [x] Exact protected Preview deployment `dpl_DxFyywkhBrMe3hzooikmqCpKAuyx` is `READY`, sourced from `e745c6188f47942ffe8405aa195d7584e2d395da` (PR #29 head; includes shared-Redis authority/diagnostics), created after the Preview variable changes. SSO stays enabled.
+- [x] Actual *one-request* authenticated, cache-busted Preview Actions API preflight returned **HTTP 200**, `x-vercel-cache: MISS`, `x-nexus-rate-limit-mode: shared-redis`, and a structurally valid, empty public Actions sample for `senanurcetin/nexus-devops-intelligence`. This demonstrates the released Preview origin's Redis-backed **allowed** path; it is **not** synthetic test data.
+- [ ] Explicitly confirm whether Preview reuses the Production Redis database or a separate Free one. **Do not** assume isolation from shared variable names or target scopes. The real command consumption is still unknown.
+- [ ] Account owner must approve an optional **bounded 21-request**, single-client test; no bulk test was performed yet. `shared-redis` success does not prove shared `429` or independent cross-instance operation. Continue issue #7 acceptance later.
+- [ ] No newer code was automatically deployed to Production. Production remained on `74cd0e3` at the last readback; human a11y issue #5 remains open.
+
