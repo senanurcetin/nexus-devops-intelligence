@@ -51,7 +51,9 @@ export default function NexusDeveloperPreview() {
   const [actionsLoading, setActionsLoading] = useState(false);
   const [pullsLoading, setPullsLoading] = useState(false);
   const [pullsSlow, setPullsSlow] = useState(false);
-  const [lastApiResponseAt, setLastApiResponseAt] = useState<string | null>(null);
+  // Record receipt time only after this source's sample passed validation.
+  const [actionsReceivedAt, setActionsReceivedAt] = useState<string | null>(null);
+  const [pullsReceivedAt, setPullsReceivedAt] = useState<string | null>(null);
   const loading = actionsLoading || pullsLoading;
   const [formError, setFormError] = useState('');
   const [workflowFilter, setWorkflowFilter] = useState<WorkflowFilter>('all');
@@ -69,12 +71,13 @@ export default function NexusDeveloperPreview() {
     if (kind === 'actions') {
       setActionsLoading(true);
       setActions(emptyPanel());
+      setActionsReceivedAt(null);
       void readPublicPanel<PublicActionsSummary>(`/api/public-actions?${params}`, next.signal,
         fetch, (data): data is PublicActionsSummary => isPublicActionsSample(data, repo))
         .then(result => {
           if (controllers.current.actions === next && !next.signal.aborted) {
             setActions(result);
-            if (result.data) setLastApiResponseAt(new Date().toLocaleTimeString());
+            if (result.data) setActionsReceivedAt(new Date().toLocaleTimeString());
           }
         })
         .finally(() => {
@@ -87,6 +90,7 @@ export default function NexusDeveloperPreview() {
       setPullsSlow(false);
       setPullsLoading(true);
       setPulls(emptyPanel());
+      setPullsReceivedAt(null);
       pullsSlowTimer.current = setTimeout(() => {
         if (controllers.current.prs === next && !next.signal.aborted) setPullsSlow(true);
       }, 2500);
@@ -95,7 +99,7 @@ export default function NexusDeveloperPreview() {
         .then(result => {
           if (controllers.current.prs === next && !next.signal.aborted) {
             setPulls(result);
-            if (result.data) setLastApiResponseAt(new Date().toLocaleTimeString());
+            if (result.data) setPullsReceivedAt(new Date().toLocaleTimeString());
           }
         })
         .finally(() => {
@@ -114,7 +118,8 @@ export default function NexusDeveloperPreview() {
     setSelectedRepo(trimmed);
     setWorkflowFilter('all');
     setPullFilter('all');
-    setLastApiResponseAt(null);
+    setActionsReceivedAt(null);
+    setPullsReceivedAt(null);
     refreshPanel('actions', trimmed);
     refreshPanel('prs', trimmed);
   }, [refreshPanel]);
@@ -217,11 +222,22 @@ export default function NexusDeveloperPreview() {
                   : actions.error ? 'Retry Actions data' : 'Retry PR data'}
               </button>
             )}
-            <p className="nexus-devops-received-at" aria-label="Last successful GitHub API sample received">
-              {lastApiResponseAt
-                ? `Last successful GitHub API sample received at ${lastApiResponseAt} (browser local time)`
-                : 'No successful GitHub API sample received for this selection yet'}
-            </p>
+            <div className="nexus-devops-receipt-grid" aria-label="Independent GitHub source receipt status" role="status" aria-live="polite" aria-atomic="true">
+              <p className="nexus-devops-received-at" data-source="actions" data-receipt={actionsLoading ? 'loading' : actions.data ? 'verified' : actions.error ? 'error' : 'pending'}>
+                <span className="nexus-devops-receipt-title">Actions</span>
+                <span>{actionsLoading ? 'Loading; no current sample verified'
+                  : actions.data && actionsReceivedAt ? `Verified sample received at ${actionsReceivedAt} (browser local time)`
+                    : actions.error ? 'Unavailable; no verified sample'
+                      : 'No verified sample received for this selection'}</span>
+              </p>
+              <p className="nexus-devops-received-at" data-source="prs" data-receipt={pullsLoading ? 'loading' : pulls.data ? 'verified' : pulls.error ? 'error' : 'pending'}>
+                <span className="nexus-devops-receipt-title">Pull requests</span>
+                <span>{pullsLoading ? 'Loading; no current sample verified'
+                  : pulls.data && pullsReceivedAt ? `Verified sample received at ${pullsReceivedAt} (browser local time)`
+                    : pulls.error ? 'Unavailable; no verified sample'
+                      : 'No verified sample received for this selection'}</span>
+              </p>
+            </div>
           </div>
         </div>
 
