@@ -10,7 +10,7 @@
 
 - [x] Bağımsız GitHub deposu; Ops-Copilot'dan ayrı.
 - [x] Next.js 15.5.27, Tailwind CSS 4.3.3, npm lockfile ve read-only public GitHub Actions/PR API.
-- [x] Birim, adapter, route-handler ve güvenlik başlığı testleri: **67/67 başarılı** (son manuel cloud çalışması).
+- [x] Birim, adapter, route-handler ve güvenlik başlığı testleri: **73/73 başarılı** (son manuel cloud çalışması).
 - [x] `npm ci`, TypeScript, Next.js production build ve tam `npm audit` (kontrol anında **0 bulgu**) başarılı.
 - [x] Gerçek GitHub verileriyle manuel HTTP smoke kontrolü; PR/Actions endpoint hata durumları.
 - [x] Chromium, Firefox ve WebKit'te 375/768/1440px temel responsive, form ve klavye odak kontrolleri; axe-core otomatik WCAG A/AA kontrollerinde test edilen akışlar için **0 ihlal**.
@@ -40,6 +40,8 @@ Bu kontrol sonuçları manuel test edilen commit'lere aittir. Otomatik erişileb
 - [x] **API-05 — PR ayrıntısı kota tasarrufu:** [PR #16](https://github.com/senanurcetin/nexus-devops-intelligence/pull/16) ile en fazla **iki eşzamanlı** ayrıntı GET'i; kota cevabı görüldükten sonra henüz başlatılmamış istekler gönderilmiyor. Önceden başlamış çağrılardan en uzun güvenli bekleme süresi korunuyor. Üç yeni test dahil **67/67** başarılı; typecheck/build/tam audit/gerçek HTTP smoke geçti. Yavaş API yanıtlarında gecikme artabilir; bu global WAF değildir. [Teknik not](RATE_LIMIT_BEHAVIOR.md).
 
 - [x] **UX-07 — Yavaş PR analizi açıklaması ve gecikme ölçümü:** [PR #17](https://github.com/senanurcetin/nexus-devops-intelligence/pull/17) merge edildi. PR isteği **2,5 sn** sürerse kullanıcıya açıklayıcı durum ve ekran okuyucu anonsu gösteriliyor; tamamlanma/repo değişiminde temizleniyor. Kontrollü 5 PR fixture: 80 ms/ayrıntıda **243 ms**, 160 ms/ayrıntıda **482 ms** toplam. Bu değerler **gerçek GitHub SLA'sı değildir**. Chromium 375/1440px, axe A/AA 0 otomatik ihlal. [Test raporu](pr-slow-load-browser-qa-2026-10-13.md).
+- [x] **SEC-03 — Ücretsiz yerel API kotası:** [PR #19](https://github.com/senanurcetin/nexus-devops-intelligence/pull/19) ile Vercel'deki aynı işlev örneği ve kaynak IP için Actions+PR ortak **20 istek/60 saniye**, fazlasında upstream çağrısı yapılmadan **429/no-store/Retry-After**; 6 yeni test dahil **73/73** başarılı. Bu **sunucu örnekleri arası ortak kota değildir** ve Log modundaki WAF'ı tam korumaya dönüştürmez. [Kısıtlar](HOBBY_LOCAL_API_PROTECTION.md). Kullanıcı müdahalesi olmadan ücretli altyapı veya canlı dağıtım açılmadı.
+
 ## P0 — Paylaşılabilir MVP'nin yayın kapıları
 
 | Sıra | ID | İş | Kabul / bitiş kriteri | Takip |
