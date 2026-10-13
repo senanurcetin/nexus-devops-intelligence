@@ -6,7 +6,7 @@ and pull request merge state. **This is not part of Ops-Copilot.**
 > **Verified MVP development build (13 October 2026):** [PR #3](https://github.com/senanurcetin/nexus-devops-intelligence/pull/3)
 > upgraded Next.js; [PR #6](https://github.com/senanurcetin/nexus-devops-intelligence/pull/6)
 > migrated Tailwind to 4.3.3 and fixed secondary-text contrast. Clean cloud `npm ci`,
-> **48/48 tests**, full TypeScript and production build passed. Full `npm audit`
+> **57/57 tests**, full TypeScript and production build passed. Full `npm audit`
 > (including development dependencies) reported **zero findings at the time checked**.
 > Chromium 375/768/1440 responsive checks and automated axe-core A/AA tests passed.
 > **No public deployment:** Vercel WAF cross-instance rate limiting and final manual
@@ -36,6 +36,13 @@ correctly interprets primary and secondary GitHub rate-limit HTTP 403 responses
 as HTTP 429 without automatically retrying and distinguishes ordinary 403
 restrictions. The 48-test suite, typecheck, production build, full npm audit
 and manual HTTP smoke passed in a temporary cloud sandbox.
+
+**Rate-limit wait hints:** [PR #12](https://github.com/senanurcetin/nexus-devops-intelligence/pull/12)
+propagates validated numeric 1–3600s `Retry-After` headers through both
+read-only APIs. The dashboard displays safe wait guidance for GitHub or edge
+WAF 429 responses, without background or automatic retries.
+See [API rate-limit behavior](docs/RATE_LIMIT_BEHAVIOR.md).
+The WAF rule is **not enabled**; rate-limit hints are not a substitute for protection.
 
 **Human accessibility checks:** The [manual screen-reader acceptance list](docs/MANUAL_ACCESSIBILITY_ACCEPTANCE.md)
 is prepared, but has **not** been performed by an NVDA/VoiceOver tester.
