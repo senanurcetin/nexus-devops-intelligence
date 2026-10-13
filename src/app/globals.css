@@ -312,3 +312,241 @@ body { background: #071829; color: #eff5ff; }
   .nexus-devops-pr-tick { transition:none; }
   .nexus-devops-pr-tick:hover { transform:none; }
 }
+
+/* NEXUS executive command deck — cohesive hierarchy, not a data simulation. */
+.nexus-devops {
+  --nexus-hairline: rgba(135, 183, 226, .19);
+  --nexus-luminous: #8cc9ff;
+  background:
+    radial-gradient(ellipse at 70% -7%, rgba(61, 143, 215, .15), transparent 43%),
+    linear-gradient(180deg, #071629 0%, #07192b 42%, #081626 100%) !important;
+}
+.nexus-devops-hero {
+  border-color: #476b90;
+  border-radius: 24px;
+  background:
+    radial-gradient(ellipse at 8% 0%, rgba(100, 174, 240, .14), transparent 53%),
+    linear-gradient(128deg, #14395a 0%, #102e4c 45%, #0b1d32 100%);
+  box-shadow: 0 28px 74px rgba(1, 8, 21, .35), inset 0 1px 0 rgba(206, 231, 254, .12);
+}
+.nexus-devops-hero h1 {
+  font-size: clamp(2.15rem, 3.6vw, 3.65rem);
+  line-height: 1.11;
+  letter-spacing: -.035em;
+}
+.nexus-devops-hero-facts {
+  display: flex;
+  gap: 8px 18px;
+  flex-wrap: wrap;
+  margin-top: 26px;
+  padding-top: 17px;
+  border-top: 1px solid rgba(154,199,240,.2);
+  color: #b9d1e9;
+  font-size: .72rem;
+  font-weight: 550;
+}
+.nexus-devops-hero-facts > span { display: inline-flex; align-items: center; gap: 8px; }
+.nexus-devops-fact-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #67e3bc;
+  box-shadow: 0 0 0 3px rgba(103,227,188,.12);
+}
+.nexus-devops-evidence-note {
+  border-color: #47698c;
+  background: linear-gradient(160deg, rgba(8,27,47,.88), rgba(12,41,65,.85));
+  box-shadow: inset 0 1px 0 rgba(192,225,255,.1);
+}
+.nexus-devops-search {
+  position: relative;
+  overflow: hidden;
+  border-color: #355f83 !important;
+  background: linear-gradient(120deg, #0e2e4c, #0b223b) !important;
+}
+.nexus-devops-search::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: #61b4fa;
+  pointer-events: none;
+}
+/* Navigation intentionally uses native anchors: keyboard, browser history,
+   motion preferences and screen readers work without JS or extra API calls. */
+.nexus-devops-command-nav {
+  position: sticky;
+  top: 10px;
+  z-index: 20;
+  display: flex;
+  gap: 7px;
+  align-items: center;
+  overflow-x: auto;
+  padding: 9px 12px;
+  margin-top: 21px;
+  border: 1px solid rgba(104, 158, 207, .38);
+  border-radius: 14px;
+  background: rgba(7, 24, 42, .96);
+  box-shadow: 0 10px 35px rgba(0,5,15,.34);
+  backdrop-filter: blur(15px);
+  scrollbar-width: thin;
+  scrollbar-color: #4c789e transparent;
+}
+.nexus-devops-command-nav-caption {
+  flex: 0 0 auto;
+  color: #83b7e5;
+  font-size: .61rem;
+  letter-spacing: .14em;
+  font-weight: 800;
+  padding: 8px 9px 8px 1px;
+}
+.nexus-devops-command-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 11px;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  color: #d8e9fc;
+  font-size: .76rem;
+  font-weight: 680;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: color .16s, border-color .16s, background-color .16s;
+}
+.nexus-devops-command-link > span {
+  color: #7bbcf9;
+  font-size: .66rem;
+  font-variant-numeric: tabular-nums;
+}
+.nexus-devops-command-link:hover, .nexus-devops-command-link:focus-visible {
+  color: #fff;
+  border-color: #487ca9;
+  background: rgba(60,130,196,.2);
+}
+.nexus-devops-command-current {
+  margin-left: auto;
+  padding: 8px 4px 8px 16px;
+  border-left: 1px solid rgba(132,170,201,.2);
+  color: #acc7e1;
+  font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
+  font-size: .64rem;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+  max-width: 260px;
+}
+.nexus-devops #overview, .nexus-devops #intelligence,
+.nexus-devops #investigations, .nexus-devops #evidence { scroll-margin-top: 95px; }
+.nexus-devops-section {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  font-size: .7rem;
+  color: #acd8ff;
+  letter-spacing: .13em;
+}
+.nexus-devops-section::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(117,175,226,.35), transparent);
+}
+.nexus-devops-card {
+  min-width: 0;
+  min-height: 158px;
+  border: 1px solid #385c7c;
+  border-top: 1px solid #6184a4;
+  background: linear-gradient(145deg, #123653 0%, #0d2842 66%, #0b233a 100%);
+  box-shadow: 0 15px 35px rgba(0, 8, 23, .2), inset 0 1px 0 rgba(195,224,255,.07);
+}
+.nexus-devops-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+.nexus-devops-card-index {
+  color: #6eaee4;
+  font-weight: 780;
+  font-size: .68rem;
+  letter-spacing: .12em;
+  line-height: 1.2;
+  font-variant-numeric: tabular-nums;
+}
+.nexus-devops-card-value { font-size: 2.2rem; line-height: 1.1; letter-spacing: -.028em; }
+.nexus-devops-card-detail { max-width: 27ch; }
+.nexus-devops-warning {
+  border-color: #716046;
+  border-top-color: #e9bb74;
+  background: linear-gradient(145deg, #313a43 0%, #1b2d3b 60%, #14263b 100%);
+}
+.nexus-devops-intelligence-grid {
+  display: grid;
+  gap: 18px;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: stretch;
+}
+.nexus-devops-insights, .nexus-devops-pr-insights {
+  min-width: 0;
+  border-radius: 19px;
+  box-shadow: 0 19px 45px rgba(0, 8, 24, .22), inset 0 1px 0 rgba(192,224,255,.07);
+}
+.nexus-devops-insights { border-color: #366a89; }
+.nexus-devops-pr-insights { border-color: #4a6689; }
+.nexus-devops-insight-body {
+  grid-template-columns: minmax(0, 1fr);
+  align-content: start;
+}
+.nexus-devops-outcome-bar, .nexus-devops-pr-bar { height: 15px; gap: 2px; }
+.nexus-devops-run-sequence, .nexus-devops-pr-sequence {
+  border-color: #385b7b;
+  background: rgba(4,17,32,.49);
+  border-radius: 13px;
+}
+.nexus-devops-investigations {
+  border-color: #507396;
+  background:
+    radial-gradient(ellipse at 97% 0%, rgba(93,154,205,.13), transparent 42%),
+    linear-gradient(140deg, #123451 0%, #0c223b 100%);
+  box-shadow: 0 20px 45px rgba(0,6,23,.23);
+}
+.nexus-devops-queue { list-style: none; }
+.nexus-devops-queue-item {
+  min-width: 0;
+  border-color: #375978;
+  background: rgba(4,19,35,.63);
+  border-left: 3px solid #809cb8;
+  transition: border-color .14s, background-color .14s;
+}
+.nexus-devops-queue-item[data-severity="high"] { border-left-color: #f69b9d; }
+.nexus-devops-queue-item[data-severity="medium"] { border-left-color: #f7c578; }
+.nexus-devops-queue-item[data-severity="info"] { border-left-color: #8fc6f5; }
+.nexus-devops-queue-severity {
+  font-size: .6rem;
+  font-weight: 800;
+  letter-spacing: .13em;
+  text-transform: uppercase;
+  color: #b9cfeb;
+}
+.nexus-devops-queue-item[data-severity="high"] .nexus-devops-queue-severity { color: #ffb2ba; }
+.nexus-devops-queue-item[data-severity="medium"] .nexus-devops-queue-severity { color: #ffda9b; }
+.nexus-devops-evidence {
+  border-color: #395c7a;
+  box-shadow: 0 16px 32px rgba(0,8,24,.2);
+}
+@media (min-width: 1100px) {
+  .nexus-devops-intelligence-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 760px) {
+  .nexus-devops-command-nav { top: 5px; padding: 7px; gap: 3px; }
+  .nexus-devops-command-current, .nexus-devops-command-nav-caption { display: none; }
+  .nexus-devops-command-link { padding: 10px 9px; font-size: .7rem; }
+  .nexus-devops #overview, .nexus-devops #intelligence,
+  .nexus-devops #investigations, .nexus-devops #evidence { scroll-margin-top: 70px; }
+  .nexus-devops-section { font-size: .64rem; }
+  .nexus-devops-card { min-height: 148px; }
+}
+@media (prefers-reduced-motion:reduce) {
+  .nexus-devops-command-link, .nexus-devops-queue-item { transition: none; }
+}

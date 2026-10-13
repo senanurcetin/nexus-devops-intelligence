@@ -26,16 +26,19 @@ const attentionMeta: Record<PullAttention, { label: string; className: string }>
   unknown: { label: 'Not verified', className: 'bg-slate-600/30 text-slate-300' },
 };
 
-function Card({ label, value, detail, tone = 'default' }: {
-  label: string; value: string | number; detail: string; tone?: 'default' | 'warning';
+function Card({ index, label, value, detail, tone = 'default' }: {
+  index: number; label: string; value: string | number; detail: string; tone?: 'default' | 'warning';
 }) {
   return (
     <div className={'nexus-devops-card rounded-2xl border border-slate-800 bg-slate-900/90 p-5' +
       (tone === 'warning' ? ' nexus-devops-warning' : '')}>
-      <p className="text-sm text-slate-400">{label}</p>
-      <div className={'mt-2 text-3xl font-semibold tabular-nums ' +
+      <div className="nexus-devops-card-head">
+        <p className="text-sm text-slate-300">{label}</p>
+        <span className="nexus-devops-card-index" aria-hidden="true">{String(index).padStart(2, '0')}</span>
+      </div>
+      <div className={'nexus-devops-card-value mt-2 text-3xl font-semibold tabular-nums ' +
         (tone === 'warning' ? 'text-amber-300' : 'text-white')}>{value}</div>
-      <p className="mt-2 text-xs leading-5 text-slate-400">{detail}</p>
+      <p className="nexus-devops-card-detail mt-2 text-xs leading-5 text-slate-400">{detail}</p>
     </div>
   );
 }
@@ -166,17 +169,22 @@ export default function NexusDeveloperPreview() {
 
         <div className="nexus-devops-hero mb-8 grid gap-8 lg:grid-cols-[1.5fr_1fr] lg:items-end">
           <div>
-            <div className="nexus-devops-eyebrow mb-3">NEXUS / DEVELOPER INTELLIGENCE · 06</div>
+            <div className="nexus-devops-eyebrow mb-3">NEXUS / REPOSITORY OPERATIONS · 06</div>
             <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-[#4ea8ff]/30 bg-[#4ea8ff]/10 px-3 py-1 text-xs font-medium uppercase tracking-wider text-[#4ea8ff]">
               <ShieldCheck className="h-4 w-4" /> Public API · Read-only preview
             </div>
             <h1 className="max-w-2xl text-4xl font-semibold tracking-tight text-white sm:text-5xl">
-              Your CI and pull requests. <span className="text-[#4ea8ff]">One view.</span>
+              Engineering signals. <span className="text-[#4ea8ff]">Linked to evidence.</span>
             </h1>
             <p className="mt-5 max-w-2xl text-base leading-7 text-slate-400">
-              Explore real GitHub Actions history and GitHub-reported merge states.
-              Find candidates that need investigation without triggering workflows or modifying code.
+              Inspect sampled GitHub workflow outcomes and reported merge states in one source-linked dashboard.
+              Investigate signals, then open the original records. No workflow execution or repository writes.
             </p>
+            <div className="nexus-devops-hero-facts" aria-label="Dashboard data boundaries">
+              <span><span aria-hidden="true" className="nexus-devops-fact-dot" /> Public GitHub REST</span>
+              <span>Maximum 10 runs / 5 PRs</span>
+              <span>No account access required</span>
+            </div>
           </div>
           <div className="nexus-devops-evidence-note rounded-2xl border border-slate-800 bg-slate-900/75 p-5 text-sm leading-6 text-slate-400">
             <div className="mb-2 flex items-center gap-2 font-semibold text-slate-200">
@@ -239,21 +247,31 @@ export default function NexusDeveloperPreview() {
           </p>
         </section>
 
-        <div className="nexus-devops-section mb-3 mt-7">01 / Public repository metrics</div>
+        <nav className="nexus-devops-command-nav" aria-label="Dashboard sections">
+          <span className="nexus-devops-command-nav-caption">JUMP TO</span>
+          <a href="#overview" className="nexus-devops-command-link"><span aria-hidden="true">01</span> Overview</a>
+          <a href="#intelligence" className="nexus-devops-command-link"><span aria-hidden="true">02</span> Intelligence</a>
+          <a href="#investigations" className="nexus-devops-command-link"><span aria-hidden="true">03</span> Investigations</a>
+          <a href="#evidence" className="nexus-devops-command-link"><span aria-hidden="true">04</span> Source records</a>
+          <span className="nexus-devops-command-current" title={selectedRepo}>Selected / {selectedRepo}</span>
+        </nav>
+
+        <div id="overview" className="nexus-devops-section mb-3 mt-7">01 / Public repository metrics</div>
         <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4" aria-label="Sample statistics">
-          <Card label="Workflow runs inspected" value={actions.data?.inspected_runs ?? (actionsLoading ? '…' : '—')}
+          <Card index={1} label="Workflow runs inspected" value={actions.data?.inspected_runs ?? (actionsLoading ? '…' : '—')}
             detail="Up to ten most recent runs" />
-          <Card label="Successful in sample" value={successRatio === null ? '—' : `${successRatio}%`}
+          <Card index={2} label="Successful in sample" value={successRatio === null ? '—' : `${successRatio}%`}
             detail={validRuns ? `${actions.data!.successful_runs} of ${validRuns} inspected runs` : 'No verified workflow sample'} />
-          <Card label="Open PRs inspected" value={pulls.data?.inspected_prs ?? (pullsLoading ? '…' : '—')}
+          <Card index={3} label="Open PRs inspected" value={pulls.data?.inspected_prs ?? (pullsLoading ? '…' : '—')}
             detail={pulls.data?.more_open_prs ? 'More open PRs exist beyond this sample' : 'Up to five open PRs'} />
-          <Card label="PRs needing inspection" value={pulls.data?.needs_attention ?? (pullsLoading ? '…' : '—')}
+          <Card index={4} label="PRs needing inspection" value={pulls.data?.needs_attention ?? (pullsLoading ? '…' : '—')}
             detail={pulls.data ? `${pulls.data.conflicts} confirmed conflict(s); ${pulls.data.unknown} unknown status(es)` : 'Only GitHub-reported states'}
             tone={Boolean(pulls.data?.needs_attention) ? 'warning' : 'default'} />
         </section>
 
-        <div className="nexus-devops-section mb-3 mt-9">02 / Workflow sample intelligence</div>
-        <section className="nexus-devops-insights rounded-2xl p-5 sm:p-6" aria-labelledby="workflow-insights-title">
+        <div id="intelligence" className="nexus-devops-section mb-3 mt-9">02 / Source intelligence / sampled</div>
+        <div className="nexus-devops-intelligence-grid">
+          <section className="nexus-devops-insights rounded-2xl p-5 sm:p-6" aria-labelledby="workflow-insights-title">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
               <p className="nexus-devops-insights-kicker">GITHUB ACTIONS / SAMPLE EVIDENCE</p>
@@ -270,7 +288,7 @@ export default function NexusDeveloperPreview() {
             </span>
           </div>
           {actions.data && actions.data.inspected_runs > 0 ? (
-            <div className="mt-6 grid gap-6 lg:grid-cols-[1.25fr_1fr]">
+            <div className="nexus-devops-insight-body mt-6 grid gap-6">
               <div className="min-w-0">
                 <div className="mb-3 flex items-end justify-between gap-3">
                   <p className="text-xs font-semibold uppercase tracking-wider text-slate-300">Outcome distribution</p>
@@ -339,7 +357,6 @@ export default function NexusDeveloperPreview() {
           )}
         </section>
 
-        <div className="nexus-devops-section mb-3 mt-9">03 / Pull request sample intelligence</div>
         <section className="nexus-devops-pr-insights rounded-2xl p-5 sm:p-6" aria-labelledby="pr-insights-title">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
@@ -357,7 +374,7 @@ export default function NexusDeveloperPreview() {
             </span>
           </div>
           {pulls.data && pulls.data.inspected_prs > 0 ? (
-            <div className="mt-6 grid gap-6 lg:grid-cols-[1.2fr_1fr]">
+            <div className="nexus-devops-insight-body mt-6 grid gap-6">
               <div className="min-w-0">
                 <div className="mb-3 flex items-end justify-between gap-2">
                   <p className="text-xs font-semibold uppercase tracking-wider text-slate-300">Merge-state composition</p>
@@ -426,8 +443,57 @@ export default function NexusDeveloperPreview() {
             </p>
           )}
         </section>
+        </div>
 
-        <div className="nexus-devops-section mb-3 mt-9">04 / GitHub workflow and pull request evidence</div>
+        <div className="nexus-devops-section mb-3 mt-9">03 / Investigation queue / sampled only</div>
+        <section id="investigations" className="nexus-devops-investigations rounded-2xl border border-slate-800 bg-slate-900/70 p-5 sm:p-6" aria-labelledby="next-title">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div>
+              <h2 id="next-title" className="flex items-center gap-2 text-base font-semibold">
+                {recommendations.some(r => r.severity === 'high') ?
+                  <TriangleAlert className="h-5 w-5 text-amber-300" /> :
+                  <CheckCircle2 className="h-5 w-5 text-[#4ea8ff]" />}
+                Suggested investigations
+              </h2>
+              <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-400">
+                Prioritized from the displayed GitHub sample only; these are not AI diagnoses or permission to merge.
+              </p>
+            </div>
+            <a href="https://docs.github.com/en/rest/actions/workflow-runs"
+              target="_blank" rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 text-sm font-medium text-[#4ea8ff] hover:text-white">
+              GitHub API docs <ArrowRight className="h-4 w-4" />
+            </a>
+          </div>
+          {recommendations.length > 0 ? (
+            <ol className="nexus-devops-queue mt-5 grid gap-3 lg:grid-cols-2">
+              {recommendations.map(item => (
+                <li key={item.key} className="nexus-devops-queue-item flex flex-wrap items-start justify-between gap-3 rounded-xl border border-slate-800 bg-slate-950/70 p-4"
+                  data-severity={item.severity}>
+                  <div className="min-w-0 flex-1">
+                    <span className="nexus-devops-queue-severity">{item.severity} / evidence-backed</span>
+                    <p className="mt-2 text-sm font-semibold text-slate-100">{item.title}</p>
+                    <p className="mt-1 text-xs leading-5 text-slate-400">{item.explanation}</p>
+                  </div>
+                  <a href={item.url} target="_blank" rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-xs font-medium text-[#4ea8ff] hover:text-[#cee8ff]">
+                    Review <ArrowUpRight className="h-4 w-4" />
+                  </a>
+                </li>
+              ))}
+            </ol>
+          ) : (
+            <p className="mt-5 text-sm leading-6 text-slate-400">
+              {actions.data && pulls.data ?
+                'No confirmed failures or merge blockers in these samples. Other runs, checks and PRs may require attention.' :
+                'Not enough verified API data to make a recommendation. Check the source panels for errors.'}
+            </p>
+          )}
+          <p className="mt-4 text-xs text-slate-400">No repository changes are made by this preview.</p>
+        </section>
+
+
+        <div id="evidence" className="nexus-devops-section mb-3 mt-9">04 / GitHub source records / original evidence</div>
         <div className="grid gap-6 lg:grid-cols-2">
           <section aria-labelledby="workflow-title" aria-busy={actionsLoading} className="nexus-devops-evidence min-w-0 overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/75">
             <div className="flex items-start justify-between gap-3 border-b border-slate-800 p-5">
@@ -568,50 +634,6 @@ export default function NexusDeveloperPreview() {
             </p>}
           </section>
         </div>
-
-        <section className="nexus-devops-investigations mt-7 rounded-2xl border border-slate-800 bg-slate-900/70 p-5 sm:p-6" aria-labelledby="next-title">
-          <div className="flex flex-wrap items-start justify-between gap-4">
-            <div>
-              <h2 id="next-title" className="flex items-center gap-2 text-base font-semibold">
-                {recommendations.some(r => r.severity === 'high') ?
-                  <TriangleAlert className="h-5 w-5 text-amber-300" /> :
-                  <CheckCircle2 className="h-5 w-5 text-[#4ea8ff]" />}
-                Suggested investigations
-              </h2>
-              <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-400">
-                Prioritized from the displayed GitHub sample only; these are not AI diagnoses or permission to merge.
-              </p>
-            </div>
-            <a href="https://docs.github.com/en/rest/actions/workflow-runs"
-              target="_blank" rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 text-sm font-medium text-[#4ea8ff] hover:text-white">
-              GitHub API docs <ArrowRight className="h-4 w-4" />
-            </a>
-          </div>
-          {recommendations.length > 0 ? (
-            <ol className="mt-5 space-y-3">
-              {recommendations.map(item => (
-                <li key={item.key} className="flex flex-wrap items-start justify-between gap-3 rounded-xl border border-slate-800 bg-slate-950/70 p-4">
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-semibold text-slate-200">{item.title}</p>
-                    <p className="mt-1 text-xs leading-5 text-slate-400">{item.explanation}</p>
-                  </div>
-                  <a href={item.url} target="_blank" rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 text-xs font-medium text-[#4ea8ff] hover:text-[#cee8ff]">
-                    Review <ArrowUpRight className="h-4 w-4" />
-                  </a>
-                </li>
-              ))}
-            </ol>
-          ) : (
-            <p className="mt-5 text-sm leading-6 text-slate-400">
-              {actions.data && pulls.data ?
-                'No confirmed failures or merge blockers in these samples. Other runs, checks and PRs may require attention.' :
-                'Not enough verified API data to make a recommendation. Check the source panels for errors.'}
-            </p>
-          )}
-          <p className="mt-4 text-xs text-slate-400">No repository changes are made by this preview.</p>
-        </section>
 
         <footer className="mt-9 border-t border-slate-800 pt-6 text-xs leading-6 text-slate-400">
           Public repositories only; anonymous GET requests; sample sizes and unknown states are explicit.
