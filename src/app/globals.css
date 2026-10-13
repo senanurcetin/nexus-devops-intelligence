@@ -137,3 +137,7 @@ body { background: #071829; color: #eff5ff; }
 .nexus-devops-data-state[data-state="ready"] .nexus-devops-state-dot { background:#43c99d; }
 .nexus-devops-data-state[data-state="warning"] { color:#f2c886; }
 .nexus-devops-data-state[data-state="warning"] .nexus-devops-state-dot { background:#f6b95f; }
+
+/* Do not describe two failed GitHub API panels as a partial success. */
+.nexus-devops-data-state[data-state="failed"] { color:#ffb2be; }
+.nexus-devops-data-state[data-state="failed"] .nexus-devops-state-dot { background:#f37a88; }

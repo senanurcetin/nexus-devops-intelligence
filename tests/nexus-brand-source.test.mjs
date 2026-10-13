@@ -22,6 +22,9 @@ test('NEXUS dashboard keeps app functionality while using sapphire brand identit
   assert.ok(page.includes('nexus-devops-evidence-note'));
   assert.ok(page.includes('nexus-devops-data-state'));
   assert.ok(page.includes('PARTIAL DATA · REVIEW PANEL ERRORS'));
+  assert.ok(page.includes('BOTH SOURCE PANELS UNAVAILABLE'));
+  assert.ok(page.includes("actions.error && pulls.error ? 'failed'"));
+  assert.ok(css.includes('data-state="failed"'));
   assert.ok(page.includes('BOTH SOURCE PANELS LOADED'));
   assert.ok(css.includes('data-state="warning"'));
   assert.ok(css.includes('.nexus-devops-company'));

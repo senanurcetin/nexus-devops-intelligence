@@ -166,9 +166,10 @@ export default function NexusDeveloperPreview() {
             Results are samples: up to 10 workflow runs and 5 open PRs. Merge states can be pending.
             No token, AI diagnosis, account-wide billing data or deployment claim.
             <div className="nexus-devops-data-state" role="status" aria-live="polite"
-              data-state={actionsLoading || pullsLoading ? 'loading' : actions.error || pulls.error ? 'warning' : actions.data && pulls.data ? 'ready' : 'idle'}>
+              data-state={loading ? 'loading' : actions.error && pulls.error ? 'failed' : actions.error || pulls.error ? 'warning' : actions.data && pulls.data ? 'ready' : 'idle'}>
               <span className="nexus-devops-state-dot" aria-hidden="true" />
-              {actionsLoading || pullsLoading ? 'FETCHING PUBLIC GITHUB SAMPLES'
+              {loading ? 'FETCHING PUBLIC GITHUB SAMPLES'
+                : actions.error && pulls.error ? 'BOTH SOURCE PANELS UNAVAILABLE'
                 : actions.error || pulls.error ? 'PARTIAL DATA · REVIEW PANEL ERRORS'
                 : actions.data && pulls.data ? 'BOTH SOURCE PANELS LOADED'
                 : 'AWAITING SOURCE RESPONSES'}
