@@ -124,3 +124,27 @@ test('Next PR route: upstream errors and invalid response never become merge suc
     });
   }
 });
+
+test('Next routes: 429 sends bounded Retry-After and no-store on both APIs', async () => {
+  await withMockGitHub(() => fakeResponse(429, {}, { 'Retry-After': '75' }), async calls => {
+    for (const [path, GET] of [['/api/public-actions', actionsGET], ['/api/public-prs', pullsGET]]) {
+      const response = await GET(request(path));
+      assert.equal(response.status, 429);
+      assert.equal(response.headers.get('retry-after'), '75');
+      assert.equal(response.headers.get('cache-control'), 'no-store');
+      assert.match((await response.json()).error, /rate limit/i);
+    }
+    assert.equal(calls.length, 2);
+  });
+});
+
+test('Next routes: malformed Retry-After is not echoed', async () => {
+  await withMockGitHub(() => fakeResponse(429, {}, { 'Retry-After': '99999999' }), async () => {
+    for (const [path, GET] of [['/api/public-actions', actionsGET], ['/api/public-prs', pullsGET]]) {
+      const response = await GET(request(path));
+      assert.equal(response.status, 429);
+      assert.equal(response.headers.get('retry-after'), null);
+      assert.equal(response.headers.get('cache-control'), 'no-store');
+    }
+  });
+});
