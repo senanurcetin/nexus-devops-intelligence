@@ -6,7 +6,7 @@
 
 ## Kesinleşmiş başlangıç durumu
 
-- [x] Son manuel bulut kontrolünde **76/76 otomatik test başarılı**, TypeScript ve Next.js production build başarılı.
+- [x] Son manuel bulut kontrolünde **78/78 otomatik test başarılı**, TypeScript ve Next.js production build başarılı.
 - [x] Son tam `npm audit --json` raporunda **0 bulgu**. Bu, gelecekteki açıkları garanti etmez.
 - [x] Gerçek public GitHub Actions ve PR REST API için localhost HTTP smoke başarılı.
 - [x] Chromium, Firefox ve Playwright WebKit motorlarında **375/768/1440 px** için temel responsive, form, klavye odağı ve otomatik axe-core WCAG A/AA testleri başarılı. Bu, tam WCAG veya ekran okuyucu onayı değildir.
@@ -46,6 +46,8 @@
 
 - [x] **Ücretsiz API koruması adres eşdeğerliği:** [PR #20](https://github.com/senanurcetin/nexus-devops-intelligence/pull/20) ile IPv6 uzun/kısa biçimleri ve IPv4-mapped IPv6 aynı IP kotasına bağlandı. 1.024 bucket sınırı ve expired-key temizliği regresyon testleriyle kontrol edildi. **76/76** test, TypeScript, production build, tam audit ve gerçek HTTP smoke başarılı. [Mimari kısıtları](HOBBY_LOCAL_API_PROTECTION.md).
 - [ ] Bu yerel kota **farklı Vercel işlev örnekleri arasında paylaşılmıyor**; herkesin erişebileceği dağıtım için platform seviyesinde gerçek koruma veya doğrulanmış eşdeğer çözüm gerekli.
+
+- [x] **PR review metriği uyumu:** [PR #21](https://github.com/senanurcetin/nexus-devops-intelligence/pull/21) ile doğrulanamamış `unknown` PR'lar inceleme gereken PR sayacına eklendi; draft ve temiz PR'lar hariç. İnsan değerlendirmesi gerektiren belirsizlik, kesin merge conflict olarak sunulmuyor. Manual **78/78**, typecheck/build/audit ve HTTP smoke başarılı; Chromium 375/1440px 0 axe otomatik ihlal. [Browser QA](pr-inspection-count-browser-qa-2026-10-13.md).
 
 ## Faz 2 — Ürün UX ve erişilebilirlik (P0/P1 paralel)
 
