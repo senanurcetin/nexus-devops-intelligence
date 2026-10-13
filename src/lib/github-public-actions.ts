@@ -92,6 +92,6 @@ export function summarizePublicActions(repository: string, payload: unknown): Pu
     pending_runs: pending,
     other_completed_runs: otherCompleted,
     runs,
-    scope_note: 'Public workflows only. Sample of up to 10 runs; completed cancelled/skipped/neutral runs are not pending or failures. Not billed minutes, monthly costs or a full historical audit.',
+    scope_note: 'Public workflows only. Sample of up to 10 runs; completed cancelled/skipped/neutral runs are not pending or failures. not billed minutes, monthly costs or a full historical audit.',
   };
 }
