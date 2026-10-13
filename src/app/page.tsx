@@ -165,7 +165,7 @@ export default function NexusDeveloperPreview() {
         repository: selectedRepo,
         actions: actions.data,
         prs: pulls.data,
-        actionsReceivedAt, prsReceivedAt,
+        actionsReceivedAt, prsReceivedAt: pullsReceivedAt,
         workflowFilter, pullFilter,
         exportedAt: new Date().toISOString(),
       });
