@@ -6,7 +6,7 @@
 
 ## Kesinleşmiş başlangıç durumu
 
-- [x] Son manuel bulut kontrolünde **67/67 otomatik test başarılı**, TypeScript ve Next.js production build başarılı.
+- [x] Son manuel bulut kontrolünde **73/73 otomatik test başarılı**, TypeScript ve Next.js production build başarılı.
 - [x] Son tam `npm audit --json` raporunda **0 bulgu**. Bu, gelecekteki açıkları garanti etmez.
 - [x] Gerçek public GitHub Actions ve PR REST API için localhost HTTP smoke başarılı.
 - [x] Chromium, Firefox ve Playwright WebKit motorlarında **375/768/1440 px** için temel responsive, form, klavye odağı ve otomatik axe-core WCAG A/AA testleri başarılı. Bu, tam WCAG veya ekran okuyucu onayı değildir.
@@ -40,6 +40,9 @@
 - [x] **PR ayrıntı eşzamanlılığı:** [PR #16](https://github.com/senanurcetin/nexus-devops-intelligence/pull/16) ile PR detail çağrılarında iki worker sınırı, kota hata yanıtından sonra kuyruktaki çağrıların durması ve sonuç sırasının korunması tamamlandı. **67/67** test, typecheck/build/tam npm audit/gerçek HTTP smoke geçti. [Kota notları](RATE_LIMIT_BEHAVIOR.md).
 - [x] **Yavaş PR yüklenmesi:** [PR #17](https://github.com/senanurcetin/nexus-devops-intelligence/pull/17) ile 2,5 sn sonra istek bazlı görsel/erişilebilir durum; yeni repo veya yanıt sonunda temizleniyor. Simüle edilmiş beş PR fixture'da 80/160 ms ayrıntı gecikmeleri **243/482 ms** toplam verdi. Chromium 375/1440px ve axe A/AA 0 otomatik ihlal. [Kanıt](pr-slow-load-browser-qa-2026-10-13.md).
 - [ ] Gerçek dağıtım ve farklı GitHub ağ koşullarındaki uçtan uca PR gecikmesi ayrıca ölçülmeli; fixture ölçümü ürün SLA'sı değildir.
+
+- [x] **Hobby ücret gerektirmeyen API katmanı:** [PR #19](https://github.com/senanurcetin/nexus-devops-intelligence/pull/19) ile her Vercel sunucu örneğinde kaynak IP'ye göre 20/60sn Actions+PR istek sınırı, 429/no-store/Retry-After, güvenli kaynak kimliği ve sınırlı bellek uygulandı. Altı regresyonla **73/73** test, build, typecheck, audit ve HTTP smoke başarılı. [Teknik belge](HOBBY_LOCAL_API_PROTECTION.md).
+- [ ] Sunucu örnekleri arasında ortak bir kota **henüz yok**. Mevcut WAF kuralı Log olduğundan halka açık yayın engeli devam ediyor. Ücretli dış servis açmadan korumalı preview testleri hazırlanabilir.
 
 ## Faz 2 — Ürün UX ve erişilebilirlik (P0/P1 paralel)
 
