@@ -33,6 +33,8 @@ Bu kontrol sonuçları manuel test edilen commit'lere aittir. Otomatik erişileb
 
 - [x] **API-05 (giriş doğrulaması / kapasite):** [PR #13](https://github.com/senanurcetin/nexus-devops-intelligence/pull/13) ile geçersiz ve 200 karakterden uzun repository girdileri gate öncesi reddediliyor; kapasite dolu koşullarda 400/503 ayrımı ve recovery test edildi. **59/59** başarı.
 
+- [x] **UX-06 — Bağımsız panel yenileme:** [PR #14](https://github.com/senanurcetin/nexus-devops-intelligence/pull/14) merge edildi. Actions/PR ayrı yenileniyor; diğer panelin verisi korunuyor; eski repository yanıtı yeni ekrana karışmıyor. 375/1440 px Chromium, klavye ve axe A/AA otomatik doğrulamada **0 ihlal**. [QA notu](panel-refresh-browser-qa-2026-10-13.md). İnsan ekran okuyucu incelemesi açık.
+
 ## P0 — Paylaşılabilir MVP'nin yayın kapıları
 
 | Sıra | ID | İş | Kabul / bitiş kriteri | Takip |
