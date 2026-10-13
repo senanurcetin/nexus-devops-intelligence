@@ -93,7 +93,7 @@ test('Next PR route: 1 list + 2 details, draft skipped, conflict and unknown are
       number: 2, mergeable: false, mergeable_state: 'dirty',
       html_url: 'https://github.com/owner/example/pull/2',
     });
-    if (url.endsWith('/pulls/3')) return fakeResponse(429, {});
+    if (url.endsWith('/pulls/3')) return fakeResponse(503, {});
     throw new Error('unexpected REST request');
   }, async calls => {
     const response = await pullsGET(request('/api/public-prs'));
