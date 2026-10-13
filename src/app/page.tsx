@@ -41,37 +41,55 @@ export default function NexusDeveloperPreview() {
   const [selectedRepo, setSelectedRepo] = useState(DEFAULT_REPOSITORY);
   const [actions, setActions] = useState<Panel<PublicActionsSummary>>(emptyPanel);
   const [pulls, setPulls] = useState<Panel<PublicPullSummary>>(emptyPanel);
-  const [loading, setLoading] = useState(false);
+  const [actionsLoading, setActionsLoading] = useState(false);
+  const [pullsLoading, setPullsLoading] = useState(false);
+  const loading = actionsLoading || pullsLoading;
   const [formError, setFormError] = useState('');
-  const controller = useRef<AbortController | null>(null);
+  const controllers = useRef<{ actions: AbortController | null; prs: AbortController | null }>({
+    actions: null, prs: null,
+  });
 
-  const load = useCallback(async (repo: string) => {
-    controller.current?.abort();
+  const refreshPanel = useCallback((kind: 'actions' | 'prs', repo: string) => {
+    controllers.current[kind]?.abort();
     const next = new AbortController();
-    controller.current = next;
-    const trimmed = repo.trim();
-    setSelectedRepo(trimmed);
-    setLoading(true);
-    setActions(emptyPanel());
-    setPulls(emptyPanel());
-    const params = new URLSearchParams({ repository: trimmed }).toString();
-    // Each panel renders as soon as its request settles. A slower PR response
-    // cannot delay Actions, and stale responses are ignored after switching repos.
-    const loadActions = readPublicPanel<PublicActionsSummary>(`/api/public-actions?${params}`, next.signal)
-      .then(result => {
-        if (controller.current === next && !next.signal.aborted) setActions(result);
-      });
-    const loadPulls = readPublicPanel<PublicPullSummary>(`/api/public-prs?${params}`, next.signal)
-      .then(result => {
-        if (controller.current === next && !next.signal.aborted) setPulls(result);
-      });
-    await Promise.all([loadActions, loadPulls]);
-    if (controller.current === next && !next.signal.aborted) setLoading(false);
+    controllers.current[kind] = next;
+    const params = new URLSearchParams({ repository: repo }).toString();
+    if (kind === 'actions') {
+      setActionsLoading(true);
+      setActions(emptyPanel());
+      void readPublicPanel<PublicActionsSummary>(`/api/public-actions?${params}`, next.signal)
+        .then(result => {
+          if (controllers.current.actions === next && !next.signal.aborted) setActions(result);
+        })
+        .finally(() => {
+          if (controllers.current.actions === next && !next.signal.aborted) setActionsLoading(false);
+        });
+    } else {
+      setPullsLoading(true);
+      setPulls(emptyPanel());
+      void readPublicPanel<PublicPullSummary>(`/api/public-prs?${params}`, next.signal)
+        .then(result => {
+          if (controllers.current.prs === next && !next.signal.aborted) setPulls(result);
+        })
+        .finally(() => {
+          if (controllers.current.prs === next && !next.signal.aborted) setPullsLoading(false);
+        });
+    }
   }, []);
 
+  const load = useCallback((repo: string) => {
+    const trimmed = repo.trim();
+    setSelectedRepo(trimmed);
+    refreshPanel('actions', trimmed);
+    refreshPanel('prs', trimmed);
+  }, [refreshPanel]);
+
   useEffect(() => {
-    void load(DEFAULT_REPOSITORY);
-    return () => controller.current?.abort();
+    load(DEFAULT_REPOSITORY);
+    return () => {
+      controllers.current.actions?.abort();
+      controllers.current.prs?.abort();
+    };
   }, [load]);
 
   function onSubmit(event: FormEvent<HTMLFormElement>) {
@@ -155,19 +173,19 @@ export default function NexusDeveloperPreview() {
         </section>
 
         <section className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4" aria-label="Sample statistics">
-          <Card label="Workflow runs inspected" value={actions.data?.inspected_runs ?? (loading ? '…' : '—')}
+          <Card label="Workflow runs inspected" value={actions.data?.inspected_runs ?? (actionsLoading ? '…' : '—')}
             detail="Up to ten most recent runs" />
           <Card label="Successful in sample" value={successRatio === null ? '—' : `${successRatio}%`}
             detail={validRuns ? `${actions.data!.successful_runs} of ${validRuns} inspected runs` : 'No verified workflow sample'} />
-          <Card label="Open PRs inspected" value={pulls.data?.inspected_prs ?? (loading ? '…' : '—')}
+          <Card label="Open PRs inspected" value={pulls.data?.inspected_prs ?? (pullsLoading ? '…' : '—')}
             detail={pulls.data?.more_open_prs ? 'More open PRs exist beyond this sample' : 'Up to five open PRs'} />
-          <Card label="PRs needing inspection" value={pulls.data?.needs_attention ?? (loading ? '…' : '—')}
+          <Card label="PRs needing inspection" value={pulls.data?.needs_attention ?? (pullsLoading ? '…' : '—')}
             detail={pulls.data ? `${pulls.data.conflicts} confirmed conflict(s); ${pulls.data.unknown} unknown status(es)` : 'Only GitHub-reported states'}
             tone={Boolean(pulls.data?.needs_attention) ? 'warning' : 'default'} />
         </section>
 
         <div className="mt-8 grid gap-6 lg:grid-cols-2">
-          <section aria-labelledby="workflow-title" aria-busy={loading && !actions.data && !actions.error} className="min-w-0 overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/75">
+          <section aria-labelledby="workflow-title" aria-busy={actionsLoading} className="min-w-0 overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/75">
             <div className="flex items-start justify-between gap-3 border-b border-slate-800 p-5">
               <div>
                 <h2 id="workflow-title" className="flex items-center gap-2 text-lg font-semibold">
@@ -175,12 +193,19 @@ export default function NexusDeveloperPreview() {
                 </h2>
                 <p className="mt-1 text-xs text-slate-400">Recent runs · GitHub REST API</p>
               </div>
-              <a href={`https://github.com/${selectedRepo}/actions`} target="_blank" rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 text-sm text-cyan-300 hover:text-white">
-                History <ArrowUpRight className="h-4 w-4" />
-              </a>
+              <div className="flex shrink-0 items-center gap-3">
+                <button type="button" onClick={() => refreshPanel('actions', selectedRepo)}
+                  disabled={actionsLoading} aria-label="Refresh GitHub Actions" title="Refresh GitHub Actions"
+                  className="inline-flex min-h-10 min-w-10 items-center justify-center rounded-lg border border-slate-700 text-slate-300 hover:border-cyan-400 hover:text-cyan-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-300 disabled:cursor-wait disabled:opacity-50">
+                  <RefreshCw aria-hidden="true" className={'h-4 w-4 ' + (actionsLoading ? 'animate-spin' : '')} />
+                </button>
+                <a href={`https://github.com/${selectedRepo}/actions`} target="_blank" rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 text-sm text-cyan-300 hover:text-white">
+                  History <ArrowUpRight className="h-4 w-4" />
+                </a>
+              </div>
             </div>
-            <span role="status" className="sr-only">{actions.data ? `Loaded ${actions.data.inspected_runs} workflow runs.` : loading && !actions.error ? 'Loading workflow history.' : ''}</span>
+            <span role="status" className="sr-only">{actions.data ? `Loaded ${actions.data.inspected_runs} workflow runs.` : actionsLoading ? 'Loading workflow history.' : ''}</span>
             {actions.error && <p className="m-5 flex gap-2 rounded-xl bg-rose-950/30 p-4 text-sm text-rose-300" role="alert">
               <AlertCircle className="h-4 w-4 shrink-0" />{actions.error}</p>}
             <ul className="divide-y divide-slate-800/80">
@@ -204,13 +229,13 @@ export default function NexusDeveloperPreview() {
               ))}
             </ul>
             {actions.data && runs.length === 0 && <p className="p-5 text-sm text-slate-400">No workflow runs in this sample.</p>}
-            {!actions.data && !actions.error && <p className="p-5 text-sm text-slate-400">{loading ? 'Loading workflow history…' : 'No workflow data loaded.'}</p>}
+            {!actions.data && !actions.error && <p className="p-5 text-sm text-slate-400">{actionsLoading ? 'Loading workflow history…' : 'No workflow data loaded.'}</p>}
             {actions.data && <p className="border-t border-slate-800 p-5 text-xs leading-5 text-slate-400">
               {actions.data.scope_note} GitHub reports {actions.data.total_matching_runs} matching workflow runs. In the sample: {actions.data.failed_runs} failed, {actions.data.pending_runs} pending, and {actions.data.other_outcome_runs} other outcomes.
             </p>}
           </section>
 
-          <section aria-labelledby="pulls-title" aria-busy={loading && !pulls.data && !pulls.error} className="min-w-0 overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/75">
+          <section aria-labelledby="pulls-title" aria-busy={pullsLoading} className="min-w-0 overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/75">
             <div className="flex items-start justify-between gap-3 border-b border-slate-800 p-5">
               <div>
                 <h2 id="pulls-title" className="flex items-center gap-2 text-lg font-semibold">
@@ -218,12 +243,19 @@ export default function NexusDeveloperPreview() {
                 </h2>
                 <p className="mt-1 text-xs text-slate-400">Recent open pull requests · GitHub-reported merge states</p>
               </div>
-              <a href={`https://github.com/${selectedRepo}/pulls`} target="_blank" rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 text-sm text-cyan-300 hover:text-white">
-                Open PRs <ArrowUpRight className="h-4 w-4" />
-              </a>
+              <div className="flex shrink-0 items-center gap-3">
+                <button type="button" onClick={() => refreshPanel('prs', selectedRepo)}
+                  disabled={pullsLoading} aria-label="Refresh pull requests" title="Refresh pull requests"
+                  className="inline-flex min-h-10 min-w-10 items-center justify-center rounded-lg border border-slate-700 text-slate-300 hover:border-cyan-400 hover:text-cyan-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-300 disabled:cursor-wait disabled:opacity-50">
+                  <RefreshCw aria-hidden="true" className={'h-4 w-4 ' + (pullsLoading ? 'animate-spin' : '')} />
+                </button>
+                <a href={`https://github.com/${selectedRepo}/pulls`} target="_blank" rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 text-sm text-cyan-300 hover:text-white">
+                  Open PRs <ArrowUpRight className="h-4 w-4" />
+                </a>
+              </div>
             </div>
-            <span role="status" className="sr-only">{pulls.data ? `Loaded ${pulls.data.inspected_prs} pull requests.` : loading && !pulls.error ? 'Loading pull requests.' : ''}</span>
+            <span role="status" className="sr-only">{pulls.data ? `Loaded ${pulls.data.inspected_prs} pull requests.` : pullsLoading ? 'Loading pull requests.' : ''}</span>
             {pulls.error && <p className="m-5 flex gap-2 rounded-xl bg-rose-950/30 p-4 text-sm text-rose-300" role="alert">
               <AlertCircle className="h-4 w-4 shrink-0" />{pulls.error}</p>}
             <ul className="divide-y divide-slate-800/80">
@@ -244,7 +276,7 @@ export default function NexusDeveloperPreview() {
               ))}
             </ul>
             {pulls.data && prList.length === 0 && <p className="p-5 text-sm text-slate-400">No open PRs found.</p>}
-            {!pulls.data && !pulls.error && <p className="p-5 text-sm text-slate-400">{loading ? 'Loading pull requests…' : 'No PR data loaded.'}</p>}
+            {!pulls.data && !pulls.error && <p className="p-5 text-sm text-slate-400">{pullsLoading ? 'Loading pull requests…' : 'No PR data loaded.'}</p>}
             {pulls.data && <p className="border-t border-slate-800 p-5 text-xs leading-5 text-slate-400">
               {pulls.data.scope_note}
             </p>}
