@@ -6,11 +6,12 @@ import {
   Activity, AlertCircle, ArrowRight, ArrowUpRight, CheckCircle2,
   GitBranch, GitPullRequest, RefreshCw, ShieldCheck, TriangleAlert,
 } from 'lucide-react';
-import { isConfirmedWorkflowFailure, parsePublicRepository, type PublicActionsSummary } from '@/lib/github-public-actions';
+import { parsePublicRepository, type PublicActionsSummary } from '@/lib/github-public-actions';
 import type { PublicPullSummary, PullAttention } from '@/lib/nexus-public-prs';
 import { recommendInvestigations } from '@/lib/nexus-recommendations';
 import { readPublicPanel, emptyPanel, type Panel } from '@/lib/nexus-panel-request';
 import { isPublicActionsSample, isPublicPullSample } from '@/lib/nexus-panel-validation';
+import { filteredWorkflowRuns, workflowOutcome, workflowOutcomeCount, workflowOutcomes, type WorkflowFilter } from '@/lib/nexus-workflow-visuals';
 
 const DEFAULT_REPOSITORY = 'senanurcetin/ot-sentinel';
 
@@ -49,6 +50,7 @@ export default function NexusDeveloperPreview() {
   const [lastApiResponseAt, setLastApiResponseAt] = useState<string | null>(null);
   const loading = actionsLoading || pullsLoading;
   const [formError, setFormError] = useState('');
+  const [workflowFilter, setWorkflowFilter] = useState<WorkflowFilter>('all');
   const controllers = useRef<{ actions: AbortController | null; prs: AbortController | null }>({
     actions: null, prs: null,
   });
@@ -105,6 +107,7 @@ export default function NexusDeveloperPreview() {
   const load = useCallback((repo: string) => {
     const trimmed = repo.trim();
     setSelectedRepo(trimmed);
+    setWorkflowFilter('all');
     setLastApiResponseAt(null);
     refreshPanel('actions', trimmed);
     refreshPanel('prs', trimmed);
@@ -135,6 +138,7 @@ export default function NexusDeveloperPreview() {
   const validRuns = actions.data?.inspected_runs ?? 0;
   const successRatio = validRuns ? Math.round((actions.data!.successful_runs / validRuns) * 100) : null;
   const runs = actions.data?.runs ?? [];
+  const visibleRuns = filteredWorkflowRuns(actions.data, workflowFilter);
   const prList = pulls.data?.pull_requests ?? [];
   const recommendations = recommendInvestigations(actions.data, pulls.data);
 
@@ -244,7 +248,94 @@ export default function NexusDeveloperPreview() {
             tone={Boolean(pulls.data?.needs_attention) ? 'warning' : 'default'} />
         </section>
 
-        <div className="nexus-devops-section mb-3 mt-9">02 / GitHub workflow and pull request evidence</div>
+        <div className="nexus-devops-section mb-3 mt-9">02 / Workflow sample intelligence</div>
+        <section className="nexus-devops-insights rounded-2xl p-5 sm:p-6" aria-labelledby="workflow-insights-title">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <p className="nexus-devops-insights-kicker">GITHUB ACTIONS / SAMPLE EVIDENCE</p>
+              <h2 id="workflow-insights-title" className="mt-2 text-xl font-semibold tracking-tight text-white">
+                Workflow outcome composition
+              </h2>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-300">
+                Only the most recent {actions.data?.inspected_runs ?? 'up to 10'} runs returned by GitHub.
+                This is a sampled distribution, not a historical trend or reliability score.
+              </p>
+            </div>
+            <span className="nexus-devops-sample-tag">
+              {actions.data ? actions.data.inspected_runs + ' / 10 sampled' : actionsLoading ? 'Loading sample' : 'Sample unavailable'}
+            </span>
+          </div>
+          {actions.data && actions.data.inspected_runs > 0 ? (
+            <div className="mt-6 grid gap-6 lg:grid-cols-[1.25fr_1fr]">
+              <div className="min-w-0">
+                <div className="mb-3 flex items-end justify-between gap-3">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-slate-300">Outcome distribution</p>
+                  <p className="text-xs tabular-nums text-slate-400">{actions.data.inspected_runs} inspected</p>
+                </div>
+                <div className="nexus-devops-outcome-bar" role="img"
+                  aria-label={workflowOutcomes.map(outcome =>
+                    outcome.label + ': ' + workflowOutcomeCount(actions.data!, outcome.key)).join(', ') + ' in the sampled workflow runs'}>
+                  {workflowOutcomes.map(outcome => {
+                    const count = workflowOutcomeCount(actions.data!, outcome.key);
+                    return count ? <span key={outcome.key}
+                      className={'nexus-devops-outcome-fill nexus-devops-outcome-fill--' + outcome.key}
+                      style={{ width: (100 * count / actions.data!.inspected_runs) + '%' }}
+                      aria-hidden="true" /> : null;
+                  })}
+                </div>
+                <div className="mt-5 grid grid-cols-2 gap-x-4 gap-y-4 sm:grid-cols-4 lg:grid-cols-2 xl:grid-cols-4">
+                  {workflowOutcomes.map(outcome => (
+                    <div key={outcome.key} className="min-w-0">
+                      <p className="flex items-center gap-2 text-xs text-slate-300">
+                        <span aria-hidden="true" className={'nexus-devops-outcome-dot nexus-devops-outcome-fill--' + outcome.key} />
+                        {outcome.shortLabel}
+                      </p>
+                      <p className="mt-1 text-2xl font-semibold tabular-nums text-white">
+                        {workflowOutcomeCount(actions.data!, outcome.key)}
+                        <span className="ml-2 text-xs font-normal text-slate-400">
+                          {Math.round(100 * workflowOutcomeCount(actions.data!, outcome.key) / actions.data!.inspected_runs)}%
+                        </span>
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="nexus-devops-run-sequence min-w-0">
+                <div className="flex items-end justify-between gap-3">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-slate-300">Recent run sequence</p>
+                  <p className="text-xs text-slate-400">Latest listed → older</p>
+                </div>
+                <ol className="mt-4 grid grid-cols-5 gap-2 sm:grid-cols-10 lg:grid-cols-5 xl:grid-cols-10"
+                  aria-label="Recently listed workflow runs in GitHub API order">
+                  {runs.map((run, index) => (
+                    <li key={run.id}>
+                      <a href={run.html_url} target="_blank" rel="noopener noreferrer"
+                        className={'nexus-devops-run-tick nexus-devops-run-tick--' + workflowOutcome(run)}
+                        aria-label={'Open sampled run ' + (index + 1) + ': ' + run.name + ', ' +
+                          workflowOutcome(run) + ', ' + run.created_at.slice(0, 10)}
+                        title={'Run #' + run.id + ': ' + workflowOutcome(run)}>
+                        <span aria-hidden="true">{String(index + 1).padStart(2, '0')}</span>
+                      </a>
+                    </li>
+                  ))}
+                </ol>
+                <p className="mt-4 text-xs leading-5 text-slate-400">
+                  Each numbered tile opens GitHub evidence. Positions indicate listing order,
+                  not equally spaced time intervals. Pending and cancelled runs are not counted as failures.
+                </p>
+              </div>
+            </div>
+          ) : (
+            <p className="mt-5 rounded-xl border border-slate-700/70 bg-slate-950/40 px-4 py-4 text-sm text-slate-300">
+              {actionsLoading ? 'Loading the GitHub workflow sample…'
+                : actions.error ? 'Workflow evidence is unavailable. Review the Actions panel error and retry.'
+                  : actions.data ? 'No workflow runs were returned in this sample. No percentages or trend are inferred.'
+                    : 'Awaiting a verified GitHub Actions response. No sample analysis is displayed yet.'}
+            </p>
+          )}
+        </section>
+
+        <div className="nexus-devops-section mb-3 mt-9">03 / GitHub workflow and pull request evidence</div>
         <div className="grid gap-6 lg:grid-cols-2">
           <section aria-labelledby="workflow-title" aria-busy={actionsLoading} className="nexus-devops-evidence min-w-0 overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/75">
             <div className="flex items-start justify-between gap-3 border-b border-slate-800 p-5">
@@ -269,16 +360,33 @@ export default function NexusDeveloperPreview() {
             <span role="status" className="sr-only">{actions.data ? `Loaded ${actions.data.inspected_runs} workflow runs.` : actionsLoading ? 'Loading workflow history.' : ''}</span>
             {actions.error && <p className="m-5 flex gap-2 rounded-xl bg-rose-950/30 p-4 text-sm text-rose-300" role="alert">
               <AlertCircle className="h-4 w-4 shrink-0" />{actions.error}</p>}
+            {actions.data && actions.data.inspected_runs > 0 && (
+              <div className="border-b border-slate-800 px-5 pb-4 pt-4">
+                <div role="group" aria-label="Filter sampled workflow runs" className="flex flex-wrap gap-2">
+                  {(['all', ...workflowOutcomes.map(outcome => outcome.key)] as WorkflowFilter[]).map(filter => (
+                    <button key={filter} type="button" onClick={() => setWorkflowFilter(filter)}
+                      aria-pressed={workflowFilter === filter}
+                      className="nexus-devops-filter">
+                      {filter === 'all' ? 'All' : workflowOutcomes.find(outcome => outcome.key === filter)!.shortLabel}
+                    </button>
+                  ))}
+                </div>
+                <p className="mt-3 text-xs tabular-nums text-slate-400" role="status" aria-live="polite">
+                  Showing {visibleRuns.length} of {actions.data.inspected_runs} sampled runs
+                  {workflowFilter === 'all' ? '' : ' · Filter: ' + workflowFilter}.
+                  No additional GitHub requests.
+                </p>
+              </div>
+            )}
             <ul className="divide-y divide-slate-800/80">
-              {runs.map(run => (
+              {visibleRuns.map(run => (
                 <li key={run.id} className="nexus-devops-event flex items-center justify-between gap-3 p-5">
                   <div className="min-w-0">
                     <p className="truncate text-sm font-medium text-slate-200">{run.name}</p>
                     <p className="mt-1 text-xs text-slate-400">{run.event} · {run.created_at.slice(0, 10)} · #{run.id}</p>
                   </div>
                   <div className="flex shrink-0 items-center gap-3">
-                    <span className={'text-xs ' + (run.conclusion === 'success' ? 'text-emerald-300' :
-                      isConfirmedWorkflowFailure(run.conclusion) && run.status === 'completed' ? 'text-rose-300' : 'text-amber-300')}>
+                    <span className={'text-xs nexus-devops-outcome-text--' + workflowOutcome(run)}>
                       {run.conclusion ?? run.status}
                     </span>
                     <a href={run.html_url} target="_blank" rel="noopener noreferrer"
@@ -290,6 +398,8 @@ export default function NexusDeveloperPreview() {
               ))}
             </ul>
             {actions.data && runs.length === 0 && <p className="p-5 text-sm text-slate-400">No workflow runs in this sample.</p>}
+            {actions.data && runs.length > 0 && visibleRuns.length === 0 &&
+              <p className="p-5 text-sm text-slate-400">No {workflowFilter} runs in the inspected sample. Other GitHub history was not checked.</p>}
             {!actions.data && !actions.error && <p className="p-5 text-sm text-slate-400">{actionsLoading ? 'Loading workflow history…' : 'No workflow data loaded.'}</p>}
             {actions.data && <p className="border-t border-slate-800 p-5 text-xs leading-5 text-slate-400">
               {actions.data.scope_note} GitHub reports {actions.data.total_matching_runs} matching workflow runs. In the sample: {actions.data.failed_runs} failed, {actions.data.pending_runs} pending, and {actions.data.other_outcome_runs} other outcomes.
