@@ -6,7 +6,7 @@ and pull request merge state. **This is not part of Ops-Copilot.**
 > **Verified MVP development build (13 October 2026):** [PR #3](https://github.com/senanurcetin/nexus-devops-intelligence/pull/3)
 > upgraded Next.js; [PR #6](https://github.com/senanurcetin/nexus-devops-intelligence/pull/6)
 > migrated Tailwind to 4.3.3 and fixed secondary-text contrast. Clean cloud `npm ci`,
-> **67/67 tests**, full TypeScript and production build passed. Full `npm audit`
+> **73/73 tests**, full TypeScript and production build passed. Full `npm audit`
 > (including development dependencies) reported **zero findings at the time checked**.
 > Chromium 375/768/1440 responsive checks and automated axe-core A/AA tests passed.
 > **No public deployment:** Vercel WAF cross-instance rate limiting and final manual
@@ -84,6 +84,14 @@ detail limit still applies. Controlled **80/160ms** simulated per-detail
 latency resulted in **243/482ms** total for five details; these are **not**
 real GitHub performance measurements. See
 [manual latency and browser QA](docs/pr-slow-load-browser-qa-2026-10-13.md).
+
+**Hobby-safe local protection:** [PR #19](https://github.com/senanurcetin/nexus-devops-intelligence/pull/19)
+adds a Vercel-only, per-instance 20 requests/minute budget shared by both
+public API endpoints. It rejects excess requests with HTTP 429 before upstream
+GitHub calls and does not need a paid datastore. **It is not a distributed
+rate limiter or enforced WAF.** The user-created Vercel firewall rule was
+reported as Log-only and remains an open release gate.
+[Security behavior and limitations](docs/HOBBY_LOCAL_API_PROTECTION.md).
 
 ## Current scope (MVP)
 
