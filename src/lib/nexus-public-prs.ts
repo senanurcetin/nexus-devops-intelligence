@@ -115,8 +115,11 @@ export function summarizePublicPullRequests(
       explanation,
     };
   });
+  // Unknown mergeability still needs a human check. The recommendations
+  // panel already includes unknown states; excluding them here understated
+  // the number of sampled PRs that need inspection.
   const needs_attention = pull_requests.filter(p =>
-    ['conflict', 'blocked', 'behind', 'unstable'].includes(p.attention)).length;
+    ['conflict', 'blocked', 'behind', 'unstable', 'unknown'].includes(p.attention)).length;
   return {
     repository,
     inspected_prs: pull_requests.length,
