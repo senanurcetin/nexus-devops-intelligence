@@ -1,12 +1,12 @@
 # NEXUS release candidate inventory — R-01
 
-**Read-only audit:** 14 October 2026 (Europe/Istanbul). **Status: inventory complete; release NOT approved or deployed.** This is a snapshot, not a release authorization or a promise that a moving `main` branch will still point here. Re-check immediately before any manual deployment.
+**Read-only audit:** 14 October 2026 (Europe/Istanbul). **Status: inventory and exact-candidate offline verification complete; release NOT approved or deployed.** This is a snapshot, not a release authorization or a promise that a moving `main` branch will still point here. Re-check immediately before any manual deployment.
 
 ## Exact GitHub / deployment references
 
 | Surface | Immutable source SHA | External ID / state | Interpretation |
 | --- | --- | --- | --- |
-| GitHub `main` at audit time | `599ced76605c25161b182b2d5bfbadbd091bfb53` | [source snapshot](https://github.com/senanurcetin/nexus-devops-intelligence/commit/599ced76605c25161b182b2d5bfbadbd091bfb53) | **Proposed candidate for a future exact-SHA build; NOT tested on Vercel at this exact SHA.** Contains docs changes after code PR |
+| GitHub `main` at audit time | `599ced76605c25161b182b2d5bfbadbd091bfb53` | [source snapshot](https://github.com/senanurcetin/nexus-devops-intelligence/commit/599ced76605c25161b182b2d5bfbadbd091bfb53) | **Proposed candidate; exact SHA compiled/tested in a disposable Vercel Sandbox (not a Preview/Production deployment).** Contains docs changes after code PR |
 | Last application feature change | `8ebcbea05a2386a351b040ed743adca596f38b8e` | [PR #37](https://github.com/senanurcetin/nexus-devops-intelligence/pull/37) | Q-05 budget tests/manual command. Previous Q-04 fix [PR #36](https://github.com/senanurcetin/nexus-devops-intelligence/pull/36), squash `a49275a1bb1e324859c66b68ef50b7849821b1b9` |
 | **Currently deployed Production** | `74cd0e344eb94255b4bc8db99e4a4dc7f3a5a0bf` | `dpl_9fXGATNHhyhNVrN1i47k3BU4u5K5`, **READY** | [Primary domain](https://nexus-devops-intelligence.vercel.app). **Older than app PR #25–37. Do not equate Production behavior with newer Redis/UX code.** |
 | **Currently deployed protected Preview** | `e745c6188f47942ffe8405aa195d7584e2d395da` | `dpl_DxFyywkhBrMe3hzooikmqCpKAuyx`, **READY** | Branch `test/protected-redis-preview-gate-20261013`; [unique Preview URL](https://nexus-devops-intelligence-r43tbr0yu-senanurs-projects-102fb36c.vercel.app). **Also older than current app source.** |
@@ -25,7 +25,7 @@
 
 ## Candidate and rollback status
 
-**Provisional candidate:** `599ced76605c25161b182b2d5bfbadbd091bfb53`, **not approved**. The last manual build/test (**135/135 Node tests, typecheck, Next production build, audit 0 findings at inspection, read-only GitHub smoke, Q-04 Chromium fixtures**) ran on the previously prepared development/PR branch code, **not this exact GitHub merge/docs SHA**. Before issuing a manual Preview deployment, rebuild this immutable candidate in disposable Sandbox and establish matching SHA/equivalent source tree evidence; do not claim exact candidate tested until it happens. If `main` advances, require a new manifest or explicit owner choice of the pinned old candidate.
+**Provisional candidate:** `599ced76605c25161b182b2d5bfbadbd091bfb53`, **NOT approved for publication**. **Exact-SHA offline preflight completed on 14 Oct**: a disposable Node **v24.14.1** Vercel Sandbox checked out exactly this immutable Git SHA, then passed `npm ci`, **135/135 Node tests**, `npm run typecheck`, Next production `npm run build`, `npm run inspect:budget` (**401,241 raw / 117,432 gzip page JS bytes**, under thresholds), `npm audit` (**0 reported findings**) and local production-server `npm run smoke:http` (valid public GitHub read-only samples, invalid-input 400/no-store, security headers). **Sandbox stopped. No protected Preview or Production deployment was created and no Upstash credentials or live shared Redis requests were used.** This verifies the pinned candidate's local build/API smoke, **not its actual Vercel deployment or human accessibility**. If `main` advances, require a new manifest or explicit owner choice of the pinned old candidate.
 
 **Production fallback:** record existing READY `dpl_9fXGATNHhyhNVrN1i47k3BU4u5K5` as the known current deployed version. A rollback means an **explicit owner-authorized Vercel operation** returning the production alias to a *previous known acceptable production deployment*, followed by bounded read-only verification. Do not silently promote a Preview deployment, point public aliases to protected Preview, rerun unknown source code, or confuse reverting GitHub files with changing Vercel's served deployment. The previously READY status does not independently guarantee safe rollback at a later time.
 
@@ -33,7 +33,7 @@
 
 | Gate | Current determination | Required before Production |
 | --- | --- | --- |
-| R-01 inventory | **Done at audit time**; exact candidate is provisional | Reconfirm source and IDs immediately before release |
+| R-01 inventory / exact SHA offline tests | **Done at audit time**; exact `599ced7` passed 135/135 + TS/build/budget/audit/smoke in disposable Sandbox. Candidate is still **not approved** | Reconfirm source and IDs immediately before release |
 | R-02 Free Redis capacity | **Unknown** | Account owner checks real aggregate command/storage headroom; no token/URL values |
 | R-03 exact-SHA SSO Preview | **Not done** for current app | Explicit Preview authorization; verify selected SHA and SSO protection |
 | R-04 current Preview functional/visual QA | **Not done** | Inspect actual latest Preview and recorded images; strictly bounded request budget |
