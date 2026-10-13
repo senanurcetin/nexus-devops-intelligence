@@ -2,6 +2,8 @@
  * Browser-side adapter for the two read-only NEXUS API panels.
  * Handles HTTP errors and non-JSON WAF responses without displaying raw HTML.
  */
+import { safeRetryAfterSeconds } from './nexus-retry-after.ts';
+
 export type Panel<T> = { data: T | null; error: string | null };
 
 export function emptyPanel<T>(): Panel<T> {
@@ -28,7 +30,10 @@ export async function readPublicPanel<T>(
     const response = await fetcher(url, { cache: 'no-store', signal });
     // Edge-level WAF responses need not be JSON; handle 429 before parsing.
     if (response.status === 429) {
-      return { data: null, error: 'Request limit reached. Please try again shortly.' };
+      const wait = safeRetryAfterSeconds(response.headers.get('retry-after'));
+      return { data: null, error: wait === null
+        ? 'Request limit reached. Please try again shortly.'
+        : `Request limit reached. Please wait at least ${wait} ${wait === 1 ? 'second' : 'seconds'} before retrying.` };
     }
     let payload: unknown;
     try {
