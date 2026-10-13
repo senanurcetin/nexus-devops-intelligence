@@ -65,7 +65,7 @@ export default function NexusDeveloperPreview() {
         .then(result => {
           if (controllers.current.actions === next && !next.signal.aborted) {
             setActions(result);
-            setLastApiResponseAt(new Date().toLocaleTimeString());
+            if (result.data) setLastApiResponseAt(new Date().toLocaleTimeString());
           }
         })
         .finally(() => {
@@ -85,7 +85,7 @@ export default function NexusDeveloperPreview() {
         .then(result => {
           if (controllers.current.prs === next && !next.signal.aborted) {
             setPulls(result);
-            setLastApiResponseAt(new Date().toLocaleTimeString());
+            if (result.data) setLastApiResponseAt(new Date().toLocaleTimeString());
           }
         })
         .finally(() => {
@@ -182,10 +182,10 @@ export default function NexusDeveloperPreview() {
                 : actions.data && pulls.data ? 'BOTH SOURCE PANELS LOADED'
                 : 'AWAITING SOURCE RESPONSES'}
             </div>
-            <p className="nexus-devops-received-at" aria-label="Last API response received">
+            <p className="nexus-devops-received-at" aria-label="Last successful GitHub API sample received">
               {lastApiResponseAt
-                ? `Last API response received at ${lastApiResponseAt} (browser local time)`
-                : 'No API response received for this selection yet'}
+                ? `Last successful GitHub API sample received at ${lastApiResponseAt} (browser local time)`
+                : 'No successful GitHub API sample received for this selection yet'}
             </p>
           </div>
         </div>
