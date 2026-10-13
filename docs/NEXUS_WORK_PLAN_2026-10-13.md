@@ -146,3 +146,14 @@
 - [ ] Account owner must approve an optional **bounded 21-request**, single-client test; no bulk test was performed yet. `shared-redis` success does not prove shared `429` or independent cross-instance operation. Continue issue #7 acceptance later.
 - [ ] No newer code was automatically deployed to Production. Production remained on `74cd0e3` at the last readback; human a11y issue #5 remains open.
 
+
+### P0.2 zero-Upstash-command real local Redis proof — 13 October 2026
+
+- [x] Owner confirmed the current **Preview and Production use the same Upstash Free Redis quota** and requested no further live quota-consuming load test. **Do not execute** the 21-request live Preview exercise without a new explicit approval.
+- [x] [PR #30](https://github.com/senanurcetin/nexus-devops-intelligence/pull/30) squash-merged as `f97e63f789e230fd6836542757b988bf1e00201f`: optional `npm run test:redis:offline` starts **real, persistence-disabled local Redis 6** and two separately initialized Node processes executing actual Actions and PR route handlers. Local adapter issues actual Redis atomic EVAL, not a JavaScript Map.
+- [x] Two real local Node runtimes split **20 concurrent valid origin GETs** over both routes and return 20 × HTTP 200; 21st yields Redis-attributed `429` with `Cache-Control: no-store` and valid `Retry-After`. Another synthetic IP returns 200; exactly **22 local EVAL** operations with two opaque Redis keys; **zero Upstash commands, zero Production requests and zero Preview requests**.
+- [x] Disposable CI-free Vercel Sandbox, Redis6 6.2.20, standalone local proof run multiple times; **105/105 regular tests**, TypeScript, Next.js production build, 0 `npm audit` findings at inspection, actual public-GitHub HTTP smoke all passed.
+- [x] [Offline Redis QA runbook](https://github.com/senanurcetin/nexus-devops-intelligence/blob/main/docs/OFFLINE_REDIS_MULTIPROCESS_QA_2026-10-13.md).
+- [ ] Do not misstate this as **independent live Vercel serverless instances**; the real Upstash backend only passed the earlier **one-request Preview preflight** (`x-nexus-rate-limit-mode:shared-redis`, cache MISS). Issue #7 stays **OPEN** for a separately approved live/provider-based cross-instance acceptance strategy once free-tier quota and operational constraints permit it.
+- [ ] Human accessibility and physical device signoff remains open under issue #5. Git merges do **not** imply a new Vercel Production release.
+
