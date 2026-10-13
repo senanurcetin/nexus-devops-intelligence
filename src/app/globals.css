@@ -123,3 +123,17 @@ body { background: #071829; color: #eff5ff; }
   .nexus-devops-company { font-size:.7rem; }
   .nexus-devops-sublabel { font-size:.55rem; }
 }
+
+/* Executive provenance indicator: represents successful API reads, not CI health. */
+.nexus-devops-data-state {
+  display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+  margin-top:15px;padding-top:13px;border-top:1px solid rgba(132,171,212,.2);
+  font-size:.65rem;font-weight:760;letter-spacing:.07em;color:#b3cae3;
+}
+.nexus-devops-state-dot { width:7px;height:7px;flex:0 0 7px;border-radius:50%;background:#93aeca; }
+.nexus-devops-data-state[data-state="loading"] { color:#a3d5ff; }
+.nexus-devops-data-state[data-state="loading"] .nexus-devops-state-dot { background:#4ea8ff; }
+.nexus-devops-data-state[data-state="ready"] { color:#8bdfbc; }
+.nexus-devops-data-state[data-state="ready"] .nexus-devops-state-dot { background:#43c99d; }
+.nexus-devops-data-state[data-state="warning"] { color:#f2c886; }
+.nexus-devops-data-state[data-state="warning"] .nexus-devops-state-dot { background:#f6b95f; }
