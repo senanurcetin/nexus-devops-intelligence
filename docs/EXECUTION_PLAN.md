@@ -47,6 +47,9 @@
 
 **Bitiş kriteri:** Erişilebilirlik raporu, browser test kanıtları ve doğrulanmış ekran görüntüleri; makine testinin insan ekran okuyucu testi yerine geçmediği açıkça yazılmış.
 
+- [x] [PR #14](https://github.com/senanurcetin/nexus-devops-intelligence/pull/14): iki veri paneline ayrı, klavye erişilebilir yenileme düğmesi; ayrı loading/aria-busy ve stale-response koruması. **59/59** test, typecheck/build/tam npm audit/gerçek HTTP smoke ve 375/1440 px Chromium etkileşim/axe kontrolü geçti. [Kanıt](panel-refresh-browser-qa-2026-10-13.md).
+- [ ] İnsan ekran okuyucu incelemesi tamamlandı iddiası yok; [issue #5](https://github.com/senanurcetin/nexus-devops-intelligence/issues/5) açık.
+
 ## Faz 3 — Güvenli manuel Vercel preview (P0, önkoşullu)
 
 **Önkoşullar:** SEC-01 gözden geçirildi, API koruması ve erişim/ücret şartları doğrulandı.
