@@ -11,15 +11,22 @@ The two read-only route handlers retain repository validation and then apply a *
 | --- | --- |
 | Budget | **20 incoming requests in 60 seconds** |
 | Routes | Both public Actions and PR endpoints **share** the same per-source budget **within one function instance** |
-| Key | One source IP supplied by the Vercel edge in `x-vercel-forwarded-for`; spoofable client `x-forwarded-for` is **not** trusted |
+| Key | Source IP from Vercel's documented `x-vercel-forwarded-for` request header; untrusted client `x-forwarded-for` values are **not** used as alternate identity |
 | Missing/invalid Vercel source header | All unattributed requests share a conservative per-instance budget |
 | When 21st request arrives | **429** JSON with `Cache-Control: no-store` and bounded `Retry-After`; upstream GitHub is **not** contacted |
 | Key lifecycle | Hashed with a random per-process salt; no raw IP retained in buckets |
+| Canonicalization | Equivalent expanded/compressed IPv6 forms and IPv4-mapped IPv6 forms share the same hashed source bucket as their canonical IP |
 | Memory control | At most **1,024** distinct source buckets per process; expired buckets are pruned at capacity; on full capacity an unknown source receives a conservative 429 |
 | Development / non-Vercel hosts | The Vercel-only guard is disabled; the existing 12 distinct in-flight per-process gate remains |
 | Libraries or paid infrastructure | None added |
 
 Invalid repository names still return **400/no-store** before any quota is consumed. The existing GitHub adapter, upstream quota recognition, two-worker PR detail fanout, user-visible wait guidance, and per-process deduplication remain unchanged. A source can refresh either panel without bypassing the **combined** local allowance.
+
+## Address-normalization hardening
+
+The same remote client may otherwise appear as `192.0.2.78`, `::ffff:192.0.2.78`, or `0:0:0:0:0:ffff:c000:24e`. All three now consume **one** local quota. Expanded and compressed IPv6 spellings are similarly unified using standard URL IP canonicalization. Invalid or multiple-address forwarding header values remain in the conservative shared `unattributed` bucket.
+
+Only the **hashed canonical source** enters the in-memory map; no IP is persisted or logged by this limiter. The existing strict 1,024-key capacity, expiration behavior and process-local limitations are retained. The code does not claim cryptographic identity verification of the original client; it relies on Vercel's ingress-provided header contract. Official reference: https://vercel.com/docs/headers/request-headers.
 
 ## Security boundaries
 
@@ -34,7 +41,7 @@ This is **defense in depth**, not a reliable service-wide or globally distribute
 ## Manual evidence, no CI
 
 - `npm ci --no-audit --no-fund`: passed in disposable cloud sandbox
-- `npm test`: **73/73 passed**; six new unit/Next.js route regressions verify budget sharing, 429 and `Retry-After`, source separation, proxy header handling, unattributed fallback and disabled non-Vercel behavior
+- `npm test`: **76/76 passed**; three additional regressions verify equivalent IPv6/IPv4-mapped identities, the 1,024-bucket cap, and expired-key reclamation, on top of the previously tested request-budget/Next.js route behavior
 - `npm run typecheck`, `npm run build`: passed on Next.js 15.5.27
 - Full `npm audit --json`: **0 findings** at verification time
 - `npm run smoke:http`: passed against local production server and actual public GitHub workflow/PR samples (10 Actions runs, 5 PRs), HTTP headers and invalid repository responses

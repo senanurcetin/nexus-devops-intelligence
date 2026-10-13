@@ -77,3 +77,57 @@ test('public rate limit: non-Vercel runtimes are not claimed as protected', () =
     if (previous !== undefined) process.env.VERCEL = previous;
   }
 });
+
+test('public rate limit: expanded and compressed IPv6 spellings share one budget', () => {
+  const old = process.env.VERCEL;
+  process.env.VERCEL = '1';
+  try {
+    const hit = ip => checkVercelPublicRateLimit(new Headers({
+      'x-vercel-forwarded-for': ip,
+    }));
+    for (let n = 0; n < PUBLIC_RATE_LIMIT_REQUESTS; n++) {
+      const equivalent = n % 2 === 0 ? '2001:0db8:0000:0000:0000:0000:0000:1111' : '2001:db8::1111';
+      assert.equal(hit(equivalent), null);
+    }
+    assert.ok(hit('2001:DB8:0:0::1111'),
+      'a differently spelled but identical IPv6 address cannot reset the budget');
+    assert.equal(hit('2001:db8::1112'), null, 'other IPv6 sources keep their own budget');
+  } finally {
+    if (old === undefined) delete process.env.VERCEL;
+    else process.env.VERCEL = old;
+  }
+});
+
+test('public rate limit: IPv4-mapped IPv6 shares the native IPv4 allowance', () => {
+  const old = process.env.VERCEL;
+  process.env.VERCEL = '1';
+  try {
+    const hit = ip => checkVercelPublicRateLimit(new Headers({
+      'x-vercel-forwarded-for': ip,
+    }));
+    for (let n = 0; n < PUBLIC_RATE_LIMIT_REQUESTS; n++) {
+      const ip = n % 3 === 0 ? '192.0.2.78'
+        : n % 3 === 1 ? '::ffff:192.0.2.78' : '0:0:0:0:0:ffff:c000:24e';
+      assert.equal(hit(ip), null);
+    }
+    assert.ok(hit('::FFFF:C000:24E'));
+    assert.equal(hit('192.0.2.79'), null);
+  } finally {
+    if (old === undefined) delete process.env.VERCEL;
+    else process.env.VERCEL = old;
+  }
+});
+
+test('public rate limit: source bucket cap rejects unknown keys and frees expired slots', () => {
+  const now = 12_000_000;
+  for (let n = 0; n < 1024; n++) {
+    assert.equal(checkLocalPublicRateLimit(`bounded-fixture-${n}`, now), null,
+      `distinct source ${n} should fit within the 1024 bucket cap`);
+  }
+  assert.deepEqual(checkLocalPublicRateLimit('bounded-new-client', now),
+    { retryAfterSeconds: 60 }, 'unknown sources cannot expand in-memory storage');
+  assert.equal(checkLocalPublicRateLimit('bounded-fixture-0', now), null,
+    'a source with an existing bucket may still use its remaining allowance');
+  assert.equal(checkLocalPublicRateLimit('bounded-new-client', now + PUBLIC_RATE_LIMIT_WINDOW_MS),
+    null, 'expired keys are reclaimed on the next capacity check');
+});
