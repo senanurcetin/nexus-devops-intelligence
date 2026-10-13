@@ -3,14 +3,32 @@
 An independent, read-only dashboard for inspecting recent GitHub Actions workflow runs
 and pull request merge state. **This is not part of Ops-Copilot.**
 
+> **CURRENT RELEASE STATUS — 14 October 2026:** The latest audited GitHub `main` snapshot is
+> [`599ced7`](https://github.com/senanurcetin/nexus-devops-intelligence/commit/599ced76605c25161b182b2d5bfbadbd091bfb53),
+> incorporating newer Actions/PR intelligence, layout, source-safety and performance fixes.
+> Vercel **Production exists**, but currently serves **older source `74cd0e3`**;
+> the protected Preview also serves older `e745c61`. Merging GitHub PRs does **not**
+> publish code (`git.deploymentEnabled:false`). Final human NVDA/VoiceOver/mobile
+> acceptance is **not evidenced**, even though historical GitHub Issue #5 is now
+> **closed**; Redis independent live Vercel instance enforcement remains open as
+> [Issue #7](https://github.com/senanurcetin/nexus-devops-intelligence/issues/7).
+> Free Upstash Redis is shared between Production/Preview; **do not run the
+> 21-request live quota test without new explicit consent**.
+> Authoritative: [release inventory](docs/NEXUS_RELEASE_CANDIDATE_MANIFEST_2026-10-14.md),
+> [status register](docs/NEXUS_ACCEPTANCE_STATUS_2026-10-14.md),
+> [manual release/rollback](docs/NEXUS_MANUAL_RELEASE_RUNBOOK_2026-10-14.md).
+
+**Historical engineering milestones below** describe earlier commits and test sessions;
+they are not a statement that those older commits are today's Production release.
+
 > **Verified MVP development build (13 October 2026):** [PR #3](https://github.com/senanurcetin/nexus-devops-intelligence/pull/3)
 > upgraded Next.js; [PR #6](https://github.com/senanurcetin/nexus-devops-intelligence/pull/6)
 > migrated Tailwind to 4.3.3 and fixed secondary-text contrast. Clean cloud `npm ci`,
 > **78/78 tests**, full TypeScript and production build passed. Full `npm audit`
 > (including development dependencies) reported **zero findings at the time checked**.
 > Chromium 375/768/1440 responsive checks and automated axe-core A/AA tests passed.
-> **No public deployment:** Vercel WAF cross-instance rate limiting and final manual
-> release QA remain pending. No GitHub Actions or CircleCI were run.
+> **At that earlier test milestone**, no public deployment existed. A later Production
+> deployment was created on older SHA `74cd0e3`; this milestone did **not** release today's app.
 
 **Release security:** [PR #9](https://github.com/senanurcetin/nexus-devops-intelligence/pull/9)
 adds verified anti-framing, MIME-sniffing, referrer and permissions headers,
@@ -117,7 +135,7 @@ browser checks are documented in
 - Deterministic investigation suggestions linking to GitHub-confirmed workflow failures
   and PR merge states; no speculative log analysis or automatic code changes.
 - URL validation, bounded requests, caching and request timeouts.
-- No AI root-cause diagnosis, CircleCI integration, private repo access or live product deployment yet.
+- No AI root-cause diagnosis, CircleCI integration or private repo access. A public Production URL exists, but it still serves an **older application SHA**, not the current reviewed UI.
 
 ## Run locally
 
@@ -149,10 +167,7 @@ covers Chromium screen widths, invalid repository validation, rapid repo switchi
 and an axe-core WCAG 2/2.1 A/AA scan. These manual checks are separate from the
 33 automated Node.js tests and require no GitHub Actions or CircleCI.
 
-**Release gate:** Before serving broad public traffic, configure a platform-wide
-rate limit covering both APIs ([issue #7](https://github.com/senanurcetin/nexus-devops-intelligence/issues/7)).
-The current request gate is per Node process only. Vercel Hobby WAF configuration,
-its usage terms, manual preview and remaining accessibility checks are not complete.
+**Current release gate:** The latest merged application implements **Redis-first shared origin admission** for both APIs when Upstash is configured; an older per-process fallback remains for unconfigured environments. This is **not** Vercel edge WAF enforcement. Existing Production is on an older SHA, and its behavior does not prove the latest implementation. [Issue #7](https://github.com/senanurcetin/nexus-devops-intelligence/issues/7) tracks the remaining live cross-instance proof; final human accessibility and manually authorized protected Preview verification are also outstanding. See the [current status register](docs/NEXUS_ACCEPTANCE_STATUS_2026-10-14.md).
 
 ### Independent panels and edge rate limiting
 
