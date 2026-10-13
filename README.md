@@ -7,8 +7,10 @@ and pull request merge state. **This is not part of Ops-Copilot.**
 > [`599ced7`](https://github.com/senanurcetin/nexus-devops-intelligence/commit/599ced76605c25161b182b2d5bfbadbd091bfb53),
 > incorporating newer Actions/PR intelligence, layout, source-safety and performance fixes.
 > Vercel **Production exists**, but currently serves **older source `74cd0e3`**;
-> the protected Preview also serves older `e745c61`. Merging GitHub PRs does **not**
-> publish code (`git.deploymentEnabled:false`). Final human NVDA/VoiceOver/mobile
+> the owner-approved **protected Preview** now serves pinned source **`599ced7`**
+> ([Preview URL](https://nexus-devops-intelligence-qwftzbzic-senanurs-projects-102fb36c.vercel.app)),
+> build **READY** but **actual signed-in visual/API acceptance not done**. Merging
+> GitHub PRs does **not** publish code (`git.deploymentEnabled:false`). Final human NVDA/VoiceOver/mobile
 > acceptance is **not evidenced**, even though historical GitHub Issue #5 is now
 > **closed**; Redis independent live Vercel instance enforcement remains open as
 > [Issue #7](https://github.com/senanurcetin/nexus-devops-intelligence/issues/7).
