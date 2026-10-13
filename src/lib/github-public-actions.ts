@@ -15,7 +15,7 @@ export type PublicActionsSummary = {
   successful_runs: number;
   failed_runs: number;
   pending_runs: number;
-  other_completed_runs: number;
+  other_outcome_runs: number;
   runs: PublicWorkflowRun[];
   scope_note: string;
 };
@@ -90,7 +90,7 @@ export function summarizePublicActions(repository: string, payload: unknown): Pu
     successful_runs: successful,
     failed_runs: failed,
     pending_runs: pending,
-    other_completed_runs: otherCompleted,
+    other_outcome_runs: otherCompleted,
     runs,
     scope_note: 'Public workflows only. Sample of up to 10 runs; completed cancelled/skipped/neutral runs are not pending or failures. not billed minutes, monthly costs or a full historical audit.',
   };
