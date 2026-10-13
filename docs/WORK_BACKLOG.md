@@ -10,7 +10,7 @@
 
 - [x] Bağımsız GitHub deposu; Ops-Copilot'dan ayrı.
 - [x] Next.js 15.5.27, Tailwind CSS 4.3.3, npm lockfile ve read-only public GitHub Actions/PR API.
-- [x] Birim, adapter, route-handler ve güvenlik başlığı testleri: **64/64 başarılı** (son manuel cloud çalışması).
+- [x] Birim, adapter, route-handler ve güvenlik başlığı testleri: **67/67 başarılı** (son manuel cloud çalışması).
 - [x] `npm ci`, TypeScript, Next.js production build ve tam `npm audit` (kontrol anında **0 bulgu**) başarılı.
 - [x] Gerçek GitHub verileriyle manuel HTTP smoke kontrolü; PR/Actions endpoint hata durumları.
 - [x] Chromium, Firefox ve WebKit'te 375/768/1440px temel responsive, form ve klavye odak kontrolleri; axe-core otomatik WCAG A/AA kontrollerinde test edilen akışlar için **0 ihlal**.
@@ -36,6 +36,8 @@ Bu kontrol sonuçları manuel test edilen commit'lere aittir. Otomatik erişileb
 - [x] **UX-06 — Bağımsız panel yenileme:** [PR #14](https://github.com/senanurcetin/nexus-devops-intelligence/pull/14) merge edildi. Actions/PR ayrı yenileniyor; diğer panelin verisi korunuyor; eski repository yanıtı yeni ekrana karışmıyor. 375/1440 px Chromium, klavye ve axe A/AA otomatik doğrulamada **0 ihlal**. [QA notu](panel-refresh-browser-qa-2026-10-13.md). İnsan ekran okuyucu incelemesi açık.
 
 - [x] **API-04 — PR ayrıntısı kota doğruluğu:** [PR #15](https://github.com/senanurcetin/nexus-devops-intelligence/pull/15) tamamlandı. Liste 200 olsa bile ayrıntıda GitHub 403/429 kota hatası varsa endpoint **429/no-store** döner; birden çok bekleme süresinde en uzun güvenli Retry-After kullanılır. Diğer ayrıntı hataları bilinmiyor kalır. **64/64** test, typecheck/build/tam audit ve gerçek HTTP smoke geçti. [Davranış notu](RATE_LIMIT_BEHAVIOR.md).
+
+- [x] **API-05 — PR ayrıntısı kota tasarrufu:** [PR #16](https://github.com/senanurcetin/nexus-devops-intelligence/pull/16) ile en fazla **iki eşzamanlı** ayrıntı GET'i; kota cevabı görüldükten sonra henüz başlatılmamış istekler gönderilmiyor. Önceden başlamış çağrılardan en uzun güvenli bekleme süresi korunuyor. Üç yeni test dahil **67/67** başarılı; typecheck/build/tam audit/gerçek HTTP smoke geçti. Yavaş API yanıtlarında gecikme artabilir; bu global WAF değildir. [Teknik not](RATE_LIMIT_BEHAVIOR.md).
 
 ## P0 — Paylaşılabilir MVP'nin yayın kapıları
 
