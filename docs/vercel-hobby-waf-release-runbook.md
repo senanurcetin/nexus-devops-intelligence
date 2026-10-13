@@ -8,7 +8,7 @@
 ## Proven baseline
 
 - Next.js 15.5.27, Tailwind CSS 4.3.3.
-- Clean `npm ci`; 33/33 unit/route tests; TypeScript; production build.
+- Clean `npm ci`; **41/41** unit/route/security-header tests; TypeScript; production build.
 - Full dependency `npm audit --json` showed zero findings at verification time.
 - CI-free HTTP smoke passed with real public GitHub API responses.
 - Chromium: 375px, 768px, 1440px without horizontal overflow; invalid repo and valid repo switching worked.
