@@ -27,8 +27,13 @@ export async function readPublicPanel<T>(
   fetcher: PanelFetcher = fetch,
   validate?: (payload: unknown) => payload is T,
 ): Promise<Panel<T>> {
+  // An already-cancelled panel must not initiate another origin/Redis request.
+  if (signal.aborted) return emptyPanel<T>();
   try {
     const response = await fetcher(url, { cache: 'no-store', signal });
+    // Custom transports and mocks may resolve after cancellation, unlike
+    // native fetch. Keep a cancellation from becoming data OR an error.
+    if (signal.aborted) return emptyPanel<T>();
     // Edge-level WAF responses need not be JSON; handle 429 before parsing.
     if (response.status === 429) {
       const wait = safeRetryAfterSeconds(response.headers.get('retry-after'));
@@ -44,6 +49,8 @@ export async function readPublicPanel<T>(
         'The API returned an unreadable response.' :
         'GitHub data is temporarily unavailable.' };
     }
+    // A response body may finish after the user selected a different repo.
+    if (signal.aborted) return emptyPanel<T>();
     const serverError = safeError(payload);
     if (!response.ok || serverError || !payload || typeof payload !== 'object' || Array.isArray(payload)) {
       return { data: null, error: serverError ?? 'GitHub data is temporarily unavailable.' };
@@ -51,6 +58,7 @@ export async function readPublicPanel<T>(
     if (validate && !validate(payload)) {
       return { data: null, error: 'The public API sample could not be verified. Please retry.' };
     }
+    if (signal.aborted) return emptyPanel<T>();
     return { data: payload as T, error: null };
   } catch {
     // Aborted/stale requests must never appear as actionable errors.
