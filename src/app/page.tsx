@@ -12,6 +12,7 @@ import { recommendInvestigations } from '@/lib/nexus-recommendations';
 import { readPublicPanel, emptyPanel, type Panel } from '@/lib/nexus-panel-request';
 import { isPublicActionsSample, isPublicPullSample } from '@/lib/nexus-panel-validation';
 import { filteredWorkflowRuns, workflowOutcome, workflowOutcomeCount, workflowOutcomes, type WorkflowFilter } from '@/lib/nexus-workflow-visuals';
+import { filteredPublicPulls, pullBucket, pullBucketCount, pullBuckets, type PullFilter } from '@/lib/nexus-pr-visuals';
 
 const DEFAULT_REPOSITORY = 'senanurcetin/ot-sentinel';
 
@@ -51,6 +52,7 @@ export default function NexusDeveloperPreview() {
   const loading = actionsLoading || pullsLoading;
   const [formError, setFormError] = useState('');
   const [workflowFilter, setWorkflowFilter] = useState<WorkflowFilter>('all');
+  const [pullFilter, setPullFilter] = useState<PullFilter>('all');
   const controllers = useRef<{ actions: AbortController | null; prs: AbortController | null }>({
     actions: null, prs: null,
   });
@@ -108,6 +110,7 @@ export default function NexusDeveloperPreview() {
     const trimmed = repo.trim();
     setSelectedRepo(trimmed);
     setWorkflowFilter('all');
+    setPullFilter('all');
     setLastApiResponseAt(null);
     refreshPanel('actions', trimmed);
     refreshPanel('prs', trimmed);
@@ -140,6 +143,7 @@ export default function NexusDeveloperPreview() {
   const runs = actions.data?.runs ?? [];
   const visibleRuns = filteredWorkflowRuns(actions.data, workflowFilter);
   const prList = pulls.data?.pull_requests ?? [];
+  const visiblePulls = filteredPublicPulls(pulls.data, pullFilter);
   const recommendations = recommendInvestigations(actions.data, pulls.data);
 
   return (
@@ -335,7 +339,95 @@ export default function NexusDeveloperPreview() {
           )}
         </section>
 
-        <div className="nexus-devops-section mb-3 mt-9">03 / GitHub workflow and pull request evidence</div>
+        <div className="nexus-devops-section mb-3 mt-9">03 / Pull request sample intelligence</div>
+        <section className="nexus-devops-pr-insights rounded-2xl p-5 sm:p-6" aria-labelledby="pr-insights-title">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div>
+              <p className="nexus-devops-insights-kicker">GITHUB PULL REQUESTS / MERGE-STATE EVIDENCE</p>
+              <h2 id="pr-insights-title" className="mt-2 text-xl font-semibold tracking-tight text-white">
+                Open PR review landscape
+              </h2>
+              <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-300">
+                A breakdown of up to five recently listed open PRs. GitHub-reported merge states
+                are not approvals, verified CI outcomes or a prediction of merge safety.
+              </p>
+            </div>
+            <span className="nexus-devops-sample-tag">
+              {pulls.data ? pulls.data.inspected_prs + ' / 5 inspected' : pullsLoading ? 'Loading PR sample' : 'Sample unavailable'}
+            </span>
+          </div>
+          {pulls.data && pulls.data.inspected_prs > 0 ? (
+            <div className="mt-6 grid gap-6 lg:grid-cols-[1.2fr_1fr]">
+              <div className="min-w-0">
+                <div className="mb-3 flex items-end justify-between gap-2">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-slate-300">Merge-state composition</p>
+                  <p className="text-xs tabular-nums text-slate-400">{pulls.data.inspected_prs} inspected</p>
+                </div>
+                <div className="nexus-devops-pr-bar" role="img"
+                  aria-label={pullBuckets.map(bucket =>
+                    bucket.label + ': ' + pullBucketCount(pulls.data!, bucket.key)).join(', ') + ' in the inspected PR sample'}>
+                  {pullBuckets.map(bucket => {
+                    const count = pullBucketCount(pulls.data!, bucket.key);
+                    return count ? <span key={bucket.key}
+                      className={'nexus-devops-pr-fill nexus-devops-pr-fill--' + bucket.key}
+                      style={{ width: (100 * count / pulls.data!.inspected_prs) + '%' }}
+                      aria-hidden="true" /> : null;
+                  })}
+                </div>
+                <div className="mt-5 grid grid-cols-2 gap-x-4 gap-y-4 sm:grid-cols-3">
+                  {pullBuckets.map(bucket => (
+                    <div key={bucket.key} className="min-w-0">
+                      <p className="flex items-center gap-2 text-xs text-slate-300">
+                        <span aria-hidden="true" className={'nexus-devops-pr-dot nexus-devops-pr-fill--' + bucket.key} />
+                        {bucket.shortLabel}
+                      </p>
+                      <p className="mt-1 text-2xl font-semibold tabular-nums text-white">
+                        {pullBucketCount(pulls.data!, bucket.key)}
+                        <span className="ml-2 text-xs font-normal text-slate-400">
+                          {Math.round(100 * pullBucketCount(pulls.data!, bucket.key) / pulls.data!.inspected_prs)}%
+                        </span>
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="nexus-devops-pr-sequence min-w-0">
+                <div className="flex items-end justify-between gap-3">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-slate-300">Recently listed PRs</p>
+                  <p className="text-xs text-slate-400">API order</p>
+                </div>
+                <ol className="mt-4 grid grid-cols-5 gap-2" aria-label="Open pull requests in GitHub API listing order">
+                  {prList.map(pr => (
+                    <li key={pr.number}>
+                      <a href={pr.html_url} target="_blank" rel="noopener noreferrer"
+                        className={'nexus-devops-pr-tick nexus-devops-pr-tick--' + pullBucket(pr)}
+                        aria-label={'Open PR #' + pr.number + ': ' + attentionMeta[pr.attention].label}
+                        title={'PR #' + pr.number + ': ' + attentionMeta[pr.attention].label}>
+                        <span aria-hidden="true">{'#' + pr.number}</span>
+                      </a>
+                    </li>
+                  ))}
+                </ol>
+                <p className="mt-4 text-xs leading-5 text-slate-400">
+                  Restrictions group blocked, behind and unstable states. Unknown remains
+                  unverified; clean does not imply merge approval. Tiles open the source PR.
+                </p>
+                {pulls.data.more_open_prs && <p className="mt-2 text-xs font-semibold text-amber-200">
+                  More open PRs exist beyond this five-item sample.
+                </p>}
+              </div>
+            </div>
+          ) : (
+            <p className="mt-5 rounded-xl border border-slate-700/70 bg-slate-950/40 px-4 py-4 text-sm text-slate-300">
+              {pullsLoading ? 'Loading GitHub merge-state evidence…'
+                : pulls.error ? 'PR evidence is unavailable. Review the PR panel error and retry.'
+                  : pulls.data ? 'No open PRs in this sample; no percentages or merge conclusions are inferred.'
+                    : 'Awaiting a verified GitHub PR sample. No merge-state summary is displayed yet.'}
+            </p>
+          )}
+        </section>
+
+        <div className="nexus-devops-section mb-3 mt-9">04 / GitHub workflow and pull request evidence</div>
         <div className="grid gap-6 lg:grid-cols-2">
           <section aria-labelledby="workflow-title" aria-busy={actionsLoading} className="nexus-devops-evidence min-w-0 overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/75">
             <div className="flex items-start justify-between gap-3 border-b border-slate-800 p-5">
@@ -432,8 +524,26 @@ export default function NexusDeveloperPreview() {
              </p>}
             {pulls.error && <p className="m-5 flex gap-2 rounded-xl bg-rose-950/30 p-4 text-sm text-rose-300" role="alert">
               <AlertCircle className="h-4 w-4 shrink-0" />{pulls.error}</p>}
+            {pulls.data && pulls.data.inspected_prs > 0 && (
+              <div className="border-b border-slate-800 px-5 pb-4 pt-4">
+                <div role="group" aria-label="Filter sampled pull requests" className="flex flex-wrap gap-2">
+                  {(['all', ...pullBuckets.map(bucket => bucket.key)] as PullFilter[]).map(filter => (
+                    <button key={filter} type="button" onClick={() => setPullFilter(filter)}
+                      aria-pressed={pullFilter === filter}
+                      className="nexus-devops-filter">
+                      {filter === 'all' ? 'All' : pullBuckets.find(bucket => bucket.key === filter)!.shortLabel}
+                    </button>
+                  ))}
+                </div>
+                <p className="mt-3 text-xs tabular-nums text-slate-400" role="status" aria-live="polite">
+                  Showing {visiblePulls.length} of {pulls.data.inspected_prs} sampled PRs
+                  {pullFilter === 'all' ? '' : ' · Filter: ' + pullFilter}.
+                  No additional GitHub requests.
+                </p>
+              </div>
+            )}
             <ul className="divide-y divide-slate-800/80">
-              {prList.map(pr => (
+              {visiblePulls.map(pr => (
                 <li key={pr.number} className="nexus-devops-event p-5">
                   <div className="flex flex-wrap items-start justify-between gap-2">
                     <a href={pr.html_url} target="_blank" rel="noopener noreferrer"
@@ -450,6 +560,8 @@ export default function NexusDeveloperPreview() {
               ))}
             </ul>
             {pulls.data && prList.length === 0 && <p className="p-5 text-sm text-slate-400">No open PRs found.</p>}
+            {pulls.data && prList.length > 0 && visiblePulls.length === 0 &&
+              <p className="p-5 text-sm text-slate-400">No {pullFilter} PRs in the inspected sample. Other open PRs were not checked.</p>}
             {!pulls.data && !pulls.error && <p className="p-5 text-sm text-slate-400">{pullsLoading ? 'Loading pull requests…' : 'No PR data loaded.'}</p>}
             {pulls.data && <p className="border-t border-slate-800 p-5 text-xs leading-5 text-slate-400">
               {pulls.data.scope_note}
