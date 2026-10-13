@@ -186,11 +186,19 @@ export default function NexusDeveloperPreview() {
                 : 'AWAITING SOURCE RESPONSES'}
             </div>
             {(actions.error || pulls.error) && !loading && (
-              <button type="button" onClick={() => load(selectedRepo)}
+              <button type="button" onClick={() => {
+                // Retry only the failed sources: preserve verified sibling data
+                // and avoid needless anonymous GitHub / Redis usage.
+                if (actions.error) refreshPanel('actions', selectedRepo);
+                if (pulls.error) refreshPanel('prs', selectedRepo);
+              }}
                 className="nexus-devops-retry"
-                aria-label="Retry both GitHub source panels">
+                aria-label={actions.error && pulls.error ? 'Retry both GitHub source panels'
+                  : actions.error ? 'Retry GitHub Actions source panel'
+                    : 'Retry GitHub PR source panel'}>
                 <RefreshCw className="h-4 w-4" aria-hidden="true" />
-                Retry public data
+                {actions.error && pulls.error ? 'Retry public data'
+                  : actions.error ? 'Retry Actions data' : 'Retry PR data'}
               </button>
             )}
             <p className="nexus-devops-received-at" aria-label="Last successful GitHub API sample received">
