@@ -1,0 +1,95 @@
+# NEXUS DevOps Intelligence — delivery and development plan
+
+**Baseline:** 13 October 2026 · **Execution policy:** CI-free; manual cloud verification; no paid services, automatic Git deployment, or unapproved production release.
+
+## Verified starting point
+
+| Area | Verified status | Source / caveat |
+| --- | --- | --- |
+| GitHub `main` | `e647baed57d8a4e2e16551d32e3bb0b920c4ceb3` | [Merged PR #25](https://github.com/senanurcetin/nexus-devops-intelligence/pull/25) |
+| Latest Vercel production build | `dpl_23cYA6n7AU6eEtxRNqw3oJQFnnWs`, `READY`, commit `74cd0e344eb94255b4bc8db99e4a4dc7f3a5a0bf` | **Not yet using the Redis-authority fix in `e647bae`**; Vercel `READY` alone is not a public-access or security sign-off |
+| Public GitHub endpoints | Read-only Actions and open PR summaries with narrow, explicit sample limitations | Invalid repository must be HTTP 400/no-store |
+| Redis | Production-scoped **Sensitive** `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` were verified as *present*, without reading their values | Free / $0 Upstash plan and remaining quota must be confirmed by owner |
+| Shared limiter | PR #24 provides an atomic Upstash IP counter; PR #25 checks it **before** the per-instance fallback | The earlier live 429 could have come from the local limiter; independent post-PR-25 cross-instance proof still needed |
+| Existing Vercel WAF | **Log** only; user's Hobby account cannot use premium `Default (429)` | Do not describe it as blocking traffic or attempt paid activation |
+| Automatic releases | `vercel.json` sets `git.deploymentEnabled: false` | Manual, specific-SHA deploy only, with release approval |
+| CI-free last validation | 90/90 unit/route/security tests; TypeScript and Next.js build; npm audit 0 findings at check time; real public GitHub HTTP smoke; Chromium 375/768/1440, axe A/AA 0 detected violations | This is pre-release code/browser evidence, **not** a current production acceptance certificate |
+| Open release issues | [#7 shared rate limit](https://github.com/senanurcetin/nexus-devops-intelligence/issues/7) (P0), [#5 manual accessibility/visual acceptance](https://github.com/senanurcetin/nexus-devops-intelligence/issues/5) (P1) | Do not close until the actual acceptance criteria pass |
+
+## Sequence and acceptance criteria
+
+### Phase 0 — P0 release and abuse protection (highest priority)
+
+**P0.1 — Verify the deployment boundary and costs** — **NOT STARTED**
+- Read back exact latest GitHub SHA, Vercel deployment target, host aliases, existing deployment protection and production vs preview environment variable **names only**. Do not read/log tokens.
+- Confirm Vercel SSO-protected preview mechanics without lowering protection; confirm user's Upstash plan is **Free / $0**, quota approx. 256 MB, 500,000 commands/month; record actual dashboard values and any limits/auto-upgrade policy.
+- Review the last production deployment for live runtime errors and accidental changes from concurrent pushes.
+- **Exit:** deployment/rollback SHA and free-cost boundaries documented; no hidden changes to production.
+
+**P0.2 — Verify Redis is authoritative in a protected release candidate** — **PENDING**
+- Preserve exact source SHA `e647bae`; no unrelated feature commits in the release candidate.
+- If a protected Vercel preview is available, ensure both Redis variables are set as **Sensitive / preview** without exposing credentials; publish **manual preview only**. If a preview cannot safely be configured, do not treat its absence as authorization for public deployment.
+- Run read-only, bounded probes: valid Actions/PR GETs, invalid repo 400/no-store, independent panel failure states, shared 20/60s counter, 21st uncached request 429 + Retry-After + no-store, second trusted IP still admitted.
+- Distinguish CDN HIT vs MISS and stable IP / region; verify Upstash command count or corresponding Redis-side evidence. For **cross-instance** proof, use two genuinely separate application processes/instances sharing one live Redis counter, or supported provider evidence of inter-instance counter use. A mocked Redis Map or a single-instance 429 is insufficient.
+- Check local fallback only when shared Redis is absent; explicitly configured Redis outage produces fail-closed 503 before GitHub calls.
+- Monitor upstream GitHub quota and Upstash commands to avoid excessive load or free-tier overages. Stop probing at the first confirmed threshold.
+- **Exit:** timestamped verification evidence attributes 429 to Redis on the released SHA, with no quota, disclosure or availability incident; otherwise leave #7 open.
+
+**P0.3 — Controlled rollout and rollback** — **BLOCKED on P0.1–P0.2 + owner approval**
+- Re-run fresh `npm ci`, `npm test`, `npm run typecheck`, `npm run build`, `npm audit --json`, `npm run smoke:http` and browser verification manually in a short-lived sandbox.
+- Publish only an explicit SHA after user approval; never turn Git auto-deploy back on. Save the previous ready production deployment ID for rollback.
+- Post-rollout perform health and 200/400/429/503 checks against the **actual** current production alias; read runtime logs, verify no error increase and no unsupported security claim.
+- Roll back if app errors/availability regress or Redis cannot meet free-tier bounds.
+- **Exit:** exact deployed SHA, URLs, manual verification records and rollback instructions match; no paid service used.
+
+### Phase 1 — Accessibility, UI and reliability acceptance (next, can work on a feature branch before rollout)
+
+**P1.1 — Real-device and assistive technology sign-off** — **PARTIAL / HUMAN ACCEPTANCE OPEN**
+- Repeat 375/768/1440 Chromium, keyboard-only entry/submit/retry, visible focus, responsive overflow, browser console, loading, malformed input, 404/429/5xx/empty states, switching repositories during requests and stale-response cancellation.
+- Owner or human QA checks NVDA + supported desktop browser, and/or VoiceOver + Safari on a real device. Record actual focus order, headings, labels, spoken errors and live announcements; do not describe axe as human screen-reader testing.
+- Capture actual application screenshots with repository/data provenance; avoid mock data presented as real.
+- **Exit:** #5 checklist reviewed with human evidence; fix any observed accessibility bugs and rerun QA. If human verification cannot be performed, #5 stays OPEN.
+
+**P1.2 — Reliability and free-tier operational guardrails** — **BACKLOG**
+- Verify upstream GitHub 403/429/5xx handling, bounded PR detail fanout, timeout and `Retry-After`; no secret or IP leak in UI/logs.
+- Define a **non-paid**, read-only health and usage review: origin 429/503 counts, error rate, cache HIT/MISS, GitHub anonymous quota failures, Upstash monthly command trend and Vercel Hobby deployment quota.
+- Proposed conservative Upstash usage alert at 80% of the published monthly command allowance; confirm observed allowance before hard-coding a threshold.
+- **Exit:** reproducible maintenance checklist and clear runbooks; no personal-data capture or new paid telemetry.
+
+### Phase 2 — Product intelligence enhancements (after release gates; implement behind separate reviewed PRs)
+
+**P2.1 — Trustworthy Actions analysis**
+- Add clearly labeled, sample-based success/failure/pending trend slices over available public runs; allow understandable filters but never portray a 10-run sample as full historical reliability, spending or billed minutes.
+- Keep links to the source run, data timestamps and `unknown` outcomes. No workflow mutations/triggers.
+
+**P2.2 — Actionable PR risk signals**
+- Better differentiate merge conflicts, `unknown` GitHub mergeability, draft, stale status and unverified details; preserve human-review disclaimers.
+- Link each signal to the exact public PR evidence. Avoid heuristic `merge safe` or AI/automerge claims without a verifiable source.
+
+**P2.3 — Portfolio-grade NEXUS presentation**
+- Retain the single navy/sapphire NEXUS palette across views; refine responsive spacing, skeleton/loading states, evidence provenance, empty/error states and readable statistical hierarchy.
+- Capture truthful branded screenshots only after actual behavior is verified.
+
+**P2 acceptance:** each feature goes through isolated PR, manually executed tests and responsive accessibility smoke; deploy only after P0/P1 release criteria and human approval.
+
+### Phase 3 — Documentation and handoff
+
+- Keep `README.md`, environment variable setup, **free-tier usage** expectations, `docs/FREE_SHARED_RATE_LIMIT.md`, release gates and the actual deployed SHA aligned.
+- Record one CI-free release checklist with exact test commands, screenshots, failures and rollback steps.
+- Close #7 and #5 only on verifiable criteria; update related issues instead of marking them done based on code merges.
+
+## Delivery discipline
+
+1. Work in this order: **P0.1 → P0.2 → P0.3 → P1.1 → P1.2 → P2.1 → P2.2 → P2.3 → P3**.
+2. Keep P0/P1 quality work separate from P2 feature changes; one issue/PR per logical change, with technical titles and evidence-based descriptions.
+3. Keep GitHub Actions / CircleCI **disabled**. Use short-lived cloud sandboxes for reproducible manual `npm`, browser, and security checks, and stop sessions when done.
+4. No paid Vercel WAF action, Redis upgrade, new account integrations, exposing secrets, automatic Git release, or production publishing without explicit user authorization.
+5. Distinguish `READY` (build status), `HTTP 200` (one tested request), **origin shared 429**, platform WAF protection, and human WCAG acceptance. These are **different claims**.
+6. Every iteration ends with: source commit, tests (pass/fail), changed files, release status, remaining blockers and next concrete step.
+
+## Immediate next execution
+
+1. Confirm Upstash Free / $0 and command allowance without viewing secret values.
+2. Verify whether protected preview of pinned `e647bae` is available on the Hobby project. If not, document the blocker and prepare QA evidence without bypassing SSO.
+3. Conduct bounded genuine cross-instance Redis attribution test once the **correct code** is deployed with approval.
+4. Update issue #7 with measured evidence; begin human/real-device items from issue #5.
