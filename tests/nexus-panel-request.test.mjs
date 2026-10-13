@@ -71,3 +71,24 @@ test('panel adapter: server-supplied oversized errors are not displayed', async 
   assert.equal(result.data, null);
   assert.ok(result.error.length < 300);
 });
+
+test('panel adapter: displays bounded WAF Retry-After guidance without auto-retry', async () => {
+  let calls = 0;
+  const result = await readPublicPanel('/api/public-actions', signal(), async () => {
+    calls++;
+    return new Response('<html>WAF blocked</html>', { status: 429, headers: { 'Retry-After': '42' } });
+  });
+  assert.equal(calls, 1);
+  assert.equal(result.data, null);
+  assert.match(result.error, /wait at least 42 seconds/i);
+  assert.doesNotMatch(result.error, /WAF blocked|html/i);
+});
+
+test('panel adapter: ignores malformed and oversized WAF Retry-After hints', async () => {
+  for (const value of ['9999999', 'date unavailable', '-8']) {
+    const result = await readPublicPanel('/api/public-prs', signal(), async () =>
+      new Response('Rate limit', { status: 429, headers: { 'Retry-After': value } }));
+    assert.match(result.error, /try again shortly/i);
+    assert.doesNotMatch(result.error, /9999999|unavailable|-8/);
+  }
+});
