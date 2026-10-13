@@ -6,7 +6,7 @@ import {
   Activity, AlertCircle, ArrowRight, ArrowUpRight, CheckCircle2,
   GitBranch, GitPullRequest, RefreshCw, ShieldCheck, TriangleAlert,
 } from 'lucide-react';
-import { parsePublicRepository, type PublicActionsSummary } from '@/lib/github-public-actions';
+import { isConfirmedWorkflowFailure, parsePublicRepository, type PublicActionsSummary } from '@/lib/github-public-actions';
 import type { PublicPullSummary, PullAttention } from '@/lib/nexus-public-prs';
 import { recommendInvestigations } from '@/lib/nexus-recommendations';
 import { readPublicPanel, emptyPanel, type Panel } from '@/lib/nexus-panel-request';
@@ -192,7 +192,7 @@ export default function NexusDeveloperPreview() {
                   </div>
                   <div className="flex shrink-0 items-center gap-3">
                     <span className={'text-xs ' + (run.conclusion === 'success' ? 'text-emerald-300' :
-                      run.conclusion === 'failure' ? 'text-rose-300' : 'text-amber-300')}>
+                      isConfirmedWorkflowFailure(run.conclusion) && run.status === 'completed' ? 'text-rose-300' : 'text-amber-300')}>
                       {run.conclusion ?? run.status}
                     </span>
                     <a href={run.html_url} target="_blank" rel="noopener noreferrer"
@@ -206,7 +206,7 @@ export default function NexusDeveloperPreview() {
             {actions.data && runs.length === 0 && <p className="p-5 text-sm text-slate-400">No workflow runs in this sample.</p>}
             {!actions.data && !actions.error && <p className="p-5 text-sm text-slate-400">{loading ? 'Loading workflow history…' : 'No workflow data loaded.'}</p>}
             {actions.data && <p className="border-t border-slate-800 p-5 text-xs leading-5 text-slate-400">
-              {actions.data.scope_note} GitHub reports {actions.data.total_matching_runs} matching workflow runs.
+              {actions.data.scope_note} GitHub reports {actions.data.total_matching_runs} matching workflow runs. In the sample: {actions.data.failed_runs} failed, {actions.data.pending_runs} pending, and {actions.data.other_outcome_runs} other outcomes.
             </p>}
           </section>
 
