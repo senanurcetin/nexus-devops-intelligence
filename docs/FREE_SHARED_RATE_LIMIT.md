@@ -6,9 +6,9 @@
 
 - The code is **available but not enabled** until both `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` are set as **server-only Vercel project environment variables**.
 - No independent NEXUS Redis instance was provisioned by this change. Do **not** reuse VocabMaster's Supabase data or any other application's database.
-- An existing **per-instance** 20 requests per 60 seconds/IP limiter still operates in Vercel without Redis; it cannot guarantee a shared budget.
+- An existing **per-instance** 20 requests per 60 seconds/IP limiter operates as a **fallback only when Redis is not configured**. When Redis is configured, Redis makes the per-IP admission decision across all instances; the local limiter must not shadow its decision.
 - The shared limiter uses a single **atomic Redis EVAL script** for `INCR`, `EXPIRE`, and `TTL`; both `/api/public-actions` and `/api/public-prs` use the **same key** (20 origin requests per 60s, per canonical client IP, counted from the first admitted request).
-- Requests rejected by either guard return `429` with `Retry-After` and `Cache-Control: no-store`. If Redis is explicitly configured but unavailable, both APIs **fail closed with HTTP 503** and `Retry-After: 5` rather than sending uncontrolled upstream GitHub requests.
+- Requests rejected by the configured shared guard (or the local fallback when Redis is disabled) return `429` with `Retry-After` and `Cache-Control: no-store`. If Redis is explicitly configured but unavailable, both APIs **fail closed with HTTP 503** and `Retry-After: 5` rather than sending uncontrolled upstream GitHub requests.
 - An absent pair of Redis variables means the shared check is disabled; **do not claim cross-instance enforcement is active**.
 
 ## Free-tier setup (requires account owner action)
@@ -24,7 +24,7 @@
 - A normal two-panel GitHub lookup remains functional and returns 200 where the public repository exists.
 - Use a **single controlled client IP in a known Vercel region** with permission and a short verification window. Request only a few times to check connection and logs; when explicitly authorized for a bounded rate-limit check, confirm the 21st *uncached, valid* API request in a 60s interval yields 429. Both routes use the same bucket. Cached CDN responses do **not** invoke the function, so they cannot prove the shared quota by themselves.
 - Confirm `Cache-Control: no-store` on 429/503 and a bounded `Retry-After`. Check public GitHub still gets **no request fanout** when Redis rejects/has an outage.
-- Observe Upstash command quota and Vercel Function usage. Current published Upstash Free plan lists **500,000 commands/month**, **256 MB**, and **10 GB bandwidth**, subject to the vendor's current terms. At most one EVAL command is sent for each valid origin API request that passes the local guard. Normal cache hits consume no Redis call. If quota is exhausted, configured APIs return 503 to protect upstream costs.
+- Observe Upstash command quota and Vercel Function usage. Current published Upstash Free plan lists **500,000 commands/month**, **256 MB**, and **10 GB bandwidth**, subject to the vendor's current terms. **Every valid origin API request checks the shared Redis counter first**, including rate-limited requests; one atomic EVAL command is issued per request. There is **no longer a 20/min local short-circuit when Redis is configured**. Normal CDN cache hits consume no Redis call. If quota is exhausted, configured APIs return 503 to protect upstream costs.
 
 ## Boundaries and rollback
 
@@ -35,3 +35,10 @@
 - Continue human NVDA/VoiceOver and real-device verification tracked in issue #5.
 
 **References:** [Upstash Redis REST API](https://upstash.com/docs/redis/features/restapi), [Upstash Free pricing](https://upstash.com/pricing/redis), [Vercel Firewall Rate Limiting](https://vercel.com/docs/vercel-firewall/vercel-waf/rate-limiting).
+
+## Verified release context (13 October 2026)
+
+- The account owner subsequently configured both server-only Upstash variables as **Sensitive / production** on the dedicated NEXUS Vercel project. Never print or retrieve their values for troubleshooting.
+- A previous production deployment returned a genuine `429` on a bounded one-client test, but the old local limiter was checked **before** Redis; therefore that result could not identify the Redis decision. This change removes that ambiguity in **future manually deployed versions**. Do not claim the change is already live after a GitHub merge.
+- This commit was checked against an in-memory mocked atomic Redis response with **90/90 tests**, TypeScript and Next.js build. Real Upstash cross-instance request accounting must be measured after a separate, reviewed manual deployment. Prefer a maximum of **21 uncached, valid** requests using one known test IP/region, checking that the 21st response is 429 and the other client is not blocked. The Vercel Git auto-deployment policy remains disabled.
+- Never confuse a rate-limited **origin** request with an edge WAF rule: Vercel Firewall stays `Log` on the user's available plan.
