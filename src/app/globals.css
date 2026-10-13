@@ -150,3 +150,15 @@ body { background: #071829; color: #eff5ff; }
 @media(max-width:640px) {
   .nexus-devops-received-at { font-size:.7rem; }
 }
+
+/* Read-only source recovery: explicit API retry on partial/total failures. */
+.nexus-devops-retry {
+  display:inline-flex; align-items:center; justify-content:center; gap:8px;
+  margin-top:12px; padding:9px 13px; min-height:42px;
+  border:1px solid #4076a3; border-radius:10px;
+  background:rgba(38,108,178,.18); color:#cae5ff;
+  font-size:.76rem; font-weight:720; transition:background-color .18s;
+}
+.nexus-devops-retry:hover { background:rgba(78,168,255,.23); }
+.nexus-devops-retry:focus-visible { outline:2px solid #4ea8ff; outline-offset:3px; }
+@media(prefers-reduced-motion:reduce) { .nexus-devops-retry { transition:none; } }

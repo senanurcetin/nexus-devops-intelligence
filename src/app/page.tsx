@@ -182,6 +182,14 @@ export default function NexusDeveloperPreview() {
                 : actions.data && pulls.data ? 'BOTH SOURCE PANELS LOADED'
                 : 'AWAITING SOURCE RESPONSES'}
             </div>
+            {(actions.error || pulls.error) && !loading && (
+              <button type="button" onClick={() => load(selectedRepo)}
+                className="nexus-devops-retry"
+                aria-label="Retry both GitHub source panels">
+                <RefreshCw className="h-4 w-4" aria-hidden="true" />
+                Retry public data
+              </button>
+            )}
             <p className="nexus-devops-received-at" aria-label="Last successful GitHub API sample received">
               {lastApiResponseAt
                 ? `Last successful GitHub API sample received at ${lastApiResponseAt} (browser local time)`
