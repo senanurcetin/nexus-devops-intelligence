@@ -39,6 +39,7 @@ Bu kontrol sonuçları manuel test edilen commit'lere aittir. Otomatik erişileb
 
 - [x] **API-05 — PR ayrıntısı kota tasarrufu:** [PR #16](https://github.com/senanurcetin/nexus-devops-intelligence/pull/16) ile en fazla **iki eşzamanlı** ayrıntı GET'i; kota cevabı görüldükten sonra henüz başlatılmamış istekler gönderilmiyor. Önceden başlamış çağrılardan en uzun güvenli bekleme süresi korunuyor. Üç yeni test dahil **67/67** başarılı; typecheck/build/tam audit/gerçek HTTP smoke geçti. Yavaş API yanıtlarında gecikme artabilir; bu global WAF değildir. [Teknik not](RATE_LIMIT_BEHAVIOR.md).
 
+- [x] **UX-07 — Yavaş PR analizi açıklaması ve gecikme ölçümü:** [PR #17](https://github.com/senanurcetin/nexus-devops-intelligence/pull/17) merge edildi. PR isteği **2,5 sn** sürerse kullanıcıya açıklayıcı durum ve ekran okuyucu anonsu gösteriliyor; tamamlanma/repo değişiminde temizleniyor. Kontrollü 5 PR fixture: 80 ms/ayrıntıda **243 ms**, 160 ms/ayrıntıda **482 ms** toplam. Bu değerler **gerçek GitHub SLA'sı değildir**. Chromium 375/1440px, axe A/AA 0 otomatik ihlal. [Test raporu](pr-slow-load-browser-qa-2026-10-13.md).
 ## P0 — Paylaşılabilir MVP'nin yayın kapıları
 
 | Sıra | ID | İş | Kabul / bitiş kriteri | Takip |
