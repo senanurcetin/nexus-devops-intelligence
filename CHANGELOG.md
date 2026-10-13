@@ -36,6 +36,7 @@
 - [PR #14](https://github.com/senanurcetin/nexus-devops-intelligence/pull/14) adds accessible independent refresh for read-only Actions and PR panels, per-panel loading states and stale repository response cancellation. Manual Chromium 375/1440px mock-error/regression checks and axe WCAG A/AA scans passed with zero automated violations; full 59-test suite, build, typecheck and npm audit passed.
 - [PR #15](https://github.com/senanurcetin/nexus-devops-intelligence/pull/15) fixes hidden GitHub rate limiting on PR detail fetches: any detail 403/429 rate limit returns 429/no-store instead of misleading HTTP 200, using the longest validated Retry-After across affected details. Non-rate-limit failures remain unknown.
 - **64/64 manually verified tests**, full TypeScript check and production build passed; full npm audit showed 0 findings at the time checked. Real public Actions/PR localhost HTTP smoke passed. No CI or deployment.
+- [PR #16](https://github.com/senanurcetin/nexus-devops-intelligence/pull/16) limits PR-detail GETs to two concurrent calls, skips unscheduled detail requests once any quota failure is observed, and keeps the longest safe Retry-After from requests already in flight. Three new regression tests bring the manually verified suite to **67/67**; TypeScript, build, full audit and live HTTP smoke passed.
 - No GitHub Actions or CircleCI jobs were configured or run.
 
 **Not yet released:** Platform-wide rate limiting, final manual cross-browser/screen-reader review and public preview deployment remain pending.
