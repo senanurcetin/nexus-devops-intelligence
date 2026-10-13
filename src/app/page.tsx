@@ -45,6 +45,7 @@ export default function NexusDeveloperPreview() {
   const [actionsLoading, setActionsLoading] = useState(false);
   const [pullsLoading, setPullsLoading] = useState(false);
   const [pullsSlow, setPullsSlow] = useState(false);
+  const [lastApiResponseAt, setLastApiResponseAt] = useState<string | null>(null);
   const loading = actionsLoading || pullsLoading;
   const [formError, setFormError] = useState('');
   const controllers = useRef<{ actions: AbortController | null; prs: AbortController | null }>({
@@ -62,7 +63,10 @@ export default function NexusDeveloperPreview() {
       setActions(emptyPanel());
       void readPublicPanel<PublicActionsSummary>(`/api/public-actions?${params}`, next.signal)
         .then(result => {
-          if (controllers.current.actions === next && !next.signal.aborted) setActions(result);
+          if (controllers.current.actions === next && !next.signal.aborted) {
+            setActions(result);
+            setLastApiResponseAt(new Date().toLocaleTimeString());
+          }
         })
         .finally(() => {
           if (controllers.current.actions === next && !next.signal.aborted) setActionsLoading(false);
@@ -79,7 +83,10 @@ export default function NexusDeveloperPreview() {
       }, 2500);
       void readPublicPanel<PublicPullSummary>(`/api/public-prs?${params}`, next.signal)
         .then(result => {
-          if (controllers.current.prs === next && !next.signal.aborted) setPulls(result);
+          if (controllers.current.prs === next && !next.signal.aborted) {
+            setPulls(result);
+            setLastApiResponseAt(new Date().toLocaleTimeString());
+          }
         })
         .finally(() => {
           if (controllers.current.prs === next && !next.signal.aborted) {
@@ -95,6 +102,7 @@ export default function NexusDeveloperPreview() {
   const load = useCallback((repo: string) => {
     const trimmed = repo.trim();
     setSelectedRepo(trimmed);
+    setLastApiResponseAt(null);
     refreshPanel('actions', trimmed);
     refreshPanel('prs', trimmed);
   }, [refreshPanel]);
@@ -174,6 +182,11 @@ export default function NexusDeveloperPreview() {
                 : actions.data && pulls.data ? 'BOTH SOURCE PANELS LOADED'
                 : 'AWAITING SOURCE RESPONSES'}
             </div>
+            <p className="nexus-devops-received-at" aria-label="Last API response received">
+              {lastApiResponseAt
+                ? `Last API response received at ${lastApiResponseAt} (browser local time)`
+                : 'No API response received for this selection yet'}
+            </p>
           </div>
         </div>
 

@@ -141,3 +141,12 @@ body { background: #071829; color: #eff5ff; }
 /* Do not describe two failed GitHub API panels as a partial success. */
 .nexus-devops-data-state[data-state="failed"] { color:#ffb2be; }
 .nexus-devops-data-state[data-state="failed"] .nexus-devops-state-dot { background:#f37a88; }
+
+/* Explicit receipt time is about this browser session, not GitHub event freshness. */
+.nexus-devops-received-at {
+  margin-top:9px;color:#adc7e2;font-size:.72rem;line-height:1.55;
+  font-variant-numeric:tabular-nums;
+}
+@media(max-width:640px) {
+  .nexus-devops-received-at { font-size:.7rem; }
+}
