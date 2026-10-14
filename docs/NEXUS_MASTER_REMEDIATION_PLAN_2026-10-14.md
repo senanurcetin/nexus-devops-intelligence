@@ -29,8 +29,8 @@ P0 = yayın engeli; P1 = ürün kalitesi; P2 = ertelenen kapsam. 'Offline DONE' 
 
 | ID | Öncelik | İş ve sorumluluk | Durum | Ölçülebilir kabul / kanıt | Bağımlılık |
 | --- | --- | --- | --- | --- | --- |
-| R0 | P0 | Mühendislik: iddia/kanıt/doküman tutarlılığı | KISMİ | Git main, tested application SHA, deployed Preview ve Production SHA ayrı; eski yanlış WebKit PASS işareti kaldırılmış; tarihli kaynak ve testler belirtilmiş | Yok |
-| R1 / G01 | P0 | Mühendislik: son değişikliklerden sonra immutable release candidate | YENİ ADAY GEREKİR | Tam 40-karakter SHA, temiz npm ci, tüm Node testleri, typecheck, production build, JS budget, audit, 16 HTTP, Chromium/Firefox (+ gerçekten çalıştırılmışsa WebKit) suite, loglar ve kaynak hash; herhangi hata => HOLD | R0 ve son mühendislik değişiklikleri |
+| R0 | P0 | Mühendislik: iddia/kanıt/doküman tutarlılığı | **DONE_OFFLINE** (yeniden dağıtımda kontrol) | Git main, tested application SHA, deployed Preview ve Production SHA ayrı; eski yanlış WebKit PASS işareti kaldırılmış; tarihli kaynak ve testler belirtilmiş | Yok |
+| R1 / G01 | P0 | Mühendislik: son değişikliklerden sonra immutable release candidate | **DONE_OFFLINE** (onaysız kaynak adayı: 2df2ea6) | Tam 40-karakter SHA, temiz npm ci, tüm Node testleri, typecheck, production build, JS budget, audit, 16 HTTP, Chromium/Firefox (+ gerçekten çalıştırılmışsa WebKit) suite, loglar ve kaynak hash; herhangi hata => HOLD | R0 ve son mühendislik değişiklikleri |
 | R2 / G02 | P0 | Hesap sahibi: Upstash Free ve tüm Vercel Hobby ekibi gerçek tüketimi | BLOCKED | Paylaşılan Preview+Production Redis DB aylık komut, MB, GB; tüm Hobby ekip fonksiyon invocations/CPU/memory, dönem ve UTC gözlem zamanı, ek Preview origin GET planı; offline capacity screen ve sahibin açık kabulü | Hesap dashboard erişimi |
 | R3 | P0 / G05 için | Mühendislik: WebKit gerçek testi | BLOCKED - HOST | Uyumlu Ubuntu/macOS ile playwright-core 1.64.0; webkit.launch ve mevcut 11 fixture senaryosunda gerçek test; engine+versiyon+SHA+console/axe/network+screenshot; host hatası NOT RUN kalır | R2'den bağımsız uygun ortam |
 | R4 | P1, G05 öncesi | Tasarım ve mühendislik: NEXUS görsel kalite ve marka QC | KISMİ | 320/375/768/1280/1440/(mümkünse 1920) genişlikte veri, boş/kısmi, timeout, hata, 200%-400% büyütme; grafik sayıları ve alanları okunur, kartlar tasarım bütünlüğüne sahip, marka yerleşimi estetik; insan screenshot PASS/FIX | Lokal build; gerçek kabul R7 |
@@ -39,7 +39,7 @@ P0 = yayın engeli; P1 = ürün kalitesi; P2 = ertelenen kapsam. 'Offline DONE' 
 | R7 / G04 | P0 | Mühendis + SSO yetkili testçi: gerçek Preview F01–F05 kabulü | BLOCKED | Kaynak SHA eşleşir; izinli origin GET sayısı aşılmaz; gerçek GitHub source vs fixture ayrımı; data/export/history/evidence/trend; 400/429/503 gözlemi yalnızca izin kapsamıyla; console/screenshot/repro ve istek sayısı kaydı | R6 ve belirlenmiş trafik bütçesi |
 | R8 / G05 | P0 | İnsan testçi: Safari/iPhone, NVDA/VoiceOver, elit tasarım onayı | BLOCKED | SR-01–SR-12 testçi+tarih+cihaz+sürüm+SHA ile PASS/FAIL; gerçek zoom, keyboard, focus, reduced-motion, table, chart, dynamic announcements; açık P0 a11y/visual bulgusu 0 | R7; R3 destekleyici |
 | R9 / G06 / #7 | P0 | Hesap sahibi + mühendis: gerçek bağımsız Vercel Function instance'larında tek Redis kota | BLOCKED | En az iki bağımsız gerçek instance provenance, iki route tek IP kovası; Redis kaynaklı 429/no-store/Retry-After ve gerçek Free delta; local/github 429 ayrımı; kanıtı güvenli, küçük trafikle üretme yolu yoksa kalıcı risk sahibi tarafından resmen değerlendirilir, geniş public koruması olmuş sayılmaz | R2 + R6 + ayrı trafik izni |
-| R10 | P0 | Mühendis: güvenlik ve operasyonel rollback | KISMİ | SSO generated URL, WAF Log ≠ enforcing 429, no secrets, headers/CSP/nosniff/no-store, rate-limit attribution, deploymentEnabled:false, Production önceki READY rollback ID ve restore prosedürü | Lokal checklist ve R6 canlı metadata |
+| R10 | P0 | Mühendis: güvenlik ve operasyonel rollback | **KISMİ** (R10 Preview probe uyumu DONE_OFFLINE; canlı SSO/WAF/rollback açık) | SSO generated URL, WAF Log ≠ enforcing 429, no secrets, headers/CSP/nosniff/no-store, rate-limit attribution, deploymentEnabled:false, Production önceki READY rollback ID ve restore prosedürü | Lokal checklist ve R6 canlı metadata |
 | R11 | P1; ciddi UX/perf sorunları P0 | Mühendis: performans, gözlemlenebilirlik, hata deneyimi | KISMİ | JS/CSS bütçesi, gerçek LCP/CLS/INP ölçüldüyse referansı; ölçülmediyse NOT MEASURED; render/hydration, kontrollü fetch ve timeout, mobil scroll, kullanıcıya açık hata dilinin doğruluğu | Lokal mümkün, canlı ölçüm R2/R6 |
 | R12 / G07 | P0 | Hesap sahibi ayrı onay verir: Production ve rollback | NOT AUTHORIZED | Tüm ilgili P0 kapılar kanıtla geçilir; açık kalan riskler yazılı karar alır; ayrı exact SHA Production izni, READY/alias, dar post-release smoke, rollback hedefi | R1, R2, R6–R10 |
 | R13 | P2 | Yeni özellik: private GitHub App, CircleCI connector, AI, 3D, daha derin trendler | ERTELENDİ | Ayrı kullanıcı değeri/veri doğruluğu/güvenlik/maliyet kararı; MVP release öncesi kapsam şişirilmez | P0 tamamlandıktan sonra |
@@ -67,6 +67,23 @@ CDN'de HIT/STALE/REVALIDATED veya belirsiz yanıtı origin kanıtı saymıyor.
 (exact executable SHA `3779071524633694157adc05be3f9d3a3808118a`).
 Yalnızca R10 offline tanılama kodu düzeltildi; **G02, gerçek Preview,
 gerçek bağımsız Redis instance ve Production KAPANMADI**.
+
+### R0 + R1 exact-main kaynak mühendislik kapanışı — 14 Ekim 2026
+
+[R1 208-test immutable main QA](R1_EXACT_MAIN_SOURCE_QA_2026-10-14.md)
+konusunda kaynak sürüm `2df2ea635fd57b0d9f4d852818f6de55e0f1e3ce`
+clean `npm ci` sonrası **208/208 Node, 16/16 yerel HTTP,
+11/11 Chromium, 11/11 Firefox**, TS/build/budget/audit 0 ile doğrulandı.
+R0 kanıt ayrımı: yanlış WebKit geçiş checkbox'ı çıkarıldı; mevcut
+**Preview 599ced7** ve **Production 74cd0e3** farklı sürümlerde kaldı.
+**R0 ve R1 sadece kaynak-lokal DONE_OFFLINE**; R2 gerçek Free kullanım,
+R3 WebKit, R6–R9 canlı/insan kabulü ve R12 Production açık.
+
+**WebKit ortam notu:** Resmî Ubuntu/Playwright container imajı
+bulundu ancak bağlı Vercel Sandbox API'si harici MCR imajını doğrudan
+kabul etmedi; Vercel Container Registry'ye ayrı imaj push işlemi
+gerekiyor. Paid/registry altyapısı bu planla otomatik açılmaz. Kaynak
+seviyesindeki WebKit testini çalışmış kabul etmiyoruz.
 
 ## 3. Yürütme sırası
 
