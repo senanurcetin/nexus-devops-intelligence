@@ -47,7 +47,7 @@ test('without explicit bounded authorization the probe sends exactly one no-stor
   const seen = [];
   const result = await probeProtectedRedisPreview({
     url: preview, bypassToken: 'test-preview-bypass-only',
-    nonce: 'safe-test', now: () => 0,
+    now: () => 0,
     fetcher: async (url, options) => {
       seen.push({url, options});
       return ok();
@@ -60,6 +60,10 @@ test('without explicit bounded authorization the probe sends exactly one no-stor
   assert.equal(new URL(seen[0].url).pathname, '/api/public-actions');
   assert.equal(new URL(seen[0].url).searchParams.get('repository'),
     'senanurcetin/nexus-devops-intelligence');
+  assert.deepEqual([...new URL(seen[0].url).searchParams.keys()], ['repository'],
+    'Preview probe must only use the single API-permitted query parameter');
+  assert.equal(seen[0].options.headers['Cache-Control'], 'no-cache, no-store, max-age=0');
+  assert.equal(seen[0].options.headers.Pragma, 'no-cache');
   assert.equal(seen[0].options.headers['x-vercel-protection-bypass'], 'test-preview-bypass-only');
   assert.equal(seen[0].options.cache, 'no-store');
   assert.equal(seen[0].options.redirect, 'manual');
@@ -71,7 +75,7 @@ test('21st request shared across both routes proves Redis-origin 429 but not ins
   const routes = [];
   let calls = 0;
   const result = await probeProtectedRedisPreview({
-    url: preview, confirm21: true, nonce: 'test-21', now: () => 0,
+    url: preview, confirm21: true, now: () => 0,
     fetcher: async (url) => {
       calls++;
       routes.push(new URL(url).pathname);
@@ -86,6 +90,10 @@ test('21st request shared across both routes proves Redis-origin 429 but not ins
   assert.equal(calls, 21);
   assert.equal(routes.filter(path => path === '/api/public-actions').length, 11);
   assert.equal(routes.filter(path => path === '/api/public-prs').length, 10);
+  // A request that carries an unrecognized _nexus_rate_check query is
+  // rejected with HTTP 400 by the modern public API before Redis, making
+  // the former test appear broken regardless of actual shared quota.
+  assert.equal(calls, 21);
 });
 
 test('upstream or local 429 is not accepted as Redis proof', async () => {
@@ -188,4 +196,26 @@ test('unavailable and malformed 429 fail instead of claiming pass', async () => 
     assert.equal(result.state, 'inconclusive', name);
     assert.equal(result.reason, '429-not-attributed-to-redis');
   }
+});
+
+test('both public routes in the bounded diagnostic use only one accepted repository field', async () => {
+  const urls = [];
+  const result = await probeProtectedRedisPreview({
+    url: preview, confirm21: true, now: () => 0,
+    fetcher: async (url, init) => {
+      const target = new URL(url);
+      urls.push(target);
+      assert.equal(target.origin, new URL(preview).origin);
+      assert.deepEqual([...target.searchParams.keys()], ['repository']);
+      assert.equal(target.searchParams.get('repository'), 'senanurcetin/nexus-devops-intelligence');
+      assert.equal(target.searchParams.has('_nexus_rate_check'), false);
+      assert.equal(init.headers['Cache-Control'], 'no-cache, no-store, max-age=0');
+      assert.equal(init.headers.Pragma, 'no-cache');
+      return urls.length === 21 ? denied() : ok();
+    },
+  });
+  assert.equal(result.state, 'passed');
+  assert.equal(urls.length, 21);
+  assert.deepEqual(new Set(urls.map(u => u.pathname)),
+    new Set(['/api/public-actions', '/api/public-prs']));
 });
