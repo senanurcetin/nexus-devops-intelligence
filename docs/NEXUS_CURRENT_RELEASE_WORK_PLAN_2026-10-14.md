@@ -4,7 +4,7 @@
 **Scope:** standalone `senanurcetin/nexus-devops-intelligence`. This is a current execution register, NOT release authorization.  
 **Tracking:** [#49](https://github.com/senanurcetin/nexus-devops-intelligence/issues/49) (current candidate Preview/human acceptance), [#7](https://github.com/senanurcetin/nexus-devops-intelligence/issues/7) (real Vercel Redis/Free usage). Previous issue #5 is owner-closed; its unchecked human tests are not certified.
 
-**G-02 source-local update (14 October):** [Hobby/SSO/Redis metadata inspection and conservative offline capacity screen](G02_CAPACITY_PREFLIGHT_2026-10-14.md); **199/199 Node tests** and TS/build/budget/audit pass on exact source `b3fbb3c` before docs-only changes. Neither Vercel billing charge ledger nor Upstash account usage was available; G-02 stays **OPEN**, no Preview/Production or live Redis probes.\n\n## Verified state, kept separate by evidence tier
+**G-02 source-local update (14 October):** [Hobby/SSO/Redis metadata inspection and conservative offline capacity screen](G02_CAPACITY_PREFLIGHT_2026-10-14.md); **199/199 Node tests** and TS/build/budget/audit pass on exact source `31b6306` before docs-only changes. Neither Vercel billing charge ledger nor Upstash account usage was available; G-02 stays **OPEN**, no Preview/Production or live Redis probes.\n\n## Verified state, kept separate by evidence tier
 
 | Area | Verified observation | Not established |
 | --- | --- | --- |
