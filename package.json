@@ -16,6 +16,7 @@
     "test:redis:offline": "node --import tsx scripts/verify-local-redis-multiprocess.mjs",
     "smoke:http:offline": "node scripts/smoke-http-offline.mjs",
     "test:browser:manual": "node --import tsx scripts/manual-browser-f01-f05.mjs",
+    "perf:local": "node --import tsx scripts/inspect-local-performance.mjs",
     "capacity:offline": "node scripts/check-free-capacity-offline.mjs",
     "capacity:upstash:read-only": "node scripts/read-upstash-management-capacity.mjs"
   },
