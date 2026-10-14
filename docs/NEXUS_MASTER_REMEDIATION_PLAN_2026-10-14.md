@@ -167,6 +167,24 @@ onaylanmış bir trafik izni değil. **R2 metrik toplama DONE;
 G02 sahibin kullanım dönemi/trafik sınırı incelemesini bekliyor,
 G03 Preview ve G07 Production yetkisi verilmedi.**
 
+### G03: Kullanıcı onaylı yeni korumalı Preview — 14 Ekim
+
+[Gerçek yeni Preview ve sınırlandırılmış kabul kaydı](G03_PROTECTED_PREVIEW_ACCEPTANCE_2026-10-14.md):
+Kullanıcı **yalnızca onaylanan güncel SHA `2b5fb7c...`**
+için SSO korumalı Preview ve **en fazla 25 origin isteği**
+fonksiyonel kabul izni verdi (gerçek 21 Redis stresi/Production hariç).
+Vercel ID `dpl_9sq98XLM2DZAgyBFZoFVUde2NucT`,
+`READY`, target Preview, tam `meta.githubCommitSha` eşleşti,
+beş serverless API build edildi; Production alias'ı değişmedi.
+Projede SSO `enabled:true/all_except_custom_domains`,
+Preview+Production Upstash env değişken adları **Sensitive**.
+**G03 kaynak/dağıtım teknik kimliği DONE, canlı SSO browser
+erişimi henüz kanıtlanmadı. G04 gerçek yetkili SSO/UI/API
+kabulü OPEN:** test ortamı URL DNS çözümleyemedi; sıfır
+başarılı app-origin isteği doğrulandı. Kullanıcıdan güvenli,
+oturum açılmış Preview ekranı ve sadece hassas olmayan
+Network status/header bilgisi alınmalı. G05/G06/G07 açık.
+
 ## 3. Yürütme sırası
 
 ### Parti A — dış yetki ve gerçek Redis tüketimi gerektirmeyen mühendislik
