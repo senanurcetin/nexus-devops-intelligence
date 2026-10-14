@@ -55,6 +55,16 @@ The project, runtime, type, and outcome partitions independently reconcile with 
 
 **Free invocation ceiling:** 9,329 is far below the visible 1,000,000 monthly Hobby quota; this **one observed metric** is no longer missing. However, **Active Function CPU hours and Provisioned Memory GB-hours** are separate metrics and still absent. CDN Request CPU Duration (**9 s**, earlier screenshot) is not Active Function CPU usage. Neither missing field is assumed to be zero.
 
+## New Fluid Functions screenshot evidence — 14 October
+
+The team-wide Fluid Active CPU display reads **23m 29s / 4h** (1,409 seconds = **0.391389 CPU-hours**, 9.78% of vendor cap). The NEXUS project uses **8 seconds**. Its project and region breakdowns reconcile to 23m 29s.
+
+The team-wide Fluid Provisioned Memory display reads **2.0 / 360 GB-hours** (0.56% of vendor cap). NEXUS uses **0.01 GB-hours**. Per-project memory numbers are rounded; use the displayed team total for budgeting.
+
+Combining these with the prior owner Usage screenshots gives all **six** G02 metric amounts: Upstash **118 / 500,000 monthly commands**, **0 B / 250 MB storage**, **10 KB / 10 GB bandwidth**; Vercel **9,329 / 1,000,000 invocations**, **23m29s / 4h active CPU**, **2.0 / 360 GB-hours memory**.
+
+**Conditional offline review arithmetic:** at a purely illustrative **25** additional origin requests, the G02 assumption of four additional Redis commands per origin projects **218** Upstash commands and **9,354** team invocations. All six baseline values are below the calculator's conservative 80% review ceilings. This is **not** an agreed traffic budget or actual `capacity:offline` execution: exact vendor UTC snapshot/reset timing and a separately approved Preview origin budget are not recorded. G02 remains **pending formal owner review**; new Preview, Redis load and Production are not authorized.
+
 ## 3. Gate outcome
 
 | R2 requirement | Status |
@@ -62,8 +72,8 @@ The project, runtime, type, and outcome partitions independently reconcile with 
 | Upstash database monthly commands, storage, bandwidth and displayed cost | **PARTIALLY OBSERVED from account UI**, source period noted, rounded values |
 | Whole-team Vercel data/origin transfer, CDN and ISR | **OBSERVED**, last 30 days |
 | Whole-team Vercel **Function Invocations** | **OBSERVED: 9,329 / 1,000,000**, including NEXUS project 66; exact reset window not confirmed |
-| Whole-team Vercel **Active Function CPU** | **MISSING** |
-| Whole-team Vercel **Provisioned Function Memory GB-hours** | **MISSING** |
+| Whole-team Vercel **Active Function CPU** | **OBSERVED: 23m 29s of 4 hours**; NEXUS 8 seconds |
+| Whole-team Vercel **Provisioned Function Memory GB-hours** | **OBSERVED: 2.0 of 360 GB-hours**; NEXUS 0.01 GB-hours |
 | Exact UTC snapshot time, Vercel relevant quota reset window and agreed origin-GET budget | **NOT VERIFIED** |
 | Combined `capacity:offline` release review | **INCOMPLETE**, cannot legitimately fill unknowns with zero |
 | Protected Preview / actual Redis multi-instance / Production authorization | **NOT PROVIDED** |
