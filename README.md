@@ -167,6 +167,19 @@ short-lived cloud sandbox, without GitHub Actions or CircleCI. The current
 `npm test` command uses the locked `tsx` development dependency and requires
 `npm ci` first. There is no requirement to install anything on the user's PC.
 
+## Free-tier capacity preflight (offline, account data required)
+
+`npm run capacity:offline` is a zero-network, credential-free **G-02
+capacity screen** for owner-entered **shared Upstash Free database usage** and
+**whole Vercel Hobby team usage**. With no data it returns
+`INCOMPLETE` / exit code 2. It refuses stale snapshots and proposes a 20%
+headroom reserve, assuming four Redis commands per additional origin GET for
+planning only. A result of `READY_FOR_OWNER_REVIEW` is **not release approval**;
+read the [dated evidence, source and usage requirements](docs/G02_CAPACITY_PREFLIGHT_2026-10-14.md).
+Do not input Upstash REST tokens or URLs, deploy, or run live Redis tests
+merely to obtain a usage estimate. The owner must verify aggregate vendor
+dashboards first; actual current usage was not available from this connector.
+
 ## Current repeatable browser regression (F01–F05)
 
 The [committed real-Chromium fixture regression runner](scripts/manual-browser-f01-f05.mjs)
