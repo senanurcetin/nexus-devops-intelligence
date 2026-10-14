@@ -19,12 +19,12 @@ const requestHeaders = {
 
 const fail = (status: number, error: string): ApiResult<never> => ({ status, body: { error } });
 
-type FetchResult =
+export type FetchResult =
   | { kind: 'ok'; data: unknown }
   | { kind: 'rate_limited'; retryAfterSeconds: number | null }
   | { kind: 'not_found' | 'denied' | 'unavailable' | 'timeout' | 'invalid' | 'network' };
 
-async function githubGet(url: string, fetcher: GitHubFetcher): Promise<FetchResult> {
+export async function githubGet(url: string, fetcher: GitHubFetcher): Promise<FetchResult> {
   let response: Awaited<ReturnType<GitHubFetcher>>;
   try {
     response = await fetcher(url, {
@@ -71,7 +71,7 @@ async function githubGet(url: string, fetcher: GitHubFetcher): Promise<FetchResu
   }
 }
 
-function upstreamError(result: Exclude<FetchResult, { kind: 'ok' }>, subject: string): ApiResult<never> {
+export function upstreamError(result: Exclude<FetchResult, { kind: 'ok' }>, subject: string): ApiResult<never> {
   switch (result.kind) {
     case 'not_found': return fail(404, `Public repository or ${subject} not found.`);
     case 'rate_limited': return {
