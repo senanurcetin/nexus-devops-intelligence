@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readPublicPanel, emptyPanel } from '../src/lib/nexus-panel-request.ts';
+import { readPublicPanel, emptyPanel, formatPublicPanelDiagnosticReport } from '../src/lib/nexus-panel-request.ts';
 
 const signal = () => new AbortController().signal;
 const json = (data, status = 200) => new Response(JSON.stringify(data), {
@@ -162,4 +162,41 @@ test('panel abort and network exception never claim a received HTTP status', asy
   assert.deepEqual(cancelled,emptyPanel());
   const broken=await readPublicPanel('/api/public-prs',signal(),async()=>{throw Error('secret local network');});
   assert.equal(broken.receipt,undefined);
+});
+
+test('copyable G04 receipt report contains only allowlisted metadata and no secrets',async()=>{
+  const response = new Response('private-token-must-never-appear',{status:503,headers:{
+    'x-vercel-cache':'BYPASS',
+    'x-nexus-rate-limit-source':'shared-redis-unavailable',
+    'authorization':'Bearer secret-token',
+    'set-cookie':'session=secret-cookie',
+    'x-dangerous-header':'private-attribution-data',
+  }});
+  const out=await readPublicPanel('/api/public-actions',signal(),async()=>response);
+  const report=formatPublicPanelDiagnosticReport(out.receipt,undefined);
+  assert.match(report,/Actions: HTTP 503 \| CDN BYPASS/);
+  assert.match(report,/PRs: no HTTP response observed/);
+  assert.match(report,/0 API requests/);
+  assert.match(report,/Not proof of SSO/);
+  assert.doesNotMatch(report,/private-token|Bearer|secret-cookie|private-attribution|example\.com|set-cookie/);
+});
+
+test('copyable receipt report has fixed lines and no user-supplied URL, query or raw payload',()=>{
+  const s=formatPublicPanelDiagnosticReport({
+    status:429,cache:'MISS',admission:'not reported',limitSource:'shared-redis',
+  },{
+    status:200,cache:'HIT',admission:'shared-redis',limitSource:'not reported',
+  });
+  assert.equal(s.split('\n').length,5);
+  assert.match(s,/Actions: HTTP 429/);
+  assert.match(s,/PRs: HTTP 200/);
+  assert.equal(s.includes('https://'),false);
+  assert.equal(s.includes('Bearer'),false);
+});
+
+test('copyable receipt report without completed HTTP does not invent statuses',()=>{
+  const s=formatPublicPanelDiagnosticReport();
+  assert.match(s,/Actions: no HTTP response observed/);
+  assert.match(s,/PRs: no HTTP response observed/);
+  assert.doesNotMatch(s,/HTTP 200|HTTP 429|verified|passed/i);
 });

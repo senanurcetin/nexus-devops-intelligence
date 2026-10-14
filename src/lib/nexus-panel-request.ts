@@ -17,6 +17,28 @@ export type PublicPanelReceipt = {
 };
 export type Panel<T> = { data: T | null; error: string | null; receipt?: PublicPanelReceipt };
 
+/**
+ * Shareable G04 summary from existing, allowlisted browser receipts only.
+ * No URL, repository path, token, cookie, headers, IP, or remote response body.
+ * It is explicitly not proof of authentication or independent Redis instances.
+ */
+export function formatPublicPanelDiagnosticReport(
+  actions?: PublicPanelReceipt,
+  prs?: PublicPanelReceipt,
+): string {
+  const line = (label: string, receipt?: PublicPanelReceipt) =>
+    receipt
+      ? `${label}: HTTP ${receipt.status} | CDN ${receipt.cache} | admission ${receipt.admission} | limit source ${receipt.limitSource}`
+      : `${label}: no HTTP response observed`;
+  return [
+    'NEXUS DevOps — browser response summary (client-side only)',
+    line('Actions', actions),
+    line('PRs', prs),
+    'Source: already received browser responses; generating this report makes 0 API requests.',
+    'Not proof of SSO challenge, GitHub source integrity, independent Vercel instances, or Redis 429.',
+  ].join('\n');
+}
+
 export function safePublicPanelReceipt(response: Response): PublicPanelReceipt {
   const cache = response.headers.get('x-vercel-cache')?.trim().toUpperCase();
   const admission = response.headers.get('x-nexus-rate-limit-mode')?.trim().toLowerCase();

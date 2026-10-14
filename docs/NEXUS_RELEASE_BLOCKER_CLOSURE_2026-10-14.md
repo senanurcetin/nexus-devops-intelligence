@@ -10,6 +10,8 @@
 
 **G06 offline probe hardening (14 Oct):** [fail-closed exact-SHA QA](G06_FAIL_CLOSED_PREVIEW_REDIS_PROBE_2026-10-14.md) on executable `cc4e97de83a807cdb2a016509de7bff215bbdcce`: **224/224 Node**, **16/16 loopback HTTP**, **11/11 Chromium**, **11/11 Firefox**, TypeScript/Next build/JS budget, npm audit 0. The manual Redis probe formerly returned **`passed` + `crossInstanceVerified:false`** for a 21-request same-client 429 and could send 1 origin GET by default; it now requires an exact explicit 1/21 request allowance, sends **zero network without it**, and labels same-client Redis 429 as **`partial`**. This is **NOT actual Vercel multi-instance proof**, and no new Redis calls/Preview/Production deployment were performed. G06/#7 stays OPEN.
 
+**G04 Safari-friendly diagnostic copy source enhancement (14 Oct):** [source-only exact-SHA evidence](G04_COPY_SAFE_DIAGNOSTICS_2026-10-14.md), executable `56c23805a55ec553d1e08a8d1e0451c01efc5e66`; safe five-line receipt report with zero new GET, no token/cookie/URL/header leakage and textarea fallback on Safari/clipboard denial. **227/227 Node**, **16/16 local HTTP**, **11/11 Chromium**, **11/11 Firefox**, TS/Next build/JS budget/audit 0. **Current Preview still lacks this newer code**; live owner acceptance remains blocked on a security-compliant exact-SHA SSO Preview release, which must not bypass prior platform controls.
+
 ## 1. Confirmed completed work
 
 | Gate / work | Status | Grounding |

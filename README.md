@@ -216,6 +216,12 @@ Full authenticated F01–F05, real Safari/assistive
 technology, independently verified Redis instance enforcement and
 separate Production authorization remain OPEN.
 
+## Copyable, zero-request safe HTTP diagnostics for mobile Safari
+
+The G04 source-coverage disclosure now includes **Copy safe diagnostics · no API requests**. It copies only previously observed, strictly allowlisted Actions/PR HTTP statuses, CDN class and admission details; **no source URL, cookie, token, IP, server error body or other raw header** can enter the generated five-line summary. iOS/Safari clipboard permission failures are handled by an accessible readonly textarea for manual copying. It **never** triggers an additional GET, refresh, API, Redis or telemetry request. The report explicitly states it is **not SSO or distributed Redis proof**.
+
+On exact tested source `56c23805a55ec553d1e08a8d1e0451c01efc5e66`: **227/227 Node**, **16/16 local HTTP**, **11/11 Chromium**, **11/11 Firefox**, TypeScript/Next build/bundle budget and audit 0. See [G04 mobile evidence-transfer QA](docs/G04_COPY_SAFE_DIAGNOSTICS_2026-10-14.md). **Code only, not present on the older deployed Preview.**
+
 ## Source-response acceptance without DevTools; local performance QA (G04/R11)
 
 The two initial source panels now have a native **Request diagnostics ·
