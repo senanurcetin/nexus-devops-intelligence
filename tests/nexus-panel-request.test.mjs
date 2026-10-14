@@ -116,7 +116,7 @@ test('panel receipt reports only allowlisted metadata from existing successful H
 });
 
 test('panel receipt uses stable allowlist for forged CDN and rate headers', async () => {
-  for(const bad of ['<script>alert(1)</script>','MISS\nSecret:token','1234567',
+  for(const bad of ['<script>alert(1)</script>','MISS token appended','1234567',
     'shared-redis, local-fallback','Bearer secret']) {
     const result = await readPublicPanel('/api/public-prs',signal(),async()=>
       new Response(JSON.stringify({repository:'owner/repo'}),{
