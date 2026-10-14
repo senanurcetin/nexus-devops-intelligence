@@ -168,6 +168,21 @@ short-lived cloud sandbox, without GitHub Actions or CircleCI. The current
 `npm test` command uses the locked `tsx` development dependency and requires
 `npm ci` first. There is no requirement to install anything on the user's PC.
 
+## Current-source offline release evidence (R1)
+
+On exact GitHub `main` SHA `2df2ea635fd57b0d9f4d852818f6de55e0f1e3ce`
+following the Redis diagnostic security repair: **208/208 Node tests,
+16/16 loopback HTTP negatives, 11/11 Chromium and 11/11 Firefox
+fixture scenarios**, TypeScript/Next production build/bundle budget
+passed and audit reported **0** vulnerabilities. [Full exact-SHA
+record](docs/R1_EXACT_MAIN_SOURCE_QA_2026-10-14.md).
+
+**This is source-only acceptance**. Current deployed Preview/Production
+remain older source SHAs. No new deployment, real Upstash Free probing,
+WebKit/Safari/VoiceOver human test or Production release was performed.
+The [master remediation plan](docs/NEXUS_MASTER_REMEDIATION_PLAN_2026-10-14.md)
+keeps these separate owner-dependent gates open.
+
 ## Mobile evidence-first layout quality (R4)
 
 The compact 320–640px NEXUS hero prioritizes the repository input while keeping
