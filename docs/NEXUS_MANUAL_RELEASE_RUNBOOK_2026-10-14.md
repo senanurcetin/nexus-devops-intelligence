@@ -2,6 +2,8 @@
 
 **Version:** 14 Oct 2026. **Execution state: owner authorized and manually created a SSO-configured, exact-SHA Preview only. No Production approval has been given.** [Deployment record](NEXUS_PROTECTED_PREVIEW_DEPLOYMENT_2026-10-14.md). Future deployments/tests require separate approval. Applies exclusively to `senanurcetin/nexus-devops-intelligence` Vercel project `prj_sbU4ylt4OV4fLkcog3VpSr2fEXYe`, team `team_sAoC03UJqqXy36NhZWBesgdg`. The [R-01 immutable inventory](NEXUS_RELEASE_CANDIDATE_MANIFEST_2026-10-14.md) captures a proposed source SHA and the actual older deployed sources.
 
+**Manual Redis probe R10 compatibility (14 Oct, source-only):** Earlier versions of `scripts/verify-protected-redis-preview.mjs` attached `_nexus_rate_check` to API queries. Since strict parameter validation landed in PR #57, that parameter would produce **400/no-store before Redis**. [R10 correction and offline QA](R10_PROTECTED_PREVIEW_PROBE_QA_2026-10-14.md) remove it. A CDN `HIT`, `STALE`, `REVALIDATED`, unknown or missing cache-status header cannot prove origin execution. **No current Preview test or Redis traffic is authorized by this note; do not run even the default single-request probe before owner usage approval and a bounded Preview scope.**
+
 ## 0. Hard stop rules
 
 1. **No GitHub Actions, CircleCI, git auto-deploy, cron-based requests, paid WAF, paid Vercel/Upstash service or Production publication without explicit owner approval.** Keep `git.deploymentEnabled:false`. GitHub PR merge is not a deployment.
