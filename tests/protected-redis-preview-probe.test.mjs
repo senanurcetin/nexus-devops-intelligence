@@ -46,7 +46,7 @@ test('probe only targets the actual NEXUS team preview namespace, never producti
 test('without explicit bounded authorization the probe sends exactly one no-store GET', async () => {
   const seen = [];
   const result = await probeProtectedRedisPreview({
-    url: preview, bypassToken: 'test-preview-bypass-only',
+    url: preview, authorizedRequests: 1, bypassToken: 'test-preview-bypass-only',
     now: () => 0,
     fetcher: async (url, options) => {
       seen.push({url, options});
@@ -75,18 +75,20 @@ test('21st request shared across both routes proves Redis-origin 429 but not ins
   const routes = [];
   let calls = 0;
   const result = await probeProtectedRedisPreview({
-    url: preview, confirm21: true, now: () => 0,
+    url: preview, confirm21: true, authorizedRequests: 21, now: () => 0,
     fetcher: async (url) => {
       calls++;
       routes.push(new URL(url).pathname);
       return calls === 21 ? denied() : ok();
     },
   });
-  assert.equal(result.state, 'passed');
+  assert.equal(result.state, 'partial');
   assert.equal(result.requests, 21);
   assert.equal(result.admitted, 20);
   assert.deepEqual(result.pathsChecked, ['actions', 'prs']);
   assert.equal(result.crossInstanceVerified, false);
+  assert.equal(result.releaseAuthorized, false);
+  assert.equal(result.reason, 'redis-attributed-429-same-client-only');
   assert.equal(calls, 21);
   assert.equal(routes.filter(path => path === '/api/public-actions').length, 11);
   assert.equal(routes.filter(path => path === '/api/public-prs').length, 10);
@@ -100,7 +102,7 @@ test('upstream or local 429 is not accepted as Redis proof', async () => {
   for (const source of ['local-fallback', 'github-upstream', undefined]) {
     let calls = 0;
     const result = await probeProtectedRedisPreview({
-      url: preview, confirm21: true, now: () => 0,
+      url: preview, confirm21: true, authorizedRequests: 21, now: () => 0,
       fetcher: async () => ++calls === 21 ? denied(source ?? '') : ok(),
     });
     assert.equal(calls, 21);
@@ -112,7 +114,7 @@ test('upstream or local 429 is not accepted as Redis proof', async () => {
 test('early Redis 429 remains inconclusive because quota may have prior traffic', async () => {
   let calls = 0;
   const result = await probeProtectedRedisPreview({
-    url: preview, confirm21: true, now: () => 0,
+    url: preview, confirm21: true, authorizedRequests: 21, now: () => 0,
     fetcher: async () => ++calls === 2 ? denied() : ok(),
   });
   assert.equal(calls, 2);
@@ -128,7 +130,7 @@ test('preview authentication and stale code stop after one harmless request', as
   ]) {
     let calls = 0;
     const result = await probeProtectedRedisPreview({
-      url: preview, confirm21: true,
+      url: preview, confirm21: true, authorizedRequests: 21,
       fetcher: async () => { calls++; return response; },
     });
     assert.equal(result.state, 'blocked');
@@ -136,7 +138,7 @@ test('preview authentication and stale code stop after one harmless request', as
     assert.equal(calls, 1);
   }
   const invalid = await probeProtectedRedisPreview({
-    url: preview, confirm21: true,
+    url: preview, confirm21: true, authorizedRequests: 21,
     fetcher: async () => Response.json({}, {headers:{'x-vercel-cache':'MISS'}}),
   });
   assert.equal(invalid.state, 'blocked');
@@ -145,7 +147,7 @@ test('preview authentication and stale code stop after one harmless request', as
 
 test('CDN cache hits and overlong probes cannot prove an origin decision', async () => {
   const cached = await probeProtectedRedisPreview({
-    url: preview, confirm21: true, fetcher: async () => new Response('{}', {
+    url: preview, confirm21: true, authorizedRequests: 21, fetcher: async () => new Response('{}', {
       status: 200, headers: { ...headers, 'x-vercel-cache': 'HIT' },
     }),
   });
@@ -155,7 +157,7 @@ test('CDN cache hits and overlong probes cannot prove an origin decision', async
   let clock = 0;
   let calls = 0;
   const stale = await probeProtectedRedisPreview({
-    url: preview, confirm21: true, now: () => clock,
+    url: preview, confirm21: true, authorizedRequests: 21, now: () => clock,
     fetcher: async () => { calls++; clock += 56_000; return ok(); },
   });
   assert.equal(calls, 1);
@@ -168,7 +170,7 @@ test('origin evidence never passes when CDN state is stale, revalidated, absent 
   for (const cacheState of ['STALE','REVALIDATED','PRERENDER','HIT',undefined]) {
     let calls = 0;
     const result = await probeProtectedRedisPreview({
-      url: preview, confirm21: true, now: () => 0,
+      url: preview, confirm21: true, authorizedRequests: 21, now: () => 0,
       fetcher: async () => {
         calls++;
         return new Response('{}', {
@@ -190,7 +192,7 @@ test('origin evidence never passes when CDN state is stale, revalidated, absent 
 test('CDN BYPASS is an eligible status but is never cross-instance proof', async () => {
   let calls=0;
   const result = await probeProtectedRedisPreview({
-    url: preview, confirm21: true, now: () => 0,
+    url: preview, confirm21: true, authorizedRequests: 21, now: () => 0,
     fetcher: async () => {
       calls++;
       return calls === 21
@@ -204,7 +206,7 @@ test('CDN BYPASS is an eligible status but is never cross-instance proof', async
           }});
     },
   });
-  assert.equal(result.state,'passed');
+  assert.equal(result.state,'partial');
   assert.equal(result.requests,21);
   assert.equal(result.crossInstanceVerified,false);
 });
@@ -224,7 +226,7 @@ test('invalid URL never sends bypass token to any host', async () => {
 
 test('unavailable and malformed 429 fail instead of claiming pass', async () => {
   const unauthorized = await probeProtectedRedisPreview({
-    url: preview, fetcher: async () => { throw new Error('private token details'); },
+    url: preview, authorizedRequests: 1, fetcher: async () => { throw new Error('private token details'); },
   });
   assert.equal(unauthorized.state, 'blocked');
   assert.equal(unauthorized.reason, 'network-or-auth-failure');
@@ -238,7 +240,7 @@ test('unavailable and malformed 429 fail instead of claiming pass', async () => 
       'x-vercel-cache':'MISS'}})],
   ]) {
     const result = await probeProtectedRedisPreview({
-      url: preview, confirm21: true,
+      url: preview, confirm21: true, authorizedRequests: 21,
       fetcher: async () => response,
     });
     assert.equal(result.state, 'inconclusive', name);
@@ -249,7 +251,7 @@ test('unavailable and malformed 429 fail instead of claiming pass', async () => 
 test('both public routes in the bounded diagnostic use only one accepted repository field', async () => {
   const urls = [];
   const result = await probeProtectedRedisPreview({
-    url: preview, confirm21: true, now: () => 0,
+    url: preview, confirm21: true, authorizedRequests: 21, now: () => 0,
     fetcher: async (url, init) => {
       const target = new URL(url);
       urls.push(target);
@@ -262,8 +264,70 @@ test('both public routes in the bounded diagnostic use only one accepted reposit
       return urls.length === 21 ? denied() : ok();
     },
   });
-  assert.equal(result.state, 'passed');
+  assert.equal(result.state, 'partial');
   assert.equal(urls.length, 21);
   assert.deepEqual(new Set(urls.map(u => u.pathname)),
     new Set(['/api/public-actions', '/api/public-prs']));
+});
+
+test('default probe and mismatched authorization perform zero GETs, including Redis preflight', async () => {
+  for(const options of [
+    {url:preview},
+    {url:preview,confirm21:true},
+    {url:preview,authorizedRequests:21},
+    {url:preview,confirm21:true,authorizedRequests:1},
+    {url:preview,authorizedRequests:0},
+    {url:preview,confirm21:true,authorizedRequests:-1},
+    {url:preview,confirm21:true,authorizedRequests:1000},
+  ]){
+    let calls=0;
+    const result=await probeProtectedRedisPreview({
+      ...options,fetcher:async()=>{calls++;throw Error('must not connect');},
+    });
+    assert.equal(calls,0,JSON.stringify(options));
+    assert.equal(result.requests,0);
+    assert.equal(result.state,'blocked');
+    assert.equal(result.reason,'explicit-origin-request-authorization-required');
+    assert.equal(result.crossInstanceVerified,false);
+    assert.equal(result.releaseAuthorized,false);
+  }
+});
+
+test('21st HTTP 429 cannot be labeled G06 PASS, including perfectly attributed response', async () => {
+  let count=0;
+  const result=await probeProtectedRedisPreview({
+    url:preview,authorizedRequests:21,confirm21:true,now:()=>0,
+    fetcher:async()=>++count===21?denied():ok(),
+  });
+  assert.equal(result.state,'partial');
+  assert.equal(result.reason,'redis-attributed-429-same-client-only');
+  assert.equal(result.requests,21);
+  assert.equal(result.admitted,20);
+  assert.equal(result.crossInstanceVerified,false);
+  assert.equal(result.releaseAuthorized,false);
+});
+
+test('CLI defaults and incomplete or unsupported 21-request flags never initiate fetch', async () => {
+  const {spawnSync}=await import('node:child_process');
+  const {fileURLToPath}=await import('node:url');
+  const file=fileURLToPath(new URL('../scripts/verify-protected-redis-preview.mjs',import.meta.url));
+  const redacted='test-owner-preview-bypass-do-not-print';
+  const origin=preview;
+  for (const args of [
+    ['--preview-url',origin],
+    ['--preview-url',origin,'--confirm-21-request-test'],
+    ['--preview-url',origin,'--confirm-1-request','--confirm-21-request-test'],
+    ['--preview-url',origin,'--confirm-1-request','--approve-free-tier-21-origin-reads'],
+    ['--preview-url',origin,'--confirm-21-request-test','--unrecognized-unsafe-option'],
+  ]) {
+    const p=spawnSync(process.execPath,[file,...args],{
+      env:{...process.env,NEXUS_PREVIEW_PROTECTION_BYPASS:redacted},
+      timeout:9000,encoding:'utf8',
+    });
+    assert.equal(p.status,2,JSON.stringify(args));
+    const output=JSON.parse(p.stdout);
+    assert.equal(output.requests,0,JSON.stringify(args));
+    assert.equal(output.state,'blocked');
+    assert.doesNotMatch(p.stdout+p.stderr,/test-owner-preview-bypass-do-not-print/);
+  }
 });
