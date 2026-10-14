@@ -8,6 +8,8 @@
 
 **Five-route admission and source-integrity engineering check (14 October):** [S-03 exact source-local proof](S03_FIVE_PUBLIC_API_ADMISSION_QA_2026-10-14.md) covers strict single-repository query validation and simulated Redis attributed 429/fail-closed 503 on **all five** public API routes. **204/204 Node**, **16/16 local HTTP**, **11/11 real Chromium fixture sessions**, TS/build/budget/audit 0 on code SHA `c131446c05a9551733602bc1909468beef538593`; no external GitHub/Upstash calls. This **does not close** the cross-instance real Redis **G-06/#7** or missing account metrics **G-02**.
 
+**Consolidated execution plan (14 October):** [NEXUS Master Remediation Plan](NEXUS_MASTER_REMEDIATION_PLAN_2026-10-14.md). Prioritized R0–R13 with true prerequisites, acceptance checks, no-spend constraints, and separate source-local / Preview / human / Production statuses. GitHub main at the new plan baseline: `d9c6cd76714fab8d86ee4040171603c960493dd6`. **This planning update does not authorize new deployment.**
+
 **T-03 cross-engine source QA (14 October):** On executable commit `d67d2b839c0ffa6ccbdf65a1521a1ba7035dc6cc`, **205/205 Node tests**, compiled local HTTP **16/16**, real Playwright **Chromium 11/11** and **Firefox 11/11 twice** passed. Explicit WebKit launch was **BLOCKED** by unsupported Amazon Linux 2023 host libraries (ICU 74 / GTK / GStreamer); **no WebKit/Safari acceptance** claimed. Exact [T-03 report](T03_CROSS_ENGINE_WEBKIT_QA_2026-10-14.md); human G-05 remains OPEN.
 
 ## Verified state, kept separate by evidence tier
