@@ -1008,7 +1008,7 @@ body { background: #071829; color: #eff5ff; }
 
 /* Data provenance and panel labels need to remain readable at 375 px. */
 .nexus-devops .nexus-devops-section {
-  font-size: .76rem;
+  font-size: .78rem;
   line-height: 1.6;
 }
 .nexus-devops-insights-kicker {
@@ -1025,11 +1025,54 @@ body { background: #071829; color: #eff5ff; }
   font-size: .73rem;
 }
 @media (max-width: 680px) {
-  .nexus-devops .nexus-devops-section { font-size: .72rem; }
+  .nexus-devops .nexus-devops-section { font-size: .75rem; }
   .nexus-devops-composition-item { padding: 12px 11px; }
   .nexus-devops-composition-item > p:nth-child(2) { font-size: 1.6rem; }
   .nexus-devops-outcome-bar, .nexus-devops-pr-bar { height: 24px; }
 }
 @media (prefers-reduced-motion: reduce) {
   .nexus-devops-run-tick, .nexus-devops-pr-tick { transition: none; }
+}
+
+/* 400% text-only zoom and narrow viewport: sections and on-demand controls
+   must reflow instead of widening the whole document. This also preserves
+   horizontal scrolling ONLY inside intentionally scrollable data tables/nav. */
+.nexus-devops .nexus-devops-section {
+  min-width: 0;
+  flex-wrap: wrap;
+  overflow-wrap: anywhere;
+}
+.nexus-devops .nexus-devops-section::after {
+  flex: 1 1 20px;
+  min-width: 14px;
+}
+@media (max-width: 640px) {
+  .nexus-devops-export > div:last-child {
+    flex: 1 1 100%;
+    min-width: 0;
+    width: 100%;
+  }
+  .nexus-devops-export-button {
+    min-width: 0;
+    max-width: 100%;
+    flex: 1 1 100%;
+    gap: 8px;
+    padding: 11px 12px;
+    flex-wrap: wrap;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    text-align: center;
+  }
+  .nexus-devops-trend > div:first-child { min-width: 0; }
+  .nexus-devops-trend-button {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    gap: 8px;
+    padding: 11px 12px;
+    flex-wrap: wrap;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    text-align: center;
+  }
 }
