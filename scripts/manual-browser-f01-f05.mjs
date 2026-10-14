@@ -321,6 +321,37 @@ async function runJourney(browser, name, width, scenario) {
       await ready(repoA);
       assert.equal(calls.length, 9, '2 initial + 3 detail + 2 switch + 2 Back');
     }
+    // Editorial mobile KPI: the source search must become available in the
+    // first 900 CSS px at 375px, while provenance remains readable. Use
+    // absolute document offsets: preceding scenario actions may have scrolled.
+    if (scenario === 'complete' && (width === 320 || width === 375)) {
+      const placement = await page.evaluate(() => {
+        const hero = document.querySelector('.nexus-devops-hero');
+        const search = document.querySelector('.nexus-devops-search');
+        const boundary = document.querySelector('.nexus-devops-boundary-copy');
+        const receipts = document.querySelectorAll('.nexus-devops-received-at');
+        if (!hero || !search || !boundary) return null;
+        const heroBox = hero.getBoundingClientRect();
+        const searchBox = search.getBoundingClientRect();
+        return {
+          heroHeight: heroBox.height,
+          searchTop: searchBox.top + window.scrollY,
+          boundaryText: boundary.textContent ?? '',
+          receiptCount: receipts.length,
+          allReceiptsHaveSource: [...receipts].every(el =>
+            /^(Actions|PRs):/.test(el.textContent?.trim() ?? '')),
+        };
+      });
+      assert.ok(placement, 'mobile hero and repo input must exist');
+      assert.ok(placement.boundaryText.includes('up to 10 workflow runs and 5 open PRs'),
+        'data sample limits must remain visible in the compact mobile hero');
+      assert.equal(placement.receiptCount, 2, 'both live source timestamps retained');
+      assert.ok(placement.allReceiptsHaveSource, 'timestamps identify source panels');
+      assert.ok(placement.heroHeight <= (width === 375 ? 700 : 790),
+        'mobile intro must not monopolize the first viewport');
+      assert.ok(placement.searchTop <= (width === 375 ? 850 : 970),
+        'repository analysis control must be reachable near the first viewport');
+    }
     assert.deepEqual(jsErrors, [], 'no uncaught browser errors or unsafe intercepted API calls');
     assert.equal(await page.evaluate(() =>
       document.documentElement.scrollWidth > document.documentElement.clientWidth + 2), false,
