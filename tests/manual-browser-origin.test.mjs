@@ -23,3 +23,16 @@ test('manual browser regression denies production, preview, and non-loopback ori
     assert.doesNotMatch(result.stdout, /scenario|PASSED/);
   }
 });
+
+test('manual multi-engine runner refuses unsupported browser engines before any launch', () => {
+  for (const value of ['safari','chromium --unsafe','WebKit','', '../webkit']) {
+    const result = spawnSync(process.execPath, ['--import', 'tsx', runner], {
+      env: {...process.env, NEXUS_BROWSER_BASE_URL:'http://127.0.0.1:3000/',
+        NEXUS_BROWSER_ENGINE:value || 'unsupported-empty'},
+      encoding:'utf8', timeout:7000,
+    });
+    assert.notEqual(result.status,0,value);
+    assert.match(result.stderr,/NEXUS_BROWSER_ENGINE must be chromium, firefox or webkit/);
+    assert.doesNotMatch(result.stdout,/scenario|PASSED/);
+  }
+});
