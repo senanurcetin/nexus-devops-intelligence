@@ -34,7 +34,7 @@ P0 = yayın engeli; P1 = ürün kalitesi; P2 = ertelenen kapsam. 'Offline DONE' 
 | R2 / G02 | P0 | Hesap sahibi: Upstash Free ve tüm Vercel Hobby ekibi gerçek tüketimi | BLOCKED | Paylaşılan Preview+Production Redis DB aylık komut, MB, GB; tüm Hobby ekip fonksiyon invocations/CPU/memory, dönem ve UTC gözlem zamanı, ek Preview origin GET planı; offline capacity screen ve sahibin açık kabulü | Hesap dashboard erişimi |
 | R3 | P0 / G05 için | Mühendislik: WebKit gerçek testi | BLOCKED - HOST | Uyumlu Ubuntu/macOS ile playwright-core 1.64.0; webkit.launch ve mevcut 11 fixture senaryosunda gerçek test; engine+versiyon+SHA+console/axe/network+screenshot; host hatası NOT RUN kalır | R2'den bağımsız uygun ortam |
 | R4 | P1, G05 öncesi | Tasarım ve mühendislik: NEXUS görsel kalite ve marka QC | KISMİ | 320/375/768/1280/1440/(mümkünse 1920) genişlikte veri, boş/kısmi, timeout, hata, 200%-400% büyütme; grafik sayıları ve alanları okunur, kartlar tasarım bütünlüğüne sahip, marka yerleşimi estetik; insan screenshot PASS/FIX | Lokal build; gerçek kabul R7 |
-| R5 | P0 | Mühendislik: doğruluk, provenance ve beş API hata matrisi | OFFLINE KISMİ, LIVE AÇIK | 200/400/403/429/404/502/503/504; no-store/Retry-After; 2 ilk source GET; F04/F05 yalnızca click; kaynak linkleri, örneklem sınırları, CSV injection, UTC günü, missing coverage, stale race | Offline özgür, live R6 |
+| R5 | P0 | Mühendislik: doğruluk, provenance ve beş API hata matrisi | **DONE_OFFLINE; G04 LIVE AÇIK** | 200/400/403/429/404/502/503/504; no-store/Retry-After; 2 ilk source GET; F04/F05 yalnızca click; kaynak linkleri, örneklem sınırları, CSV injection, UTC günü, missing coverage, stale race | Offline özgür, live R6 |
 | R6 / G03 | P0 | Hesap sahibi izin verir, mühendis exact-SHA protected Preview kurar | BLOCKED - İZİN | Sadece Preview hedefi ve onaylı SHA, Vercel unique URL/ID, READY/SSO, env adları Sensitive Preview+Production (değerler açılmaz), Production alias değişmez, rollback referansı | R1, R2, ayrı Preview izni |
 | R7 / G04 | P0 | Mühendis + SSO yetkili testçi: gerçek Preview F01–F05 kabulü | BLOCKED | Kaynak SHA eşleşir; izinli origin GET sayısı aşılmaz; gerçek GitHub source vs fixture ayrımı; data/export/history/evidence/trend; 400/429/503 gözlemi yalnızca izin kapsamıyla; console/screenshot/repro ve istek sayısı kaydı | R6 ve belirlenmiş trafik bütçesi |
 | R8 / G05 | P0 | İnsan testçi: Safari/iPhone, NVDA/VoiceOver, elit tasarım onayı | BLOCKED | SR-01–SR-12 testçi+tarih+cihaz+sürüm+SHA ile PASS/FAIL; gerçek zoom, keyboard, focus, reduced-motion, table, chart, dynamic announcements; açık P0 a11y/visual bulgusu 0 | R7; R3 destekleyici |
@@ -84,6 +84,20 @@ bulundu ancak bağlı Vercel Sandbox API'si harici MCR imajını doğrudan
 kabul etmedi; Vercel Container Registry'ye ayrı imaj push işlemi
 gerekiyor. Paid/registry altyapısı bu planla otomatik açılmaz. Kaynak
 seviyesindeki WebKit testini çalışmış kabul etmiyoruz.
+
+### R5 kaynak/doğruluk test matrisi — 14 Ekim 2026
+
+[R5 kaynak ve hata matrisi](R5_SOURCE_DATA_ERROR_MATRIX_2026-10-14.md)
+F01–F05 kaynak kimliği, örneklem sınırları, doğrulanmamış verinin
+gizlenmesi ve beş API 400/429/503 güvenlik sözleşmesini mevcut
+Node/HTTP/browser fixture testlerine bağladı. 403 GitHub quota, 404,
+502, 504, sınırlandırılmış Retry-After, CSV enjeksiyon, UTC kapsama,
+source switch ve sadece tıklamayla detay/UTC GET **offline doğrulandı**.
+Başarılı mevcut kaynak SHA `2df2ea635fd57b0d9f4d852818f6de55e0f1e3ce`
+ve [R1 QA](R1_EXACT_MAIN_SOURCE_QA_2026-10-14.md).
+
+**R5 DONE_OFFLINE; G04 gerçek SSO Preview kabulü AÇIK.**
+Mock statü testleri gerçek GitHub/Vercel/Upstash kanıtı değildir.
 
 ## 3. Yürütme sırası
 
