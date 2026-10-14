@@ -17,6 +17,7 @@ import { createPublicSampleExport, createSampleFilename, serializePublicSampleCs
 import { buildRepositoryShareUrl, readRepositoryLink } from '@/lib/nexus-repository-link';
 import { isPublicPrVerification, type PublicPrVerification } from '@/lib/nexus-pr-evidence';
 import { isPublicRunEvidence, type PublicRunEvidence } from '@/lib/nexus-workflow-run-evidence';
+import { isPublicWorkflowTrend, type PublicWorkflowTrend } from '@/lib/nexus-workflow-trends';
 
 const DEFAULT_REPOSITORY = 'senanurcetin/ot-sentinel';
 
@@ -65,6 +66,11 @@ export default function NexusDeveloperPreview() {
   const [runEvidenceOpen, setRunEvidenceOpen] = useState(false);
   const [runEvidenceLoading, setRunEvidenceLoading] = useState(false);
   const runEvidenceController = useRef<AbortController | null>(null);
+  const [trend, setTrend] = useState<Panel<PublicWorkflowTrend>>(emptyPanel);
+  const [trendKey, setTrendKey] = useState<string | null>(null);
+  const [trendOpen, setTrendOpen] = useState(false);
+  const [trendLoading, setTrendLoading] = useState(false);
+  const trendController = useRef<AbortController | null>(null);
   const [actionsReceivedAt, setActionsReceivedAt] = useState<string | null>(null);
   const [pullsReceivedAt, setPullsReceivedAt] = useState<string | null>(null);
   const loading = actionsLoading || pullsLoading;
@@ -84,6 +90,12 @@ export default function NexusDeveloperPreview() {
   const refreshPanel = useCallback((kind: 'actions' | 'prs', repo: string) => {
     setCopyStatus(null);
     if (kind === 'actions') {
+      trendController.current?.abort();
+      trendController.current = null;
+      setTrend(emptyPanel());
+      setTrendKey(null);
+      setTrendOpen(false);
+      setTrendLoading(false);
       runEvidenceController.current?.abort();
       runEvidenceController.current = null;
       setRunEvidence(emptyPanel());
@@ -171,6 +183,12 @@ export default function NexusDeveloperPreview() {
     prEvidenceController.current = null;
     runEvidenceController.current?.abort();
     runEvidenceController.current = null;
+    trendController.current?.abort();
+    trendController.current = null;
+    setTrend(emptyPanel());
+    setTrendKey(null);
+    setTrendOpen(false);
+    setTrendLoading(false);
     setRunEvidence(emptyPanel());
     setRunEvidenceKey(null);
     setRunEvidenceOpen(false);
@@ -225,6 +243,7 @@ export default function NexusDeveloperPreview() {
       controllers.current.prs?.abort();
       prEvidenceController.current?.abort();
       runEvidenceController.current?.abort();
+      trendController.current?.abort();
       activeRepositoryRef.current = null;
       if (pullsSlowTimer.current !== null) clearTimeout(pullsSlowTimer.current);
     };
@@ -275,6 +294,39 @@ export default function NexusDeveloperPreview() {
   const visiblePulls = filteredPublicPulls(pulls.data, pullFilter);
   const recommendations = recommendInvestigations(actions.data, pulls.data);
   const canExport = !loading && Boolean(actions.data || pulls.data);
+
+  function inspectUtcTrend() {
+    // Seven-day history is never requested by initial load/filter/CSV or URL hydration.
+    if (!selectedRepo || loading || trendLoading) return;
+    const end = new Date(Date.now() - 86_400_000).toISOString().slice(0, 10);
+    const key = selectedRepo + ':' + end;
+    if (trendKey === key && trend.data) {
+      setTrendOpen(!trendOpen);
+      return;
+    }
+    trendController.current?.abort();
+    const controller = new AbortController();
+    trendController.current = controller;
+    setTrend(emptyPanel());
+    setTrendKey(key);
+    setTrendOpen(true);
+    setTrendLoading(true);
+    const query = new URLSearchParams({ repository: selectedRepo, end });
+    void readPublicPanel<PublicWorkflowTrend>(
+      '/api/public-workflow-trends?' + query,
+      controller.signal, fetch,
+      (data): data is PublicWorkflowTrend =>
+        isPublicWorkflowTrend(data, selectedRepo, end),
+    ).then(result => {
+      if (trendController.current === controller && !controller.signal.aborted) {
+        setTrend(result);
+      }
+    }).finally(() => {
+      if (trendController.current === controller && !controller.signal.aborted) {
+        setTrendLoading(false);
+      }
+    });
+  }
 
   function inspectFailedRun(id: number) {
     // The job API is never called on initial load, filters, URL navigation or exports.
@@ -550,6 +602,91 @@ export default function NexusDeveloperPreview() {
               <Download aria-hidden="true" className="h-4 w-4" /> Export JSON
             </button>
           </div>
+        </section>
+
+        <section aria-label="Optional complete seven-day UTC workflow trend"
+          className="nexus-devops-trend mb-6 rounded-2xl p-5 sm:p-6">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div className="min-w-0 flex-1">
+              <p className="nexus-devops-insights-kicker">ON-DEMAND / GITHUB ACTIONS / UTC</p>
+              <h2 className="mt-2 text-lg font-semibold text-white">Seven completed days · workflow volume</h2>
+              <p className="mt-2 max-w-3xl text-xs leading-5 text-slate-300">
+                A single additional public GitHub request only when selected. Daily counts use
+                creation dates and currently reported outcomes; they do not establish historical
+                pass rates. If GitHub returns a partial window, no trend chart is shown.
+              </p>
+            </div>
+            <button type="button" onClick={inspectUtcTrend} disabled={!selectedRepo || loading || trendLoading}
+              aria-expanded={trendOpen}
+              className="nexus-devops-trend-button inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-4 py-3 text-xs font-semibold">
+              <Activity aria-hidden="true" className="h-4 w-4" />
+              {trendOpen && trend.data ? 'Hide 7-day UTC trend' : trendLoading ? 'Loading UTC trend…' : 'Load 7-day UTC trend'}
+            </button>
+          </div>
+          {trendOpen && (
+            <div className="mt-5 border-t border-slate-700/60 pt-5">
+              {trendLoading && <p role="status" className="text-xs text-slate-300">
+                Checking one GitHub date-filtered page for complete UTC coverage…
+              </p>}
+              {trend.error && <p role="alert" className="text-xs text-rose-300">
+                {trend.error} No daily trend is shown.
+              </p>}
+              {trend.data && (
+                <div>
+                  <p className="text-xs font-semibold text-[#a6d3fa]">
+                    {trend.data.start_utc} through {trend.data.end_utc} UTC ·
+                    {trend.data.inspected_runs} of {trend.data.total_matching_runs} returned ·
+                    {trend.data.coverage === 'complete' ? 'Complete returned window' : 'Incomplete coverage'}
+                  </p>
+                  {trend.data.coverage === 'complete' ? (
+                    <div className="nexus-devops-trend-scroll mt-4 overflow-x-auto" role="region" tabIndex={0}
+                      aria-label="Seven-day UTC workflow count table, scroll horizontally if needed">
+                      <table className="nexus-devops-trend-table w-full min-w-[290px] text-left text-xs">
+                        <caption className="sr-only">
+                          Seven UTC creation days with currently reported successful, failed, pending and other workflow counts
+                        </caption>
+                        <thead><tr>
+                          <th scope="col">UTC day</th><th scope="col">Daily volume</th>
+                          <th scope="col">Success</th><th scope="col">Failed</th>
+                          <th scope="col">Pending</th><th scope="col">Other</th>
+                        </tr></thead>
+                        <tbody>
+                          {trend.data.days.map(day => {
+                            const maxVolume = Math.max(1, ...trend.data!.days.map(d => d.total));
+                            return (
+                              <tr key={day.day_utc}>
+                                <th scope="row" className="font-medium">{day.day_utc.slice(5)}</th>
+                                <td>
+                                  <div className="flex items-center gap-2">
+                                    <span className="min-w-4 tabular-nums">{day.total}</span>
+                                    <div className="nexus-devops-trend-track" aria-hidden="true">
+                                      {(['success','failed','pending','other'] as const).map(state => day[state] ? (
+                                        <span key={state}
+                                          className={'nexus-devops-outcome-fill--' + state}
+                                          style={{ width: (100 * day[state] / maxVolume) + '%' }} />
+                                      ) : null)}
+                                    </div>
+                                  </div>
+                                </td>
+                                <td className="tabular-nums">{day.success}</td>
+                                <td className="tabular-nums">{day.failed}</td>
+                                <td className="tabular-nums">{day.pending}</td>
+                                <td className="tabular-nums">{day.other}</td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  ) : <p role="status" className="mt-4 text-sm font-medium text-amber-200">
+                    Only part of this seven-day window was returned. No chart or inferred
+                    daily success rate is displayed.
+                  </p>}
+                  <p className="mt-4 text-xs leading-5 text-slate-400">{trend.data.scope_note}</p>
+                </div>
+              )}
+            </div>
+          )}
         </section>
 
         <div id="intelligence" className="nexus-devops-section mb-3 mt-9">02 / Source intelligence / sampled</div>
