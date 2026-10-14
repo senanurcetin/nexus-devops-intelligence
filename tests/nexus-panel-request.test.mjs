@@ -92,3 +92,74 @@ test('panel adapter: ignores malformed and oversized WAF Retry-After hints', asy
     assert.doesNotMatch(result.error, /9999999|unavailable|-8/);
   }
 });
+
+test('panel receipt reports only allowlisted metadata from existing successful HTTP response', async () => {
+  let requests = 0;
+  const result = await readPublicPanel('/api/public-actions', signal(), async (_url, init) => {
+    requests++;
+    assert.equal(init.cache, 'no-store');
+    return new Response(JSON.stringify({repository:'owner/repo'}),{
+      status:200,headers:{
+        'content-type':'application/json',
+        'x-vercel-cache':'MISS',
+        'x-nexus-rate-limit-mode':'shared-redis',
+        'set-cookie':'session=very-private-token',
+        'x-nexus-rate-limit-source':'evil-secret',
+      },
+    });
+  });
+  assert.equal(requests,1);
+  assert.deepEqual(result.receipt,{
+    status:200,cache:'MISS',admission:'shared-redis',limitSource:'not reported',
+  });
+  assert.doesNotMatch(JSON.stringify(result.receipt),/session|private|cookie|evil-secret/);
+});
+
+test('panel receipt uses stable allowlist for forged CDN and rate headers', async () => {
+  for(const bad of ['<script>alert(1)</script>','MISS token appended','1234567',
+    'shared-redis, local-fallback','Bearer secret']) {
+    const result = await readPublicPanel('/api/public-prs',signal(),async()=>
+      new Response(JSON.stringify({repository:'owner/repo'}),{
+        status:200, headers:{
+          'content-type':'application/json','x-vercel-cache':bad,
+          'x-nexus-rate-limit-mode':bad,
+          'x-nexus-rate-limit-source':bad,
+        },
+      }));
+    assert.deepEqual(result.receipt,{
+      status:200,cache:'not reported',
+      admission:'not reported',limitSource:'not reported',
+    });
+    assert.doesNotMatch(JSON.stringify(result.receipt),/script|Secret|secret|Bearer/);
+  }
+});
+
+test('panel diagnostics preserve safe 429 and 503 observations without raw payloads', async () => {
+  const limited = await readPublicPanel('/api/public-actions',signal(),async()=>new Response(
+    '<h1>private WAF error</h1>',{status:429,headers:{
+      'retry-after':'10','x-vercel-cache':'BYPASS',
+      'x-nexus-rate-limit-source':'shared-redis',
+    }}));
+  assert.equal(limited.receipt?.status,429);
+  assert.equal(limited.receipt?.cache,'BYPASS');
+  assert.equal(limited.receipt?.limitSource,'shared-redis');
+  assert.doesNotMatch(JSON.stringify(limited),/private WAF error/);
+  const unavailable = await readPublicPanel('/api/public-prs',signal(),async()=>
+    new Response('private transport data',{status:503,headers:{
+      'x-nexus-rate-limit-source':'shared-redis-unavailable',
+      'x-vercel-cache':'STALE',
+    }}));
+  assert.equal(unavailable.receipt?.status,503);
+  assert.equal(unavailable.receipt?.cache,'STALE');
+  assert.equal(unavailable.receipt?.limitSource,'shared-redis-unavailable');
+  assert.doesNotMatch(JSON.stringify(unavailable),/private transport data/);
+});
+
+test('panel abort and network exception never claim a received HTTP status', async () => {
+  const ctl=new AbortController();
+  ctl.abort();
+  const cancelled=await readPublicPanel('/api/public-prs',ctl.signal,async()=>{throw Error('abort');});
+  assert.deepEqual(cancelled,emptyPanel());
+  const broken=await readPublicPanel('/api/public-prs',signal(),async()=>{throw Error('secret local network');});
+  assert.equal(broken.receipt,undefined);
+});

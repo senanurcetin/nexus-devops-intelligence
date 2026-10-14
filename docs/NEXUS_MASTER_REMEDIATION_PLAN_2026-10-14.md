@@ -4,7 +4,7 @@
 **Proje:** senanurcetin/nexus-devops-intelligence. Ops-Copilot, Power BI, Fraud ve Smart Factory hariç.  
 **Kaynak başlangıç SHA:** d9c6cd76714fab8d86ee4040171603c960493dd6.  
 **Durum:** Bu plan yayın veya ücretli servis kullanım izni değildir.  
-**Son doğrulanmış Vercel dağıtım snapshot'ı:** Preview 599ced76605c25161b182b2d5bfbadbd091bfb53; Production 74cd0e344eb94255b4bc8db99e4a4dc7f3a5a0bf. Dağıtımdan hemen önce yeniden kontrol edilmeli.
+**Güncel Vercel snapshot (14 Ekim):** Yetkili SSO Preview `dpl_9sq98XLM2DZAgyBFZoFVUde2NucT` = `READY`, kaynak `2b5fb7c379bd1f939f3b50f286edfb868ddb386a`; Production `dpl_9fXGATNHhyhNVrN1i47k3BU4u5K5` = `READY`, kaynak `74cd0e344eb94255b4bc8db99e4a4dc7f3a5a0bf`. Sonraki PR'lar otomatik deploy değildir. Dağıtımdan önce yeniden sorgula.
 
 **Ana kayıtlar:** [Güncel kabul #49](https://github.com/senanurcetin/nexus-devops-intelligence/issues/49), [Redis ve Free kapasite #7](https://github.com/senanurcetin/nexus-devops-intelligence/issues/7), [eski/güncel kapılar](NEXUS_CURRENT_RELEASE_WORK_PLAN_2026-10-14.md), [manuel yayın/geri dönüş runbook](NEXUS_MANUAL_RELEASE_RUNBOOK_2026-10-14.md).
 
@@ -30,17 +30,17 @@ P0 = yayın engeli; P1 = ürün kalitesi; P2 = ertelenen kapsam. 'Offline DONE' 
 | ID | Öncelik | İş ve sorumluluk | Durum | Ölçülebilir kabul / kanıt | Bağımlılık |
 | --- | --- | --- | --- | --- | --- |
 | R0 | P0 | Mühendislik: iddia/kanıt/doküman tutarlılığı | **DONE_OFFLINE** (yeniden dağıtımda kontrol) | Git main, tested application SHA, deployed Preview ve Production SHA ayrı; eski yanlış WebKit PASS işareti kaldırılmış; tarihli kaynak ve testler belirtilmiş | Yok |
-| R1 / G01 | P0 | Mühendislik: son değişikliklerden sonra immutable release candidate | **DONE_OFFLINE** (onaysız kaynak adayı: 2df2ea6) | Tam 40-karakter SHA, temiz npm ci, tüm Node testleri, typecheck, production build, JS budget, audit, 16 HTTP, Chromium/Firefox (+ gerçekten çalıştırılmışsa WebKit) suite, loglar ve kaynak hash; herhangi hata => HOLD | R0 ve son mühendislik değişiklikleri |
-| R2 / G02 | P0 | Hesap sahibi: Upstash Free ve tüm Vercel Hobby ekibi gerçek tüketimi | BLOCKED | Paylaşılan Preview+Production Redis DB aylık komut, MB, GB; tüm Hobby ekip fonksiyon invocations/CPU/memory, dönem ve UTC gözlem zamanı, ek Preview origin GET planı; offline capacity screen ve sahibin açık kabulü | Hesap dashboard erişimi |
+| R1 / G01 | P0 | Mühendislik: son değişikliklerden sonra immutable release candidate | **DONE_OFFLINE** (son app QA: 8bb2e7c; ayrı Preview onayı gerekir) | Tam 40-karakter SHA, temiz npm ci, tüm Node testleri, typecheck, production build, JS budget, audit, 16 HTTP, Chromium/Firefox (+ gerçekten çalıştırılmışsa WebKit) suite, loglar ve kaynak hash; herhangi hata => HOLD | R0 ve son mühendislik değişiklikleri |
+| R2 / G02 | P0 | Hesap sahibi: Upstash Free ve tüm Vercel Hobby ekibi gerçek tüketimi | **Altı gerçek kullanım metriği gözlendi; 25-istek what-if READY_FOR_OWNER_REVIEW** (dönem hizası açık) | Paylaşılan Preview+Production Redis DB aylık komut, MB, GB; tüm Hobby ekip fonksiyon invocations/CPU/memory, dönem ve UTC gözlem zamanı, ek Preview origin GET planı; offline capacity screen ve sahibin açık kabulü | Hesap dashboard erişimi |
 | R3 | P0 / G05 için | Mühendislik: WebKit gerçek testi | BLOCKED - HOST | Uyumlu Ubuntu/macOS ile playwright-core 1.64.0; webkit.launch ve mevcut 11 fixture senaryosunda gerçek test; engine+versiyon+SHA+console/axe/network+screenshot; host hatası NOT RUN kalır | R2'den bağımsız uygun ortam |
 | R4 | P1, G05 öncesi | Tasarım ve mühendislik: NEXUS görsel kalite ve marka QC | KISMİ | 320/375/768/1280/1440/(mümkünse 1920) genişlikte veri, boş/kısmi, timeout, hata, 200%-400% büyütme; grafik sayıları ve alanları okunur, kartlar tasarım bütünlüğüne sahip, marka yerleşimi estetik; insan screenshot PASS/FIX | Lokal build; gerçek kabul R7 |
 | R5 | P0 | Mühendislik: doğruluk, provenance ve beş API hata matrisi | **DONE_OFFLINE; G04 LIVE AÇIK** | 200/400/403/429/404/502/503/504; no-store/Retry-After; 2 ilk source GET; F04/F05 yalnızca click; kaynak linkleri, örneklem sınırları, CSV injection, UTC günü, missing coverage, stale race | Offline özgür, live R6 |
-| R6 / G03 | P0 | Hesap sahibi izin verir, mühendis exact-SHA protected Preview kurar | BLOCKED - İZİN | Sadece Preview hedefi ve onaylı SHA, Vercel unique URL/ID, READY/SSO, env adları Sensitive Preview+Production (değerler açılmaz), Production alias değişmez, rollback referansı | R1, R2, ayrı Preview izni |
-| R7 / G04 | P0 | Mühendis + SSO yetkili testçi: gerçek Preview F01–F05 kabulü | BLOCKED | Kaynak SHA eşleşir; izinli origin GET sayısı aşılmaz; gerçek GitHub source vs fixture ayrımı; data/export/history/evidence/trend; 400/429/503 gözlemi yalnızca izin kapsamıyla; console/screenshot/repro ve istek sayısı kaydı | R6 ve belirlenmiş trafik bütçesi |
+| R6 / G03 | P0 | Hesap sahibi izin verir, mühendis exact-SHA protected Preview kurar | **Preview READY/exact-SHA DONE** (deployed 2b5fb7c; SSO gerçek challenge not proven) | Sadece Preview hedefi ve onaylı SHA, Vercel unique URL/ID, READY/SSO, env adları Sensitive Preview+Production (değerler açılmaz), Production alias değişmez, rollback referansı | R1, R2, ayrı Preview izni |
+| R7 / G04 | P0 | Mühendis + SSO yetkili testçi: gerçek Preview F01–F05 kabulü | **PARTIAL_REAL_BROWSER_EVIDENCE** (kullanıcı ekranları; HTTP ve eylemler açık) | Kaynak SHA eşleşir; izinli origin GET sayısı aşılmaz; gerçek GitHub source vs fixture ayrımı; data/export/history/evidence/trend; 400/429/503 gözlemi yalnızca izin kapsamıyla; console/screenshot/repro ve istek sayısı kaydı | R6 ve belirlenmiş trafik bütçesi |
 | R8 / G05 | P0 | İnsan testçi: Safari/iPhone, NVDA/VoiceOver, elit tasarım onayı | BLOCKED | SR-01–SR-12 testçi+tarih+cihaz+sürüm+SHA ile PASS/FAIL; gerçek zoom, keyboard, focus, reduced-motion, table, chart, dynamic announcements; açık P0 a11y/visual bulgusu 0 | R7; R3 destekleyici |
 | R9 / G06 / #7 | P0 | Hesap sahibi + mühendis: gerçek bağımsız Vercel Function instance'larında tek Redis kota | BLOCKED | En az iki bağımsız gerçek instance provenance, iki route tek IP kovası; Redis kaynaklı 429/no-store/Retry-After ve gerçek Free delta; local/github 429 ayrımı; kanıtı güvenli, küçük trafikle üretme yolu yoksa kalıcı risk sahibi tarafından resmen değerlendirilir, geniş public koruması olmuş sayılmaz | R2 + R6 + ayrı trafik izni |
 | R10 | P0 | Mühendis: güvenlik ve operasyonel rollback | **KISMİ** (R10 Preview probe uyumu DONE_OFFLINE; canlı SSO/WAF/rollback açık) | SSO generated URL, WAF Log ≠ enforcing 429, no secrets, headers/CSP/nosniff/no-store, rate-limit attribution, deploymentEnabled:false, Production önceki READY rollback ID ve restore prosedürü | Lokal checklist ve R6 canlı metadata |
-| R11 | P1; ciddi UX/perf sorunları P0 | Mühendis: performans, gözlemlenebilirlik, hata deneyimi | KISMİ | JS/CSS bütçesi, gerçek LCP/CLS/INP ölçüldüyse referansı; ölçülmediyse NOT MEASURED; render/hydration, kontrollü fetch ve timeout, mobil scroll, kullanıcıya açık hata dilinin doğruluğu | Lokal mümkün, canlı ölçüm R2/R6 |
+| R11 | P1; ciddi UX/perf sorunları P0 | Mühendis: performans, gözlemlenebilirlik, hata deneyimi | **DONE_OFFLINE lab; field CWV / gerçek API açık** | JS/CSS bütçesi, gerçek LCP/CLS/INP ölçüldüyse referansı; ölçülmediyse NOT MEASURED; render/hydration, kontrollü fetch ve timeout, mobil scroll, kullanıcıya açık hata dilinin doğruluğu | Lokal mümkün, canlı ölçüm R2/R6 |
 | R12 / G07 | P0 | Hesap sahibi ayrı onay verir: Production ve rollback | NOT AUTHORIZED | Tüm ilgili P0 kapılar kanıtla geçilir; açık kalan riskler yazılı karar alır; ayrı exact SHA Production izni, READY/alias, dar post-release smoke, rollback hedefi | R1, R2, R6–R10 |
 | R13 | P2 | Yeni özellik: private GitHub App, CircleCI connector, AI, 3D, daha derin trendler | ERTELENDİ | Ayrı kullanıcı değeri/veri doğruluğu/güvenlik/maliyet kararı; MVP release öncesi kapsam şişirilmez | P0 tamamlandıktan sonra |
 
@@ -184,6 +184,33 @@ kabulü OPEN:** test ortamı URL DNS çözümleyemedi; sıfır
 başarılı app-origin isteği doğrulandı. Kullanıcıdan güvenli,
 oturum açılmış Preview ekranı ve sadece hassas olmayan
 Network status/header bilgisi alınmalı. G05/G06/G07 açık.
+
+### Güncel kapanış özeti — G04 response receipts + R11 (14 Ekim)
+
+[Kaynağa bağlı HTTP yanıt kanıtı ve yerel performans testleri](G04_R11_SAFE_RECEIPTS_PERFORMANCE_QA_2026-10-14.md):
+Dört yeni güvenlik/adapter testiyle toplam **221/221 Node**,
+**16/16 HTTP**, **11/11 Chromium**, **11/11 Firefox**,
+TypeScript/build/JS budget ve audit 0 geçmiştir. Uygulama SHA
+`8bb2e7c2fc664d051f4d34d0c02b8ee4cc7494c3`.
+Kaynak panellerindeki **“Request diagnostics · no new requests”**
+bölümü önceden alınmış yanıtın yalnızca güvenli HTTP durumunu, allowlist
+CDN sınıfını ve hız sınırı kaynak bilgisini gösterir; **0 yeni API GET**,
+çerez, token, ham başlık veya hata gövdesi göstermez.
+Bu henüz dağıtılmış **Preview 2b5fb7c'de bulunmuyor**.
+
+R11 localhost Chromium fixture laboratuvarı: 375/1280px'de 3'er
+oturum, medyan iki panel görünümü **253/281ms**,
+FCP **136/200ms**, LCP **136/200ms**, CLS **0,01129/0,00325**,
+her çalışmada iki intercept edilmiş API çağrısı, harici ağ 0.
+**Bunlar field Core Web Vitals veya gerçek SSO/gecikme kanıtı değil.**
+
+**Bağımlı nihai kapılar:** G04 son kullanıcı gerçek HTTP/SSO,
+F01 indirme dosyası/F03 geçmiş/F04 opt-in; R3 WebKit destekli host;
+G05 gerçek Safari/iPhone ve NVDA/VoiceOver;
+G06 gerçek bağımsız Vercel Redis instance provası;
+G07 Production için ayrıca onay. G02 6/6 güncel kullanım
+değeri gözlendi; ancak sağlayıcı kesin dönem bilgisi ve üretim
+izni review aşamasından bağımsız.
 
 ## 3. Yürütme sırası
 

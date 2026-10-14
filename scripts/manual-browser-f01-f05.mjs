@@ -163,7 +163,8 @@ async function runJourney(browser, name, width, scenario) {
       }
       const reply = fixtureResponse(url.pathname, repository, url.searchParams, scenario);
       await route.fulfill({status: reply.status, contentType: 'application/json',
-        headers: { 'cache-control': 'no-store' }, body: JSON.stringify(reply.body)});
+        headers: { 'cache-control': 'no-store', 'x-vercel-cache':'MISS',
+          'x-nexus-rate-limit-mode':'inactive' }, body: JSON.stringify(reply.body)});
     } catch (e) {
       jsErrors.push('Route intercept: ' + String(e));
       try { await route.abort(); } catch {}
@@ -357,6 +358,17 @@ async function runJourney(browser, name, width, scenario) {
         'mobile intro must not monopolize the first viewport');
       assert.ok(placement.searchTop <= (width === 375 ? 850 : 970),
         'repository analysis control must be reachable near the first viewport');
+    }
+    if (scenario === 'complete' && width === 375) {
+      const before = calls.length;
+      await page.getByText('Request diagnostics · no new requests', {exact:true}).click();
+      const diagnostics = page.locator('.nexus-devops-diagnostics');
+      assert.equal(await diagnostics.getByText(
+        'HTTP 200 · CDN MISS · admission inactive · limit source not reported',
+        {exact:true}).count(),2,
+      'both accepted initial panel responses expose allowlisted HTTP metadata');
+      assert.equal(calls.length,before,
+        'opening client-side diagnostics may NEVER trigger an origin GET');
     }
     assert.deepEqual(jsErrors, [], 'no uncaught browser errors or unsafe intercepted API calls');
     assert.equal(await page.evaluate(() =>
