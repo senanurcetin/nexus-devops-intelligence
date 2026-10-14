@@ -189,4 +189,7 @@ test('F-05: client only loads trend on user action and suppresses incomplete cov
  assert.ok(page.includes("trend.data.coverage === 'complete'"));
  assert.ok(page.includes('No chart or inferred'));
  assert.ok(page.includes('new Date(Date.now() - 86_400_000)'));
+ assert.ok(page.includes('nexus-devops-trend-scroll mt-4 overflow-x-auto'));
+ assert.ok(page.includes('role="region" tabIndex={0}'));
+ assert.ok(page.includes('aria-label="Seven-day UTC workflow count table, scroll horizontally if needed"'));
 });
