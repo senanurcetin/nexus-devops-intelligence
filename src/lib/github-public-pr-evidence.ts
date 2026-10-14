@@ -48,11 +48,13 @@ export async function loadPublicPrVerification(
     base + '/commits/' + sha + '/check-runs?per_page=30&page=1', fetcher,
   );
   if (checks.kind !== 'ok') return upstreamError(checks, 'pull request verification');
-  // Do not spend a third GET on malformed GitHub check-run payloads.
-  if (!checks.data || typeof checks.data !== 'object' ||
-      !('total_count' in checks.data) || !('check_runs' in checks.data) ||
-      !Number.isSafeInteger((checks.data as { total_count: unknown }).total_count) ||
-      !Array.isArray((checks.data as { check_runs: unknown }).check_runs)) return invalid();
+  // Exhaustively validate the check-run page BEFORE spending the third GET.
+  // Empty review events are a valid temporary input to this pure validator.
+  try {
+    summarizePublicPrVerification(repository, number, pr.data, checks.data, []);
+  } catch {
+    return invalid();
+  }
   const reviews = await githubGet(
     base + '/pulls/' + number + '/reviews?per_page=30&page=1', fetcher,
   );
