@@ -1047,6 +1047,9 @@ body { background: #071829; color: #eff5ff; }
   min-width: 14px;
 }
 @media (max-width: 640px) {
+  /* Keep the sticky, horizontally scrollable command nav inside the viewport.
+     'clip' is not a scroll container; the nav and UTC table still scroll. */
+  .nexus-devops { overflow-x: clip; }
   .nexus-devops-export > div:last-child {
     flex: 1 1 100%;
     min-width: 0;
