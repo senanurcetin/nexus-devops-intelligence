@@ -174,11 +174,17 @@ can be invoked manually with `npm run test:browser:manual` after installing
 optional `playwright-core@1.64.0` and `axe-core@4.11.0` locally in a short-lived
 sandbox. It refuses non-loopback origins, intercepts **all five** NEXUS API routes,
 blocks off-origin requests and service workers, and makes **no valid live GitHub
-or Upstash API calls**. Six independent 375/1280px scenarios cover F01–F05
-downloads, manual-only drilldowns/trends, source switching, partial data and
-invalid share links. **Two full Chromium runs passed at the recorded QA checkpoint**;
-see the [dated evidence and exact setup](docs/T01_PERSISTENT_BROWSER_REGRESSION_QA_2026-10-14.md).
-The test is **not** authenticated Preview or real-device/NVDA/VoiceOver acceptance.
+or Upstash API calls**. The persisted runner now checks **11 journeys**,
+including native CSV/JSON downloads, explicit PR/run drilldowns, complete versus
+incomplete UTC trends, source races, invalid share links, **320/375/768/1280/1440px**
+layouts, and simulated **200%/400% text-only zoom at 320px**. Optional
+`NEXUS_BROWSER_CAPTURE_DIR=./qa-captures` writes source-SHA-labeled local
+PNG screens including the expanded seven-day matrix. **Two consecutive complete
+11-journey Chromium runs passed** at the [T-02 QA checkpoint](docs/T02_EDITORIAL_RESPONSIVE_QA_2026-10-14.md);
+the earlier [T-01 source-only results](docs/T01_PERSISTENT_BROWSER_REGRESSION_QA_2026-10-14.md)
+are retained for history. The NEXUS chart/UTC table hierarchy has also been
+refined; fixture screenshots are not human editorial or actual
+Safari/mobile/NVDA/VoiceOver acceptance.
 
 ## CI-free browser verification
 
