@@ -6,7 +6,7 @@ import {
   Activity, AlertCircle, ArrowRight, ArrowUpRight, CheckCircle2,
   Check, Copy, Download, GitBranch, GitPullRequest, RefreshCw, ShieldCheck, TriangleAlert,
 } from 'lucide-react';
-import { parsePublicRepository, type PublicActionsSummary } from '@/lib/github-public-actions';
+import { isConfirmedWorkflowFailure, parsePublicRepository, type PublicActionsSummary } from '@/lib/github-public-actions';
 import type { PublicPullSummary, PullAttention } from '@/lib/nexus-public-prs';
 import { recommendInvestigations } from '@/lib/nexus-recommendations';
 import { readPublicPanel, emptyPanel, type Panel } from '@/lib/nexus-panel-request';
@@ -16,6 +16,7 @@ import { filteredPublicPulls, pullBucket, pullBucketCount, pullBuckets, type Pul
 import { createPublicSampleExport, createSampleFilename, serializePublicSampleCsv } from '@/lib/nexus-public-sample-export';
 import { buildRepositoryShareUrl, readRepositoryLink } from '@/lib/nexus-repository-link';
 import { isPublicPrVerification, type PublicPrVerification } from '@/lib/nexus-pr-evidence';
+import { isPublicRunEvidence, type PublicRunEvidence } from '@/lib/nexus-workflow-run-evidence';
 
 const DEFAULT_REPOSITORY = 'senanurcetin/ot-sentinel';
 
@@ -59,6 +60,11 @@ export default function NexusDeveloperPreview() {
   const [prEvidenceOpen, setPrEvidenceOpen] = useState(false);
   const [prEvidenceLoading, setPrEvidenceLoading] = useState(false);
   const prEvidenceController = useRef<AbortController | null>(null);
+  const [runEvidence, setRunEvidence] = useState<Panel<PublicRunEvidence>>(emptyPanel);
+  const [runEvidenceKey, setRunEvidenceKey] = useState<string | null>(null);
+  const [runEvidenceOpen, setRunEvidenceOpen] = useState(false);
+  const [runEvidenceLoading, setRunEvidenceLoading] = useState(false);
+  const runEvidenceController = useRef<AbortController | null>(null);
   const [actionsReceivedAt, setActionsReceivedAt] = useState<string | null>(null);
   const [pullsReceivedAt, setPullsReceivedAt] = useState<string | null>(null);
   const loading = actionsLoading || pullsLoading;
@@ -77,6 +83,14 @@ export default function NexusDeveloperPreview() {
 
   const refreshPanel = useCallback((kind: 'actions' | 'prs', repo: string) => {
     setCopyStatus(null);
+    if (kind === 'actions') {
+      runEvidenceController.current?.abort();
+      runEvidenceController.current = null;
+      setRunEvidence(emptyPanel());
+      setRunEvidenceKey(null);
+      setRunEvidenceOpen(false);
+      setRunEvidenceLoading(false);
+    }
     if (kind === 'prs') {
       prEvidenceController.current?.abort();
       prEvidenceController.current = null;
@@ -155,6 +169,12 @@ export default function NexusDeveloperPreview() {
     controllers.current.prs?.abort();
     prEvidenceController.current?.abort();
     prEvidenceController.current = null;
+    runEvidenceController.current?.abort();
+    runEvidenceController.current = null;
+    setRunEvidence(emptyPanel());
+    setRunEvidenceKey(null);
+    setRunEvidenceOpen(false);
+    setRunEvidenceLoading(false);
     setPrEvidence(emptyPanel());
     setPrEvidenceKey(null);
     setPrEvidenceOpen(false);
@@ -204,6 +224,7 @@ export default function NexusDeveloperPreview() {
       controllers.current.actions?.abort();
       controllers.current.prs?.abort();
       prEvidenceController.current?.abort();
+      runEvidenceController.current?.abort();
       activeRepositoryRef.current = null;
       if (pullsSlowTimer.current !== null) clearTimeout(pullsSlowTimer.current);
     };
@@ -254,6 +275,39 @@ export default function NexusDeveloperPreview() {
   const visiblePulls = filteredPublicPulls(pulls.data, pullFilter);
   const recommendations = recommendInvestigations(actions.data, pulls.data);
   const canExport = !loading && Boolean(actions.data || pulls.data);
+
+  function inspectFailedRun(id: number) {
+    // The job API is never called on initial load, filters, URL navigation or exports.
+    if (loading || runEvidenceLoading || !actions.data ||
+        !actions.data.runs.some(r => r.id === id && r.status === 'completed' &&
+          isConfirmedWorkflowFailure(r.conclusion))) return;
+    const key = selectedRepo + ':' + id;
+    if (runEvidenceKey === key && runEvidence.data) {
+      setRunEvidenceOpen(!runEvidenceOpen);
+      return;
+    }
+    runEvidenceController.current?.abort();
+    const controller = new AbortController();
+    runEvidenceController.current = controller;
+    setRunEvidence(emptyPanel());
+    setRunEvidenceKey(key);
+    setRunEvidenceOpen(true);
+    setRunEvidenceLoading(true);
+    const params = new URLSearchParams({ repository: selectedRepo, id: String(id) });
+    void readPublicPanel<PublicRunEvidence>(
+      '/api/public-workflow-evidence?' + params,
+      controller.signal, fetch,
+      (data): data is PublicRunEvidence => isPublicRunEvidence(data, selectedRepo, id),
+    ).then(result => {
+      if (runEvidenceController.current === controller && !controller.signal.aborted) {
+        setRunEvidence(result);
+      }
+    }).finally(() => {
+      if (runEvidenceController.current === controller && !controller.signal.aborted) {
+        setRunEvidenceLoading(false);
+      }
+    });
+  }
 
   function inspectPrVerification(number: number) {
     // PR detail GETs are NEVER triggered by initial load, filter, export, or URL hydration.
@@ -787,20 +841,89 @@ export default function NexusDeveloperPreview() {
             )}
             <ul className="divide-y divide-slate-800/80">
               {visibleRuns.map(run => (
-                <li key={run.id} className="nexus-devops-event flex flex-wrap items-start justify-between gap-3 p-5">
-                  <div className="min-w-0">
-                    <p className="nexus-devops-source-title text-sm font-medium text-slate-200">{run.name}</p>
-                    <p className="mt-1 text-xs text-slate-400">{run.event} · {run.created_at.slice(0, 10)} · #{run.id}</p>
+                <li key={run.id} className="nexus-devops-event min-w-0 p-5">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="nexus-devops-source-title text-sm font-medium text-slate-200">{run.name}</p>
+                      <p className="mt-1 text-xs text-slate-400">{run.event} · {run.created_at.slice(0, 10)} · #{run.id}</p>
+                    </div>
+                    <div className="nexus-devops-run-actions ml-auto flex flex-wrap items-center gap-3">
+                      <span className={'text-xs nexus-devops-outcome-text--' + workflowOutcome(run)}>
+                        {run.conclusion ?? run.status}
+                      </span>
+                      <a href={run.html_url} target="_blank" rel="noopener noreferrer"
+                        aria-label={`View GitHub Actions run ${run.id}`} className="text-slate-400 hover:text-[#4ea8ff]">
+                        <ArrowUpRight className="h-4 w-4" />
+                      </a>
+                    </div>
                   </div>
-                  <div className="nexus-devops-run-actions ml-auto flex flex-wrap items-center gap-3">
-                    <span className={'text-xs nexus-devops-outcome-text--' + workflowOutcome(run)}>
-                      {run.conclusion ?? run.status}
-                    </span>
-                    <a href={run.html_url} target="_blank" rel="noopener noreferrer"
-                      aria-label={`View GitHub Actions run ${run.id}`} className="text-slate-400 hover:text-[#4ea8ff]">
-                      <ArrowUpRight className="h-4 w-4" />
-                    </a>
-                  </div>
+                  {run.status === 'completed' && isConfirmedWorkflowFailure(run.conclusion) && (
+                    <div className="mt-3 border-t border-slate-700/50 pt-3">
+                      <button type="button" disabled={actionsLoading || runEvidenceLoading}
+                        onClick={() => inspectFailedRun(run.id)}
+                        aria-expanded={runEvidenceOpen && runEvidenceKey === selectedRepo + ':' + run.id}
+                        className="nexus-devops-run-inspect inline-flex min-h-10 items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold">
+                        <ShieldCheck aria-hidden="true" className="h-4 w-4" />
+                        {runEvidenceOpen && runEvidenceKey === selectedRepo + ':' + run.id && runEvidence.data
+                          ? 'Hide job & step evidence' : 'Inspect job & step evidence'}
+                      </button>
+                      <p className="mt-2 text-xs leading-5 text-slate-400">
+                        On demand only: at most 2 public GitHub GETs and one NEXUS origin rate-limit decision. No logs are downloaded.
+                      </p>
+                    </div>
+                  )}
+                  {runEvidenceOpen && runEvidenceKey === selectedRepo + ':' + run.id && (
+                    <div className="nexus-devops-run-details mt-3 rounded-xl p-4"
+                      aria-label={'Workflow job evidence for run #' + run.id}>
+                      {runEvidenceLoading && <p role="status" className="text-xs text-slate-300">
+                        Checking the latest public run attempt and its sampled jobs…
+                      </p>}
+                      {runEvidence.error && <p role="alert" className="text-xs text-rose-300">
+                        {runEvidence.error}{' '}
+                        <a href={run.html_url} target="_blank" rel="noopener noreferrer"
+                          className="underline">Verify the run directly on GitHub</a>.
+                      </p>}
+                      {runEvidence.data && (
+                        <div className="space-y-3">
+                          <p className="text-xs leading-5 text-slate-300">
+                            Attempt {runEvidence.data.run_attempt} · commit{' '}
+                            <code className="font-mono text-[#a6d3fa]">{runEvidence.data.head_sha.slice(0, 12)}</code>
+                            {' '}· {runEvidence.data.inspected_jobs} of {runEvidence.data.total_jobs} jobs sampled.
+                          </p>
+                          {runEvidence.data.jobs.length ? (
+                            <ul className="space-y-3">
+                              {runEvidence.data.jobs.map(job => (
+                                <li key={job.id} className="rounded-lg border border-slate-700/70 p-3">
+                                  <p className="nexus-devops-source-title text-xs font-semibold text-slate-100">
+                                    {job.name} · {job.conclusion ?? job.status}
+                                  </p>
+                                  {job.steps.length > 0 && (
+                                    <ol className="mt-2 space-y-1">
+                                      {job.steps.map(step => (
+                                        <li key={step.number} className="nexus-devops-source-title text-xs text-slate-300">
+                                          {step.number}. {step.name} · {step.conclusion ?? step.status}
+                                        </li>
+                                      ))}
+                                    </ol>
+                                  )}
+                                  {job.additional_steps_not_shown && <p className="mt-2 text-xs text-amber-200">
+                                    Additional steps are not shown; review the GitHub run.
+                                  </p>}
+                                </li>
+                              ))}
+                            </ul>
+                          ) : <p className="text-xs text-slate-400">
+                            No jobs returned in this sample. This is not evidence that a workflow passed.
+                          </p>}
+                          <p className="text-xs leading-5 text-slate-400">{runEvidence.data.scope_note}</p>
+                          <a href={run.html_url} target="_blank" rel="noopener noreferrer"
+                            className="inline-flex min-h-10 items-center text-xs font-semibold text-[#a6d3fa] hover:underline">
+                            Review logs on GitHub <ArrowUpRight aria-hidden="true" className="ml-1 h-4 w-4" />
+                          </a>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </li>
               ))}
             </ul>

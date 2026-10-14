@@ -31,9 +31,11 @@ const PUBLIC_ERRORS = new Set([
   'GitHub returned unexpected pull request list data.',
   'Use a valid public repository and PR number.',
   'GitHub returned invalid pull request verification data.',
+  'Use a valid public repository and workflow run ID.',
+  'GitHub returned invalid workflow job evidence.',
   'GitHub returned invalid pull request list data.',
   'GitHub returned invalid pull request status data.',
-  ...['workflow history', 'pull requests', 'pull request details', 'pull request verification'].flatMap(subject => [
+  ...['workflow history', 'pull requests', 'pull request details', 'pull request verification', 'workflow run verification', 'workflow job evidence'].flatMap(subject => [
     `Public repository or ${subject} not found.`,
     `GitHub ${subject} request timed out.`,
     `GitHub returned invalid ${subject} JSON.`,
