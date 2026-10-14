@@ -3,22 +3,25 @@
 An independent, read-only dashboard for inspecting recent GitHub Actions workflow runs
 and pull request merge state. **This is not part of Ops-Copilot.**
 
-> **CURRENT RELEASE STATUS — 14 October 2026:** The latest audited GitHub `main` snapshot is
-> [`599ced7`](https://github.com/senanurcetin/nexus-devops-intelligence/commit/599ced76605c25161b182b2d5bfbadbd091bfb53),
-> incorporating newer Actions/PR intelligence, layout, source-safety and performance fixes.
-> Vercel **Production exists**, but currently serves **older source `74cd0e3`**;
-> the owner-approved **protected Preview** now serves pinned source **`599ced7`**
-> ([Preview URL](https://nexus-devops-intelligence-qwftzbzic-senanurs-projects-102fb36c.vercel.app)),
-> build **READY** but **actual signed-in visual/API acceptance not done**. Merging
-> GitHub PRs does **not** publish code (`git.deploymentEnabled:false`). Final human NVDA/VoiceOver/mobile
-> acceptance is **not evidenced**, even though historical GitHub Issue #5 is now
-> **closed**; Redis independent live Vercel instance enforcement remains open as
-> [Issue #7](https://github.com/senanurcetin/nexus-devops-intelligence/issues/7).
-> Free Upstash Redis is shared between Production/Preview; **do not run the
-> 21-request live quota test without new explicit consent**.
-> Authoritative: [release inventory](docs/NEXUS_RELEASE_CANDIDATE_MANIFEST_2026-10-14.md),
-> [status register](docs/NEXUS_ACCEPTANCE_STATUS_2026-10-14.md),
-> [manual release/rollback](docs/NEXUS_MANUAL_RELEASE_RUNBOOK_2026-10-14.md).
+> **CURRENT SOURCE / RELEASE STATUS — 14 October 2026:** GitHub's current F01–F05
+> source has advanced beyond the previously audited [`599ced7` candidate](docs/NEXUS_RELEASE_CANDIDATE_MANIFEST_2026-10-14.md).
+> The offline integrated F01–F05 milestone recorded **187/187 Node tests**, TypeScript,
+> build and measured bundle budget with no reported audit findings **at that checkpoint**;
+> these results are not a fresh verification of every later documentation commit.
+> Vercel **Production is live on older `74cd0e3`**. The latest recorded **SSO-protected
+> Preview is READY on older `599ced7`** ([immutable deployment URL](https://nexus-devops-intelligence-qwftzbzic-senanurs-projects-102fb36c.vercel.app)).
+> **Neither deployment contains the latest F01–F05 features.** Git merging does not deploy
+> (`git.deploymentEnabled:false`). Human NVDA/VoiceOver/physical-device acceptance,
+> actual owner-authenticated Preview functionality, cross-Vercel-instance shared Redis
+> proof and shared Upstash Free usage all remain **unverified**. The Vercel Hobby rate
+> limit rule is **Log-only**; it is not an enforcing 429 edge WAF.
+>
+> **Source of truth for next work:** [current release work plan](docs/NEXUS_CURRENT_RELEASE_WORK_PLAN_2026-10-14.md),
+> [current Preview/human acceptance issue #49](https://github.com/senanurcetin/nexus-devops-intelligence/issues/49),
+> [shared Redis issue #7](https://github.com/senanurcetin/nexus-devops-intelligence/issues/7),
+> and [manual release/rollback](docs/NEXUS_MANUAL_RELEASE_RUNBOOK_2026-10-14.md).
+> **No CI, paid protection, 21-request live shared Free Redis probe or Production
+> deployment is authorized by these documents.**
 
 **Historical engineering milestones below** describe earlier commits and test sessions;
 they are not a statement that those older commits are today's Production release.
@@ -62,7 +65,7 @@ propagates validated numeric 1–3600s `Retry-After` headers through both
 read-only APIs. The dashboard displays safe wait guidance for GitHub or edge
 WAF 429 responses, without background or automatic retries.
 See [API rate-limit behavior](docs/RATE_LIMIT_BEHAVIOR.md).
-The WAF rule is **not enabled**; rate-limit hints are not a substitute for protection.
+The user-configured WAF rule has **Log-only** action, not active 429 enforcement; rate-limit hints are not a substitute for protection.
 
 **Input validation under load:** [PR #13](https://github.com/senanurcetin/nexus-devops-intelligence/pull/13)
 validates both read-only API parameters before the process-local in-flight gate.
@@ -128,16 +131,18 @@ and clean PRs are excluded. Regression tests and controlled responsive
 browser checks are documented in
 [PR inspection QA](docs/pr-inspection-count-browser-qa-2026-10-13.md).
 
-## Current scope (MVP)
+## Current source scope — public read-only MVP
 
-- Public GitHub repositories only; no GitHub token, GitHub App installation, or write permission.
-- Recent workflow history (up to 10 runs); sample metrics **are not billed minutes**.
-- Recent open pull requests (up to five), with GitHub-reported merge state.
-- Explicit `unknown` statuses when GitHub has not finished calculating mergeability.
-- Deterministic investigation suggestions linking to GitHub-confirmed workflow failures
-  and PR merge states; no speculative log analysis or automatic code changes.
-- URL validation, bounded requests, caching and request timeouts.
-- No AI root-cause diagnosis, CircleCI integration or private repo access. A public Production URL exists, but it still serves an **older application SHA**, not the current reviewed UI.
+- Public GitHub repositories only; no GitHub token, GitHub App installation, private repository access or write permission.
+- An **up to 10-run** GitHub Actions sample and **up to 5-PR** open pull request sample with independent source, staleness, loading and error receipts. These are neither repository-wide performance rates nor billed CI minutes.
+- **F01:** manually downloaded, filtered **CSV/JSON** exports of available, source-verified sample rows; unknown/stale results are not promoted into a complete report.
+- **F02:** evidence-first investigation queue with direct GitHub provenance and bounded, explainable next steps; **no AI root cause assertion**.
+- **F03:** validated shareable public `repo=owner/name` selections, clipboard/history navigation and repository-switch isolation.
+- **F04:** user-triggered verification details for one selected PR and one confirmed failed workflow run, including bounded check/review or job/step evidence; **no automatic background detail fan-out, raw logs or workflow execution**.
+- **F05:** explicitly requested counts for the **seven completed UTC workflow creation days**, displayed only when returned GitHub coverage is complete; not a historical reliability SLA.
+- Redis-first distributed origin request admission when configured, with fail-closed unavailable behavior; per-process fallback when Redis is absent. This is **not** edge WAF and requires real multi-instance/Free-capacity acceptance.
+
+All F01–F05 functionality is in **GitHub source**, not yet accepted on an exact-SHA live Preview or released to current Production.
 
 ## Run locally
 
@@ -167,7 +172,7 @@ short-lived cloud sandbox, without GitHub Actions or CircleCI. The current
 The [manual Tailwind 4 browser/a11y report](docs/tailwind4-browser-audit-2026-10-13.md)
 covers Chromium screen widths, invalid repository validation, rapid repo switching,
 and an axe-core WCAG 2/2.1 A/AA scan. These manual checks are separate from the
-33 automated Node.js tests and require no GitHub Actions or CircleCI.
+**33 automated Node.js tests at that historical stage** and require no GitHub Actions or CircleCI.
 
 **Current release gate:** The latest merged application implements **Redis-first shared origin admission** for both APIs when Upstash is configured; an older per-process fallback remains for unconfigured environments. This is **not** Vercel edge WAF enforcement. Existing Production is on an older SHA, and its behavior does not prove the latest implementation. [Issue #7](https://github.com/senanurcetin/nexus-devops-intelligence/issues/7) tracks the remaining live cross-instance proof; final human accessibility and manually authorized protected Preview verification are also outstanding. See the [current status register](docs/NEXUS_ACCEPTANCE_STATUS_2026-10-14.md).
 
@@ -216,31 +221,23 @@ with `npm run start`, then run `npm run smoke:http` to check live HTTP routes.
 
 ## Release limitations
 
-The current project is an **MVP source distribution**, not a deployed service or
-production-grade security monitor. The Next.js production build was verified using the committed dependency lockfile;
-interactive browser QA and public deployment are still pending.
+The repository has a **working public Production URL serving old source**, not a release of the latest app. The old SSO-protected Preview also predates F01–F05. The **current F01–F05 source is implemented and previously tested offline, but not deployment-accepted**. Do not use Production screenshots to review the newer UI, assume the 187-test milestone passed on a newly selected SHA, or present automated accessibility fixtures as real-device acceptance.
+
+Follow the [current release work plan](docs/NEXUS_CURRENT_RELEASE_WORK_PLAN_2026-10-14.md) for immutable source pinning, exact-build rerun, Free Redis usage checks, separately authorized protected Preview, real network/visual testing, human screen-reader/device review, Vercel cross-instance Redis proof, and separately approved Production/rollback.
 
 ## Roadmap
 
-1. Responsive browser QA and route-level failure testing.
-2. Dedicated deployment, URL, and release checklist.
-3. Better PR check-run details, CI incident classification and historical trends.
-4. Optional least-privilege GitHub App, CircleCI integration and AI assistance.
+1. Re-run test/typecheck/build/bundle/audit/smoke on the next **immutable** F01–F05 candidate without hosted CI.
+2. Preserve the integrated browser fixture runner as a replayable, opt-in **CI-free** test instead of relying only on ephemeral past screenshots.
+3. After Free capacity/owner approval, manually deploy the exact source to SSO-protected Preview and verify live F01–F05, mobile/desktop, keyboard and error-state behavior.
+4. Finish human Safari/mobile/NVDA/VoiceOver review and independently verify origin Redis across Vercel instances; then request explicit Production approval and rollback readiness.
+5. Only after an accepted public read-only MVP, evaluate least-privilege GitHub App/private repositories, read-only CircleCI connector, explainable analysis and deeper trends.
 
 ## Support and security
 
 General contact: senanur.cetin.work@gmail.com.
 Do not disclose GitHub tokens or private CI logs in public issues.
 
-## Cloud verification (13 October 2026)
+## Archived cloud verification (13 October 2026)
 
-The independent NEXUS repository was cloned into a temporary Vercel Sandbox (Node 24 / npm 11) and **checked manually without GitHub Actions or CircleCI**:
-
-- `npm install --no-audit --no-fund` — 108 packages installed successfully
-- `npm test` — 24 tests passed, zero failures (latest source)
-- `npm run typecheck` — passed
-- `npm run build` — Next.js 15.5.9 production build passed
-- HTTP smoke test: `/` returned 200, Actions and PR API endpoints returned 200 with live public GitHub responses, malformed repository input returned 400
-- Additional populated-source probes: ten workflow runs from `senanurcetin/ot-sentinel`, five open PRs from `vercel/next.js`
-
-**Status limitations:** these results are a manual cloud verification of the source at `e51b38057dbc3be35fed4020e7b42434071c7783`, not a publicly deployed production service or browser accessibility audit. The dependency lockfile is committed (`4b87e6d`), and `npm ci` and Next.js production build have been verified against the latest source (`e51b380`). Vercel deployment and hosting have not been enabled.
+An **early independent-repository snapshot** at `e51b38057dbc3be35fed4020e7b42434071c7783` was verified manually in a disposable Node 24 Vercel Sandbox, with **24** tests, TypeScript/build and a bounded public GitHub HTTP smoke. The dependency lockfile was committed at that milestone. These observations did **not** exercise today's F01–F05 source, newer Redis gate, live Preview, human accessibility or current Production. Later milestone results are recorded in [the integrated QA report](docs/F01_F05_INTEGRATED_RELEASE_QA_2026-10-14.md) and [release register](docs/NEXUS_CURRENT_RELEASE_WORK_PLAN_2026-10-14.md). No hosted GitHub Actions or CircleCI jobs were used.
