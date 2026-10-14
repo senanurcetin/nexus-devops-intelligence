@@ -136,7 +136,8 @@ test('preview authentication and stale code stop after one harmless request', as
     assert.equal(calls, 1);
   }
   const invalid = await probeProtectedRedisPreview({
-    url: preview, confirm21: true, fetcher: async () => Response.json({}),
+    url: preview, confirm21: true,
+    fetcher: async () => Response.json({}, {headers:{'x-vercel-cache':'MISS'}}),
   });
   assert.equal(invalid.state, 'blocked');
   assert.equal(invalid.reason, 'redis-not-active-or-old-deployment');
@@ -162,6 +163,52 @@ test('CDN cache hits and overlong probes cannot prove an origin decision', async
   assert.equal(stale.reason, 'test-window-expired');
 });
 
+
+test('origin evidence never passes when CDN state is stale, revalidated, absent or unknown', async () => {
+  for (const cacheState of ['STALE','REVALIDATED','PRERENDER','HIT',undefined]) {
+    let calls = 0;
+    const result = await probeProtectedRedisPreview({
+      url: preview, confirm21: true, now: () => 0,
+      fetcher: async () => {
+        calls++;
+        return new Response('{}', {
+          status: calls === 21 ? 429 : 200,
+          headers: {
+            'x-nexus-rate-limit-mode': 'shared-redis',
+            ...(cacheState ? {'x-vercel-cache':cacheState} : {}),
+          },
+        });
+      },
+    });
+    assert.equal(result.state, 'inconclusive',cacheState);
+    assert.equal(result.reason, cacheState === 'HIT' ?
+      'edge-cache-hit-not-an-origin-proof' : 'edge-cache-state-not-confirmed');
+    assert.equal(calls,1,'never spend further requests if first origin is unverified');
+  }
+});
+
+test('CDN BYPASS is an eligible status but is never cross-instance proof', async () => {
+  let calls=0;
+  const result = await probeProtectedRedisPreview({
+    url: preview, confirm21: true, now: () => 0,
+    fetcher: async () => {
+      calls++;
+      return calls === 21
+        ? new Response('{}',{status:429,headers:{
+            'x-nexus-rate-limit-source':'shared-redis',
+            'x-vercel-cache':'BYPASS',
+            'cache-control':'no-store','retry-after':'10',
+          }})
+        : new Response('{}',{status:200,headers:{
+            'x-nexus-rate-limit-mode':'shared-redis','x-vercel-cache':'BYPASS',
+          }});
+    },
+  });
+  assert.equal(result.state,'passed');
+  assert.equal(result.requests,21);
+  assert.equal(result.crossInstanceVerified,false);
+});
+
 test('invalid URL never sends bypass token to any host', async () => {
   let calls = 0;
   const result = await probeProtectedRedisPreview({
@@ -185,9 +232,10 @@ test('unavailable and malformed 429 fail instead of claiming pass', async () => 
   for (const [name, response] of [
     ['invalid-retry',new Response('', {status: 429, headers:{
       'x-nexus-rate-limit-source':'shared-redis', 'retry-after':'999',
-      'cache-control':'no-store'}})],
+      'cache-control':'no-store','x-vercel-cache':'MISS'}})],
     ['missing-no-store',new Response('', {status: 429, headers:{
-      'x-nexus-rate-limit-source':'shared-redis', 'retry-after':'30'}})],
+      'x-nexus-rate-limit-source':'shared-redis', 'retry-after':'30',
+      'x-vercel-cache':'MISS'}})],
   ]) {
     const result = await probeProtectedRedisPreview({
       url: preview, confirm21: true,
