@@ -167,6 +167,27 @@ short-lived cloud sandbox, without GitHub Actions or CircleCI. The current
 `npm test` command uses the locked `tsx` development dependency and requires
 `npm ci` first. There is no requirement to install anything on the user's PC.
 
+## CI-free cross-engine browser verification (T-03)
+
+The same [F01–F05 real-browser fixture runner](scripts/manual-browser-f01-f05.mjs)
+accepts `NEXUS_BROWSER_ENGINE=chromium` (default), `firefox`, or `webkit`;
+there is **no fallback to another engine** if a requested one cannot launch.
+Install `playwright-core@1.64.0` and `axe-core@4.11.0` only into the
+manual QA checkout, then `npx playwright-core install chromium firefox webkit`,
+build/start the local app, and run `npm run test:browser:manual` for each
+selected engine. On Windows PowerShell set
+`$env:NEXUS_BROWSER_ENGINE="firefox"` before running the npm script.
+
+**Exact-source T-03 engineering result:** Chromium **11/11**, Firefox **11/11
+twice**, Node **205/205**, local HTTP **16/16**, TypeScript/build/bundle and
+audit 0 all passed in an isolated Linux sandbox. **WebKit has not passed or
+run any scenario:** Amazon Linux 2023 lacks the downloaded WebKit build's
+ICU 74, GTK/GStreamer and media libraries. See the [dated cross-engine
+evidence and supported-host retry instructions](docs/T03_CROSS_ENGINE_WEBKIT_QA_2026-10-14.md).
+Even passing Playwright WebKit on another host is **not real iOS/macOS Safari
+or human VoiceOver/NVDA acceptance**. The no-network fixture and loopback-only
+URL safeguards are mandatory for all engines.
+
 ## Five-route source integrity and fail-closed admission (S-03)
 
 All five `/api/public-*` endpoints reject **duplicate `repository` fields,
