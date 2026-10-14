@@ -2,7 +2,7 @@
 
 **Inspection:** 14 October 2026, Europe/Istanbul.  
 **Project:** `senanurcetin/nexus-devops-intelligence`.  
-**Exact tested source SHA:** `b3fbb3ca3f15563b8d1de340757fe3c0e14e4811` (before later documentation-only changes).  
+**Exact tested source SHA:** `31b6306ca0eb7b554e7697be1f025e3a6bf46f50` (before later documentation-only changes).  
 **G-02 outcome: NOT ACCEPTED — actual aggregate Upstash and Vercel usage cannot be read from the available integration.**
 
 ## Confirmed from connected Vercel metadata (read-only)
@@ -55,7 +55,7 @@ Find Upstash's database usage statistics from the **selected database's** Consol
 
 ## Exact-source verification (no hosted CI, no secrets)
 
-Disposable Node.js 24 Vercel sandbox downloaded **public GitHub source only**, checked out exactly `b3fbb3ca3f15563b8d1de340757fe3c0e14e4811`, and ran:
+Disposable Node.js 24 Vercel sandbox downloaded **public GitHub source only**, checked out exactly `31b6306ca0eb7b554e7697be1f025e3a6bf46f50`, and ran:
 
 - `node --check scripts/check-free-capacity-offline.mjs`: PASS.
 - `node scripts/check-free-capacity-offline.mjs --json` without data: **INCOMPLETE** and exit 2, as designed.
