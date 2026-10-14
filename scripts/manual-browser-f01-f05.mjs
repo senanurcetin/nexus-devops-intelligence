@@ -126,6 +126,7 @@ function fixtureResponse(path, repo, params, scenario) {
 async function runJourney(browser, name, width, scenario) {
   const context = await browser.newContext({
     viewport: {width, height: 900}, acceptDownloads: true,
+    serviceWorkers: 'block',
     permissions: ['clipboard-read', 'clipboard-write'],
   });
   const page = await context.newPage();
