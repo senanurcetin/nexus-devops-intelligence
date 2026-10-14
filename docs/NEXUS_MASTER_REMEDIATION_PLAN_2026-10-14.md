@@ -134,6 +134,18 @@ Provisioned Memory GB-hours, kesin UTC ölçüm zamanı ve origin-GET
 bütçesi hâlâ eksik.** CDN request sayısını Function Invocations sayısı
 yerine geçirmiyoruz. **R2 G02 sadece PARTIAL EVIDENCE, henüz PASS değil.**
 
+### R2 Vercel Functions ekranlarından ek kanıt (14 Ekim)
+
+Dört ek ekran görüntüsüyle takım genelinde **9.329 / 1.000.000**
+Vercel **Function Invocations**, NEXUS projesi özelinde **66**
+çağrı doğrulandı. Project, runtime, type ve success/timeout
+dağılımları aynı 9.329 toplamıyla uyuşuyor.
+[R2 kanıt kaydı](R2_OWNER_USAGE_SNAPSHOT_2026-10-14.md)
+güncellendi. Bunlar CDN istekleri değildir; tam Function çağrı
+sayılarıdır. **Function Active CPU ve Provisioned Memory GB-hours
+hâlâ eksik**, fatura/limit penceresinin başlangıcı ve kaynak bütçesi
+de doğrulanmadı. **G02 INCOMPLETE**; hiçbir dağıtım yetkisi verilmedi.
+
 ## 3. Yürütme sırası
 
 ### Parti A — dış yetki ve gerçek Redis tüketimi gerektirmeyen mühendislik
