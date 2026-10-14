@@ -168,6 +168,23 @@ short-lived cloud sandbox, without GitHub Actions or CircleCI. The current
 `npm test` command uses the locked `tsx` development dependency and requires
 `npm ci` first. There is no requirement to install anything on the user's PC.
 
+## Owner-approved current-source SSO Preview (G03)
+
+The owner approved a **Preview-only exact-SHA deployment** and up to
+**25 application-origin read requests**, excluding a live 21-request Redis
+test, paid features and Production. The resulting [unique generated
+Preview](https://nexus-devops-intelligence-jknosakps-senanurs-projects-102fb36c.vercel.app)
+is Vercel `READY`, ID `dpl_9sq98XLM2DZAgyBFZoFVUde2NucT`,
+GitHub application SHA `2b5fb7c379bd1f939f3b50f286edfb868ddb386a`,
+`target:null` (Preview). The project's generated URL SSO
+**configuration is enabled** and Production remains on older source.
+**The authenticated Preview UI/API journeys are NOT VERIFIED**: available
+tool-host DNS access failed before an HTTP response, and no SSO session
+or live Redis proof was accessed. See
+[G03 deployment evidence, user-browser G04 checklist and rollback
+reference](docs/G03_PROTECTED_PREVIEW_ACCEPTANCE_2026-10-14.md).
+No new Production deployment is authorized.
+
 ## Current-source offline release evidence (R1)
 
 On exact GitHub `main` SHA `2df2ea635fd57b0d9f4d852818f6de55e0f1e3ce`
