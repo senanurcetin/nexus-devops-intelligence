@@ -183,6 +183,38 @@ async function runJourney(browser, name, width, scenario) {
       await page.getByRole('alert').filter({hasText:/Invalid repository in shared link/}).waitFor();
       assert.equal(calls.length, 0, 'invalid duplicate repo causes zero API calls');
       assert.equal(await page.getByRole('button', {name:'Export JSON'}).isDisabled(), true);
+    } else if (scenario === 'textzoom-200' || scenario === 'textzoom-400') {
+      // Simulated text-only enlargement using the root rem unit; unlike
+      // browser zoom this deliberately retains a 320 CSS-pixel viewport.
+      await ready(repoA);
+      await page.evaluate(size => {
+        document.documentElement.style.fontSize = size;
+      }, scenario === 'textzoom-200' ? '32px' : '64px');
+      await page.waitForTimeout(150);
+      const geometry = await page.evaluate(() => {
+        const width = document.documentElement.clientWidth;
+        const nav = document.querySelector('.nexus-devops-command-nav');
+        const controls = [...document.querySelectorAll(
+          '.nexus-devops-export-button, .nexus-devops-trend-button',
+        )].map(el => {
+          const rect = el.getBoundingClientRect();
+          return {left:rect.left, right:rect.right, width:rect.width};
+        });
+        return {
+          width,
+          documentWidth:document.documentElement.scrollWidth,
+          navInternalScroll:nav ? nav.scrollWidth > nav.clientWidth : false,
+          controls,
+        };
+      });
+      assert.ok(geometry.documentWidth <= geometry.width + 2,
+        'text-only enlargement must not widen the page');
+      assert.ok(geometry.navInternalScroll, 'navigation must retain its own horizontal scrolling');
+      assert.equal(geometry.controls.length, 3);
+      assert.ok(geometry.controls.every(c =>
+        c.width > 0 && c.left >= -2 && c.right <= geometry.width + 2),
+      'export and trend controls must remain inside viewport at 400%');
+      assert.equal(calls.length, 2, 'text-only enlargement causes no extra API calls');
     } else if (scenario === 'race') {
       // Wait until initial source calls really exist before racing their responses.
       // Without this guard a fast tester can type before React hydrates the URL.
@@ -327,6 +359,8 @@ const browser = await chromium.launch({
 });
 try {
   for (const [name,width,scenario] of [
+    ['textzoom-200',320,'textzoom-200'],
+    ['textzoom-400',320,'textzoom-400'],
     ['complete-narrow',320,'complete'],
     ['complete-mobile',375,'complete'],
     ['complete-tablet',768,'complete'],
@@ -337,7 +371,7 @@ try {
     ['rapid-source-switch-mobile',375,'race'],
     ['duplicate-share-link-mobile',375,'invalid'],
   ]) await runJourney(browser,name,width,scenario);
-  console.log('F01–F05 fixture browser regression: all nine sessions PASSED (no live API/Redis calls).');
+  console.log('F01–F05 fixture browser regression: all eleven sessions PASSED (no live API/Redis calls).');
 } finally {
   await browser.close();
 }
