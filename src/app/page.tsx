@@ -641,7 +641,7 @@ export default function NexusDeveloperPreview() {
                   {trend.data.coverage === 'complete' ? (
                     <div className="nexus-devops-trend-scroll mt-4 overflow-x-auto" role="region" tabIndex={0}
                       aria-label="Seven-day UTC workflow count table, scroll horizontally if needed">
-                      <table className="nexus-devops-trend-table w-full min-w-[290px] text-left text-xs">
+                      <table className="nexus-devops-trend-table w-full min-w-[680px] text-left text-xs">
                         <caption className="sr-only">
                           Seven UTC creation days with currently reported successful, failed, pending and other workflow counts
                         </caption>
@@ -658,7 +658,7 @@ export default function NexusDeveloperPreview() {
                                 <th scope="row" className="font-medium">{day.day_utc.slice(5)}</th>
                                 <td>
                                   <div className="flex items-center gap-2">
-                                    <span className="min-w-4 tabular-nums">{day.total}</span>
+                                    <span className="nexus-devops-trend-total tabular-nums">{day.total}</span>
                                     <div className="nexus-devops-trend-track" aria-hidden="true">
                                       {(['success','failed','pending','other'] as const).map(state => day[state] ? (
                                         <span key={state}
@@ -711,7 +711,7 @@ export default function NexusDeveloperPreview() {
             <div className="nexus-devops-insight-body mt-6 grid gap-6">
               <div className="min-w-0">
                 <div className="mb-3 flex items-end justify-between gap-3">
-                  <p className="text-xs font-semibold uppercase tracking-wider text-slate-300">Outcome distribution</p>
+                  <p className="nexus-devops-chart-caption text-xs font-semibold uppercase tracking-wider text-slate-300">Outcome distribution</p>
                   <p className="text-xs tabular-nums text-slate-400">{actions.data.inspected_runs} inspected</p>
                 </div>
                 <div className="nexus-devops-outcome-bar" role="img"
@@ -725,9 +725,9 @@ export default function NexusDeveloperPreview() {
                       aria-hidden="true" /> : null;
                   })}
                 </div>
-                <div className="mt-5 grid grid-cols-2 gap-x-4 gap-y-4 sm:grid-cols-4 lg:grid-cols-2 xl:grid-cols-4">
+                <div className="nexus-devops-composition-grid mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-2 xl:grid-cols-4">
                   {workflowOutcomes.map(outcome => (
-                    <div key={outcome.key} className="min-w-0">
+                    <div key={outcome.key} className="nexus-devops-composition-item min-w-0">
                       <p className="flex items-center gap-2 text-xs text-slate-300">
                         <span aria-hidden="true" className={'nexus-devops-outcome-dot nexus-devops-outcome-fill--' + outcome.key} />
                         {outcome.shortLabel}
@@ -744,7 +744,7 @@ export default function NexusDeveloperPreview() {
               </div>
               <div className="nexus-devops-run-sequence min-w-0">
                 <div className="flex items-end justify-between gap-3">
-                  <p className="text-xs font-semibold uppercase tracking-wider text-slate-300">Recent run sequence</p>
+                  <p className="nexus-devops-chart-caption text-xs font-semibold uppercase tracking-wider text-slate-300">Recent run sequence</p>
                   <p className="text-xs text-slate-400">Latest listed → older</p>
                 </div>
                 <ol className="mt-4 grid grid-cols-5 gap-2 sm:grid-cols-10 lg:grid-cols-5 xl:grid-cols-10"
@@ -797,7 +797,7 @@ export default function NexusDeveloperPreview() {
             <div className="nexus-devops-insight-body mt-6 grid gap-6">
               <div className="min-w-0">
                 <div className="mb-3 flex items-end justify-between gap-2">
-                  <p className="text-xs font-semibold uppercase tracking-wider text-slate-300">Merge-state composition</p>
+                  <p className="nexus-devops-chart-caption text-xs font-semibold uppercase tracking-wider text-slate-300">Merge-state composition</p>
                   <p className="text-xs tabular-nums text-slate-400">{pulls.data.inspected_prs} inspected</p>
                 </div>
                 <div className="nexus-devops-pr-bar" role="img"
@@ -811,9 +811,9 @@ export default function NexusDeveloperPreview() {
                       aria-hidden="true" /> : null;
                   })}
                 </div>
-                <div className="mt-5 grid grid-cols-2 gap-x-4 gap-y-4 sm:grid-cols-3">
+                <div className="nexus-devops-composition-grid mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3">
                   {pullBuckets.map(bucket => (
-                    <div key={bucket.key} className="min-w-0">
+                    <div key={bucket.key} className="nexus-devops-composition-item min-w-0">
                       <p className="flex items-center gap-2 text-xs text-slate-300">
                         <span aria-hidden="true" className={'nexus-devops-pr-dot nexus-devops-pr-fill--' + bucket.key} />
                         {bucket.shortLabel}
@@ -830,7 +830,7 @@ export default function NexusDeveloperPreview() {
               </div>
               <div className="nexus-devops-pr-sequence min-w-0">
                 <div className="flex items-end justify-between gap-3">
-                  <p className="text-xs font-semibold uppercase tracking-wider text-slate-300">Recently listed PRs</p>
+                  <p className="nexus-devops-chart-caption text-xs font-semibold uppercase tracking-wider text-slate-300">Recently listed PRs</p>
                   <p className="text-xs text-slate-400">API order</p>
                 </div>
                 <ol className="mt-4 grid grid-cols-5 gap-2" aria-label="Open pull requests in GitHub API listing order">
