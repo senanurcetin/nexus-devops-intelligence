@@ -168,6 +168,22 @@ short-lived cloud sandbox, without GitHub Actions or CircleCI. The current
 `npm test` command uses the locked `tsx` development dependency and requires
 `npm ci` first. There is no requirement to install anything on the user's PC.
 
+## Mobile evidence-first layout quality (R4)
+
+The compact 320–640px NEXUS hero prioritizes the repository input while keeping
+**both source receipt timestamps, the up-to-10 Actions/up-to-5 PR sample limit,
+read-only data boundaries, and partial/error recovery** visible. Mobile share
+guidance no longer occupies a cramped half-width text sidebar. The existing
+11-scenario manual fixture browser suite now checks the 320/375px hero height,
+repository search reachability and full-width share copy along with no
+horizontal overflow or unexpected API calls.
+
+Source-local **205/205 Node**, **16/16 local HTTP**, **11/11 Chromium** and
+**11/11 Firefox** passed on executable SHA `2efaefcc27c8fafe8c5f2534ac34f3f59cd35f13`.
+See [R4 visual/geometry QA](docs/R4_MOBILE_HIERARCHY_QA_2026-10-14.md).
+**Real Safari, owner editorial signoff, aggregate Free quota and protected
+Preview are still unverified**; merge does not deploy.
+
 ## CI-free cross-engine browser verification (T-03)
 
 The same [F01–F05 real-browser fixture runner](scripts/manual-browser-f01-f05.mjs)
