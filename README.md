@@ -167,6 +167,19 @@ short-lived cloud sandbox, without GitHub Actions or CircleCI. The current
 `npm test` command uses the locked `tsx` development dependency and requires
 `npm ci` first. There is no requirement to install anything on the user's PC.
 
+## Current repeatable browser regression (F01–F05)
+
+The [committed real-Chromium fixture regression runner](scripts/manual-browser-f01-f05.mjs)
+can be invoked manually with `npm run test:browser:manual` after installing
+optional `playwright-core@1.64.0` and `axe-core@4.11.0` locally in a short-lived
+sandbox. It refuses non-loopback origins, intercepts **all five** NEXUS API routes,
+blocks off-origin requests and service workers, and makes **no valid live GitHub
+or Upstash API calls**. Six independent 375/1280px scenarios cover F01–F05
+downloads, manual-only drilldowns/trends, source switching, partial data and
+invalid share links. **Two full Chromium runs passed at the recorded QA checkpoint**;
+see the [dated evidence and exact setup](docs/T01_PERSISTENT_BROWSER_REGRESSION_QA_2026-10-14.md).
+The test is **not** authenticated Preview or real-device/NVDA/VoiceOver acceptance.
+
 ## CI-free browser verification
 
 The [manual Tailwind 4 browser/a11y report](docs/tailwind4-browser-audit-2026-10-13.md)
