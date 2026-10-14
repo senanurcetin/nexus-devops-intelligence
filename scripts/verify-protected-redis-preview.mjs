@@ -87,8 +87,18 @@ export async function probeProtectedRedisPreview({
     if ([301, 302, 303, 307, 308, 401, 403].includes(response.status)) {
       return { state: 'blocked', reason: 'preview-authentication-required', requests: index };
     }
-    if (response.headers.get('x-vercel-cache')?.toUpperCase() === 'HIT') {
-      return { state: 'inconclusive', reason: 'edge-cache-hit-not-an-origin-proof', requests: index };
+    // A HIT, STALE, REVALIDATED or absent CDN status is not trustworthy
+    // proof of a fresh origin execution. Only explicit MISS/BYPASS status
+    // is eligible as *one* prerequisite, never independent instance proof.
+    const cacheStatus = response.headers.get('x-vercel-cache')?.trim().toUpperCase();
+    if (cacheStatus !== 'MISS' && cacheStatus !== 'BYPASS') {
+      return {
+        state: 'inconclusive',
+        reason: cacheStatus === 'HIT'
+          ? 'edge-cache-hit-not-an-origin-proof'
+          : 'edge-cache-state-not-confirmed',
+        requests: index,
+      };
     }
     if (response.status === 429) {
       const originSource = response.headers.get('x-nexus-rate-limit-source');
