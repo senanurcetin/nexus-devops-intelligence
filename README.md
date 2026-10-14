@@ -234,6 +234,27 @@ The [dated 204-test security verification](docs/S03_FIVE_PUBLIC_API_ADMISSION_QA
 is **not** evidence of cross-Vercel-instance Upstash enforcement or actual
 account quota. No new deployment has been triggered.
 
+## Owner-data-free Upstash usage extraction (R2, opt-in)
+
+The owner need not copy Upstash's current-month command, bandwidth or
+storage numbers by hand. `npm run capacity:upstash:read-only -- --authorized-readonly --json`
+can retrieve sanitized, whole-database figures from **the official Upstash
+Management API** using separately authorized private account credentials
+(`UPSTASH_MANAGEMENT_EMAIL`, `UPSTASH_MANAGEMENT_API_KEY` and
+`UPSTASH_MANAGEMENT_DATABASE_ID`). It issues **two fixed management GETs**
+and **zero Redis data-plane commands**; it does not read Vercel Redis
+credentials, permit redirects, log secrets or run if the authorization flag
+or account access is absent. No secret should be entered in a GitHub issue,
+ChatGPT message or production project env.
+
+This tool has not been used against the owner's real account because its
+Management API authorization is **not connected**. Only local fake-API
+contract tests passed (216/216 Node on exact code SHA
+`d234e9d4f62ec7ed0f97ed05462700b7aa0ef224`). It reports only
+`UPSTASH_ONLY_VERIFIED`; it **cannot certify G02 or authorize a
+deployment**, because the entire Vercel Hobby TEAM usage also needs
+an authorized source. [Full usage-fetcher evidence and constraints](docs/R2_AUTOMATED_UPSTASH_MANAGEMENT_USAGE_2026-10-14.md).
+
 ## Free-tier capacity preflight (offline, account data required)
 
 `npm run capacity:offline` is a zero-network, credential-free **G-02
