@@ -7,6 +7,8 @@
  * paid plan changes. "READY_FOR_OWNER_REVIEW" is not release approval.
  * See docs/G02_CAPACITY_PREFLIGHT_2026-10-14.md for provenance and limitations.
  */
+import {pathToFileURL} from 'node:url';
+
 const LIMITS = Object.freeze({
   upstashMonthlyCommands: 500_000,
   upstashDataMb: 256,
@@ -134,7 +136,7 @@ function parse(raw) {
   return {values, json};
 }
 
-if (process.argv[1] && import.meta.url === new URL('file://' + process.argv[1]).href) {
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   if (process.argv.includes('--help') || process.argv.includes('-h')) {
     console.log(HELP);
   } else {
