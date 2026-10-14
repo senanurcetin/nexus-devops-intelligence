@@ -14,7 +14,8 @@
     "inspect:budget": "node scripts/inspect-q05-bundle.mjs",
     "test:routes": "node --import tsx --test tests/next-routes.test.mjs",
     "test:redis:offline": "node --import tsx scripts/verify-local-redis-multiprocess.mjs",
-    "smoke:http:offline": "node scripts/smoke-http-offline.mjs"
+    "smoke:http:offline": "node scripts/smoke-http-offline.mjs",
+    "test:browser:manual": "node --import tsx scripts/manual-browser-f01-f05.mjs"
   },
   "dependencies": {
     "lucide-react": "^0.475.0",
