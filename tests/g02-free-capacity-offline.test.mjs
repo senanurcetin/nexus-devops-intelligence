@@ -72,6 +72,15 @@ test('G02 consumed shared monthly commands plus conservative planned 4x cannot e
   }),fixtureNow).status,'READY_FOR_OWNER_REVIEW');
 });
 
+test('G02 owner screenshot 250 MB storage cap enforces 200 MB engineering reserve',()=>{
+  const justAt=screenCapacity(usage({'upstash-data-mb':200}),fixtureNow);
+  const above=screenCapacity(usage({'upstash-data-mb':200.01}),fixtureNow);
+  assert.equal(justAt.status,'READY_FOR_OWNER_REVIEW');
+  assert.equal(justAt.metrics[1].limit,250);
+  assert.equal(justAt.metrics[1].reviewCeiling,200);
+  assert.equal(above.status,'HOLD');
+});
+
 test('G02 high Upstash data or bandwidth independently forces HOLD',()=>{
   for (const [key,value] of [['upstash-data-mb',205],
     ['upstash-bandwidth-gb',8.01]]) {
