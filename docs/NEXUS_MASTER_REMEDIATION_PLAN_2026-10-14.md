@@ -1,0 +1,106 @@
+# NEXUS DevOps Intelligence — Ana geliştirme ve eksik kapama planı
+
+**Tarih:** 14 Ekim 2026 (Europe/Istanbul)  
+**Proje:** senanurcetin/nexus-devops-intelligence. Ops-Copilot, Power BI, Fraud ve Smart Factory hariç.  
+**Kaynak başlangıç SHA:** d9c6cd76714fab8d86ee4040171603c960493dd6.  
+**Durum:** Bu plan yayın veya ücretli servis kullanım izni değildir.  
+**Son doğrulanmış Vercel dağıtım snapshot'ı:** Preview 599ced76605c25161b182b2d5bfbadbd091bfb53; Production 74cd0e344eb94255b4bc8db99e4a4dc7f3a5a0bf. Dağıtımdan hemen önce yeniden kontrol edilmeli.
+
+**Ana kayıtlar:** [Güncel kabul #49](https://github.com/senanurcetin/nexus-devops-intelligence/issues/49), [Redis ve Free kapasite #7](https://github.com/senanurcetin/nexus-devops-intelligence/issues/7), [eski/güncel kapılar](NEXUS_CURRENT_RELEASE_WORK_PLAN_2026-10-14.md), [manuel yayın/geri dönüş runbook](NEXUS_MANUAL_RELEASE_RUNBOOK_2026-10-14.md).
+
+## 1. Hedef ve mevcut kanıt tabanı
+
+Hedef; salt-okunur, gerçek kaynağı gösterilen, maliyeti doğrulanmış, elit NEXUS görsel sistemiyle sunulan, kaynak-veri anlamı doğru bir DevOps ürünüdür. Demo/fixture veri gerçek veri olarak gösterilmez. Örneklenmiş iş akışı sayısı geçmiş uptime/SLA anlamına gelmez. PR belirsizliği merge onayı gibi yorumlanmaz. AI tarafından doğrulanmamış kök neden uydurulmaz.
+
+**Kodda geliştirilmiş ürün sözleşmesi:**
+
+- F01: doğrulanmış mevcut filtrelenmiş CSV/JSON; tekrar ağ çağrısı yok, spreadsheet enjeksiyonu nötr.
+- F02: kanıta ve güvenli GitHub bağlantısına bağlı inceleme önerileri; unsupported root cause yok.
+- F03: tek canonical depo, paylaşım URL'si, Back/Forward, stale-response temizliği.
+- F04: kullanıcının açık tıklamasıyla PR check/review ve failed job-step kanıtı; ilk yüklemede ek fan-out yok.
+- F05: yalnızca tamamlanmış yedi UTC gününün hacim tablosu; eksik source coverage ile sahte tarihsel sonuç yok.
+- S03: beş public API'de belirsiz/tekrarlı parametre Redis öncesinde 400/no-store; simüle edilmiş ortak Redis sınırı 429; arızası 503.
+
+**En son doğrulanmış offline kanıt:** 205/205 Node, 16/16 loopback HTTP, Chromium 11/11, Firefox 11/11 iki ayrı çalışmada, TS/Next build, JS bundle bütçesi ve audit 0. [T03 kaynak kanıtı](T03_CROSS_ENGINE_WEBKIT_QA_2026-10-14.md). WebKit hiç başlayamadı; gerçek Safari, iPhone, VoiceOver ve korumalı gerçek Preview henüz test edilmedi. T02 görsel düzenlemeleri mühendislikçe bitti, insan estetik onayı açık.
+
+## 2. Açık işler — öncelik, bağımlılık, doğrulanabilir kabul
+
+P0 = yayın engeli; P1 = ürün kalitesi; P2 = ertelenen kapsam. 'Offline DONE' gerçek kullanıcı/Preview kabulü değildir.
+
+| ID | Öncelik | İş ve sorumluluk | Durum | Ölçülebilir kabul / kanıt | Bağımlılık |
+| --- | --- | --- | --- | --- | --- |
+| R0 | P0 | Mühendislik: iddia/kanıt/doküman tutarlılığı | KISMİ | Git main, tested application SHA, deployed Preview ve Production SHA ayrı; eski yanlış WebKit PASS işareti kaldırılmış; tarihli kaynak ve testler belirtilmiş | Yok |
+| R1 / G01 | P0 | Mühendislik: son değişikliklerden sonra immutable release candidate | YENİ ADAY GEREKİR | Tam 40-karakter SHA, temiz npm ci, tüm Node testleri, typecheck, production build, JS budget, audit, 16 HTTP, Chromium/Firefox (+ gerçekten çalıştırılmışsa WebKit) suite, loglar ve kaynak hash; herhangi hata => HOLD | R0 ve son mühendislik değişiklikleri |
+| R2 / G02 | P0 | Hesap sahibi: Upstash Free ve tüm Vercel Hobby ekibi gerçek tüketimi | BLOCKED | Paylaşılan Preview+Production Redis DB aylık komut, MB, GB; tüm Hobby ekip fonksiyon invocations/CPU/memory, dönem ve UTC gözlem zamanı, ek Preview origin GET planı; offline capacity screen ve sahibin açık kabulü | Hesap dashboard erişimi |
+| R3 | P0 / G05 için | Mühendislik: WebKit gerçek testi | BLOCKED - HOST | Uyumlu Ubuntu/macOS ile playwright-core 1.64.0; webkit.launch ve mevcut 11 fixture senaryosunda gerçek test; engine+versiyon+SHA+console/axe/network+screenshot; host hatası NOT RUN kalır | R2'den bağımsız uygun ortam |
+| R4 | P1, G05 öncesi | Tasarım ve mühendislik: NEXUS görsel kalite ve marka QC | KISMİ | 320/375/768/1280/1440/(mümkünse 1920) genişlikte veri, boş/kısmi, timeout, hata, 200%-400% büyütme; grafik sayıları ve alanları okunur, kartlar tasarım bütünlüğüne sahip, marka yerleşimi estetik; insan screenshot PASS/FIX | Lokal build; gerçek kabul R7 |
+| R5 | P0 | Mühendislik: doğruluk, provenance ve beş API hata matrisi | OFFLINE KISMİ, LIVE AÇIK | 200/400/403/429/404/502/503/504; no-store/Retry-After; 2 ilk source GET; F04/F05 yalnızca click; kaynak linkleri, örneklem sınırları, CSV injection, UTC günü, missing coverage, stale race | Offline özgür, live R6 |
+| R6 / G03 | P0 | Hesap sahibi izin verir, mühendis exact-SHA protected Preview kurar | BLOCKED - İZİN | Sadece Preview hedefi ve onaylı SHA, Vercel unique URL/ID, READY/SSO, env adları Sensitive Preview+Production (değerler açılmaz), Production alias değişmez, rollback referansı | R1, R2, ayrı Preview izni |
+| R7 / G04 | P0 | Mühendis + SSO yetkili testçi: gerçek Preview F01–F05 kabulü | BLOCKED | Kaynak SHA eşleşir; izinli origin GET sayısı aşılmaz; gerçek GitHub source vs fixture ayrımı; data/export/history/evidence/trend; 400/429/503 gözlemi yalnızca izin kapsamıyla; console/screenshot/repro ve istek sayısı kaydı | R6 ve belirlenmiş trafik bütçesi |
+| R8 / G05 | P0 | İnsan testçi: Safari/iPhone, NVDA/VoiceOver, elit tasarım onayı | BLOCKED | SR-01–SR-12 testçi+tarih+cihaz+sürüm+SHA ile PASS/FAIL; gerçek zoom, keyboard, focus, reduced-motion, table, chart, dynamic announcements; açık P0 a11y/visual bulgusu 0 | R7; R3 destekleyici |
+| R9 / G06 / #7 | P0 | Hesap sahibi + mühendis: gerçek bağımsız Vercel Function instance'larında tek Redis kota | BLOCKED | En az iki bağımsız gerçek instance provenance, iki route tek IP kovası; Redis kaynaklı 429/no-store/Retry-After ve gerçek Free delta; local/github 429 ayrımı; kanıtı güvenli, küçük trafikle üretme yolu yoksa kalıcı risk sahibi tarafından resmen değerlendirilir, geniş public koruması olmuş sayılmaz | R2 + R6 + ayrı trafik izni |
+| R10 | P0 | Mühendis: güvenlik ve operasyonel rollback | KISMİ | SSO generated URL, WAF Log ≠ enforcing 429, no secrets, headers/CSP/nosniff/no-store, rate-limit attribution, deploymentEnabled:false, Production önceki READY rollback ID ve restore prosedürü | Lokal checklist ve R6 canlı metadata |
+| R11 | P1; ciddi UX/perf sorunları P0 | Mühendis: performans, gözlemlenebilirlik, hata deneyimi | KISMİ | JS/CSS bütçesi, gerçek LCP/CLS/INP ölçüldüyse referansı; ölçülmediyse NOT MEASURED; render/hydration, kontrollü fetch ve timeout, mobil scroll, kullanıcıya açık hata dilinin doğruluğu | Lokal mümkün, canlı ölçüm R2/R6 |
+| R12 / G07 | P0 | Hesap sahibi ayrı onay verir: Production ve rollback | NOT AUTHORIZED | Tüm ilgili P0 kapılar kanıtla geçilir; açık kalan riskler yazılı karar alır; ayrı exact SHA Production izni, READY/alias, dar post-release smoke, rollback hedefi | R1, R2, R6–R10 |
+| R13 | P2 | Yeni özellik: private GitHub App, CircleCI connector, AI, 3D, daha derin trendler | ERTELENDİ | Ayrı kullanıcı değeri/veri doğruluğu/güvenlik/maliyet kararı; MVP release öncesi kapsam şişirilmez | P0 tamamlandıktan sonra |
+
+**G06 kararı:** Gereken bağımsız instance kanıtı düşük kotayla güvenli şekilde mümkün değilse test yapılmaması doğrudur. Sahip risk kabulü bir test PASS'i değildir; özellikle geniş public koruması ile karıştırılmamalıdır. Onaysız 21 geçerli gerçek istek yasaktır.
+
+## 3. Yürütme sırası
+
+### Parti A — dış yetki ve gerçek Redis tüketimi gerektirmeyen mühendislik
+
+1. R0: Belge çelişkilerini ve eski SHA'ları ayır; G05 listesindeki WebKit checkbox hatasını düzelt.
+2. R3: Amazon Linux 2023'e uyumsuz ICU 74 kütüphanesini symlink ederek sahte çalışma yaratma. Playwright destekli Ubuntu/macOS üzerinde WebKit'i açıp aynı 11-local-fixture testi çalıştır; başarısızsa durum açık.
+3. R4: NEXUS koyu mavi/teal tasarımını koruyarak *elit veri analizcisi* görsel QC ve gerekiyorsa bileşen düzeyinde yeniden yerleşim. 320–1920px, kısmi/hata/boş durum, yakınlaştırma, F05 tablo, kaynak kartları, logo, grafik içi sayı okunurluğu. Sahte metrik, kullanıcının gerçek verisi gibi gösterilen demo yok.
+4. R5/R10: Ek offline negatif testler: duplicate source, GitHub 403/429, malformed JSON, Redis fail-closed, no-store/Retry-After, stale repo-switch, source receipt ve outbound network guard. Her hata sınıfı için beklenen 400/429/503/502/504, upstream GET sayısı ve cache sözleşmesi.
+5. R11: Yerel Lighthouse/Web Vitals ölçümü mümkünse ölç, değilse belgele; yük altında ekstra otomatik origin isteklerini engelle; önceki JS bundle bütçesini koru.
+6. R1: Nihai uygulama değişikliğinden sonra SHA sabitle; temiz tüm testleri yeniden çalıştır, insan kabulünü taklit etme.
+
+### Parti B — yalnızca hesap sahibinin gerçek altyapı verisiyle
+
+7. R2: Upstash Console + Vercel Team Usage toplamları ve dönem/tarih; ücretsiz kalan kapasiteyi gerçek rakamlarla ekranla. npm run capacity:offline için güncel snapshot ve açıkça belirlenen origin request bütçesini gir. 4 Redis komutu/istek varsayımı kesin faturalanma kanıtı değildir; %20 güvenlik payı proje önerisidir. Kullanım bilinmiyorsa STOP.
+8. R6: Ayrıca yalnızca onaylanan SHA + Preview-only + trafik limiti yetkisiyle SSO Preview dağıtımı. Git otomatik deployment kapalı; Production alias sabit. Her yeni Preview ayrı izin gerektirir.
+
+### Parti C — korumalı Preview ve insan kabulü
+
+9. R7: Yetkili SSO Preview testleri; her gerçek origin GET sayısı, ekran kaydı, statü/header ve source SHA; F01–F05 doğruluğu. Toplu Redis/21 istek testi yok.
+10. R8: Gerçek Safari/iPhone veya macOS Safari ve NVDA/VoiceOver testçisi; SR-01–12, tasarım kabulü, raporlanan kusurların düzeltilmesi ve **aynı exact-SHA'da** tekrar. WebKit'in Linux engine testi gerçek cihazın yerine geçmez.
+11. R9: Önce Free headroom ve ayrı izin; mümkünse iki farklı gerçek Vercel instance üzerinden ekonomik ortak Redis kanıtı ve harcama deltası. Mümkün değilse yayın riskini kapandı olarak işaretleme.
+
+### Parti D — ayrı Production kararı
+
+12. R12: İnsan, güvenlik, Free maliyet ve veri kapıları tamamlanınca farklı ve açık **Production** izni; exact SHA, READY, rollback, sınırlı smoke. Plan veya GitHub merge yayın yetkisi değildir.
+
+## 4. Görsel ve veri kalite kabulü
+
+- Gerçek/provenance verisi: “up to ten Actions runs”, “up to five open PRs” örneklem kapsamı; eksik veri ve yanlış kaynak bağlantısı saklanmaz. F05 yedi tamamlanmış UTC gününü tam kapsamadıkça tarihsel güvenilirlik sonucu üretilmez.
+- Grafik tasarımı: NEXUS renk/kontrast hiyerarşisi, okunur rakamlar, kategorik count+percentage, ölçüm tanımları, responsive tablo ve kendi konteynerinde scroll; “yapıştırılmış grafik” görünümü ve hatalı logo konumu yok.
+- Erişilebilirlik: axe otomatik sonuçları ayrı; gerçek klavye/AT testleri ayrı; SR-01–12 tamamlanmadan human signoff yok; gerçek Safari ayrı.
+- Güvenlik: İlk açılışta yalnız iki panel GET, detay opt-in, kaynak sabit GitHub hostu, safe-CSV, no-store hata, Redis fail-closed ve SSO, WAF Log gerçek bloklama değildir.
+- Performans: yalnızca ölçülmüş değerleri raporla; Core Web Vitals ölçülmediyse NOT MEASURED.
+- Yayın: SHA = onaylanan build, Preview target + unique URL/ID + SSO doğrulanmış, Production için bağımsız karar ve geri dönüş planı.
+
+## 5. Standart kanıt kaydı
+
+Her iş/PR için zorunlu alanlar:
+
+| Alan | Değer |
+| --- | --- |
+| ID / öncelik / sorumlu | Rxx, P0/P1/P2, engineer/owner/human |
+| Durum | OPEN / BLOCKED / IN_PROGRESS / DONE_OFFLINE / VERIFIED_PREVIEW / HUMAN_ACCEPTED |
+| Exact source SHA | 40 karakter |
+| Ortam / engine / testçi / tarih | Somut |
+| Test komutları, exit status, örneklem kapsamı | Kanıtla doğrulanabilir |
+| Canlı GitHub/Upstash/Vercel origin istekleri | Gerçek rakam veya 0 |
+| Kabul ölçütü ve delil | PASS / FAIL / NOT_RUN |
+| Kalan risk, maliyet, geri dönüş | Açık/kapalı, bağlantı |
+| Yayın yetkisi | NONE / APPROVED_PREVIEW / APPROVED_PRODUCTION |
+
+**Kritik ayrım:** DONE_OFFLINE != VERIFIED_PREVIEW != HUMAN_ACCEPTED != PRODUCTION_RELEASED.
+
+## 6. Kalıcı durdurma koşulları
+
+GitHub Actions/CircleCI/hosted CI, Vercel otomatik Git deployment, paid WAF/Upstash/Vercel tier, yetkisiz yeni Preview, Production, SSO bypass, ücret/kota tüketen kontrolsüz live probes, paylaşılan Redis için gerçek 21-request stres testi ve Upstash bağlantı URL/token deşifresi yok. Yerel güvenlik araçları yalnızca localhost origin kullanabilir.
+
+**Başarı tanımı:** kaynağı ve sonucu güvenilir uygulama + ücretsiz kullanım headroom kanıtı + tam SHA protected Preview gözlemi + gerçek cihaz/insan kabulü + dağıtık Redis risk kararı + ayrı yetkilendirilmiş Production yayın. Bunların hepsi tamamlanana kadar “release-ready” ibaresi kullanılmaz.
