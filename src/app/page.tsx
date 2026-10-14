@@ -639,7 +639,8 @@ export default function NexusDeveloperPreview() {
                     {trend.data.coverage === 'complete' ? 'Complete returned window' : 'Incomplete coverage'}
                   </p>
                   {trend.data.coverage === 'complete' ? (
-                    <div className="mt-4 overflow-x-auto">
+                    <div className="mt-4 overflow-x-auto" role="region" tabIndex={0}
+                      aria-label="Seven-day UTC workflow count table, scroll horizontally if needed">
                       <table className="nexus-devops-trend-table w-full min-w-[290px] text-left text-xs">
                         <caption className="sr-only">
                           Seven UTC creation days with currently reported successful, failed, pending and other workflow counts
