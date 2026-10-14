@@ -180,6 +180,10 @@ async function runJourney(browser, name, width, scenario) {
       assert.equal(calls.length, 0, 'invalid duplicate repo causes zero API calls');
       assert.equal(await page.getByRole('button', {name:'Export JSON'}).isDisabled(), true);
     } else if (scenario === 'race') {
+      // Wait until initial source calls really exist before racing their responses.
+      // Without this guard a fast tester can type before React hydrates the URL.
+      for (let i = 0; i < 125 && calls.length < 2; i++) await page.waitForTimeout(40);
+      assert.equal(calls.length, 2, 'initial repository panel GETs must be in flight');
       await page.getByRole('textbox', {name:/Public GitHub repository/}).fill(repoB);
       await page.getByRole('button', {name:/Analyze repository/}).click();
       await ready(repoB);
