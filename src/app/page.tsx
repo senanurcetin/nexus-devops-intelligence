@@ -1011,7 +1011,7 @@ export default function NexusDeveloperPreview() {
                   )}
                   {runEvidenceOpen && runEvidenceKey === selectedRepo + ':' + run.id && (
                     <div className="nexus-devops-run-details mt-3 rounded-xl p-4"
-                      aria-label={'Workflow job evidence for run #' + run.id}>
+                      role="region" aria-label={'Workflow job evidence for run #' + run.id}>
                       {runEvidenceLoading && <p role="status" className="text-xs text-slate-300">
                         Checking the latest public run attempt and its sampled jobs…
                       </p>}
@@ -1148,7 +1148,7 @@ export default function NexusDeveloperPreview() {
                   </div>
                   {prEvidenceOpen && prEvidenceKey === selectedRepo + ':' + pr.number && (
                     <div className="nexus-devops-pr-verification mt-3 rounded-xl p-4"
-                      aria-label={'GitHub evidence for PR #' + pr.number}>
+                      role="region" aria-label={'GitHub evidence for PR #' + pr.number}>
                       {prEvidenceLoading && <p role="status" className="text-xs text-slate-300">
                         Loading this PR’s public checks and review events…
                       </p>}
