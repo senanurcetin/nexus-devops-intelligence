@@ -124,6 +124,12 @@ test('F-04: malformed checks stop before third request; malformed reviews never 
  const calls=[];const res=await loadPublicPrVerification(repo,number,fetcher(calls,{checks:{check_runs:[]}}));
  assert.equal(res.status,502);
  assert.equal(calls.length,2);
+ const malformedCheckCalls=[];
+ const malformedChecks=await loadPublicPrVerification(repo,number,fetcher(malformedCheckCalls,{
+   checks:{total_count:1,check_runs:[{id:1,name:'check',status:'completed',conclusion:'success'},{id:2,name:'extra',status:'completed',conclusion:'success'}]},
+ }));
+ assert.equal(malformedChecks.status,502);
+ assert.equal(malformedCheckCalls.length,2,'inconsistent totals cannot cause third review GET');
  const invalidReviews=[{id:2,user:{login:'reviewer'},state:'APPROVED',submitted_at:'not-a-date'}];
  const c2=[];const r2=await loadPublicPrVerification(repo,number,fetcher(c2,{reviews:invalidReviews}));
  assert.equal(r2.status,502);
