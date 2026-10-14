@@ -8,6 +8,8 @@
 
 **Post-ledger R3 update (14 Oct):** [Real Windows WebKit 27.2 test and Windows path correction](R3_REAL_WEBKIT_WINDOWS_QA_2026-10-14.md), executable source `7bd062d30bec50fb83ecca1ad031a14b75816a46` **221/221 Node**, **16/16 offline HTTP**, **11/11 genuine headless WebKit fixture** with zero external requests/page errors/axe violations, Next build/TS/JS budget PASS. Original Amazon Linux host remains unsupported; the WebKit engine test was completed instead on already-connected authorized Windows under a temp checkout. **R3 DONE_OFFLINE**; G05 real iOS/Safari/VoiceOver/NVDA human review and G04/G06/G07 release gates still OPEN. This report documents a source-only PR, not a new Preview or Production deployment.
 
+**G06 offline probe hardening (14 Oct):** [fail-closed exact-SHA QA](G06_FAIL_CLOSED_PREVIEW_REDIS_PROBE_2026-10-14.md) on executable `cc4e97de83a807cdb2a016509de7bff215bbdcce`: **224/224 Node**, **16/16 loopback HTTP**, **11/11 Chromium**, **11/11 Firefox**, TypeScript/Next build/JS budget, npm audit 0. The manual Redis probe formerly returned **`passed` + `crossInstanceVerified:false`** for a 21-request same-client 429 and could send 1 origin GET by default; it now requires an exact explicit 1/21 request allowance, sends **zero network without it**, and labels same-client Redis 429 as **`partial`**. This is **NOT actual Vercel multi-instance proof**, and no new Redis calls/Preview/Production deployment were performed. G06/#7 stays OPEN.
+
 ## 1. Confirmed completed work
 
 | Gate / work | Status | Grounding |

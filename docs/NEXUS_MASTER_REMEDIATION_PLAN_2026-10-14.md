@@ -227,6 +227,21 @@ düzeltildi ve Windows Node **220/221 → 221/221** oldu.
 R3 **DONE_OFFLINE**; Apple Safari/iOS ve insan AT G05 **OPEN**.
 Güncel SSO Preview ve Production SHA'ları otomatik değiştirilmedi.
 
+### G06 Preview Redis test güvenliği — 14 Ekim
+
+[G06 sıfır-istek/yanıltıcı PASS düzeltmesi](G06_FAIL_CLOSED_PREVIEW_REDIS_PROBE_2026-10-14.md):
+Manuel tanılama artık yetkisizken **0 canlı HTTP isteği** gönderir.
+Önceden tek istemcinin 21. isteğinde Redis kaynaklı `429`
+alması, `crossInstanceVerified:false` olsa da `passed`
+yazıyordu. Şimdi açık 1/21 istek yetkisi olmadan **blocked/0**,
+tek istemcide 21. Redis `429` gözlemi ise **partial, asla G06 PASS değil**.
+Tam kaynak `cc4e97de83a807cdb2a016509de7bff215bbdcce`
+üzerinde **224/224 Node, 16/16 yerel HTTP, 11/11 Chromium,
+11/11 Firefox**, TS/build/budget/audit 0 doğrulandı.
+**G06 gerçek iki bağımsız Vercel instance kanıtı AÇIK,**
+#7 kapanmadı. Ücretli servis, Upstash canlı test veya
+yeni Preview/Production deploy yok.
+
 ## 3. Yürütme sırası
 
 ### Parti A — dış yetki ve gerçek Redis tüketimi gerektirmeyen mühendislik
