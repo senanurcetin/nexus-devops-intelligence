@@ -15,6 +15,7 @@ import { filteredWorkflowRuns, workflowOutcome, workflowOutcomeCount, workflowOu
 import { filteredPublicPulls, pullBucket, pullBucketCount, pullBuckets, type PullFilter } from '@/lib/nexus-pr-visuals';
 import { createPublicSampleExport, createSampleFilename, serializePublicSampleCsv } from '@/lib/nexus-public-sample-export';
 import { buildRepositoryShareUrl, readRepositoryLink } from '@/lib/nexus-repository-link';
+import { isPublicPrVerification, type PublicPrVerification } from '@/lib/nexus-pr-evidence';
 
 const DEFAULT_REPOSITORY = 'senanurcetin/ot-sentinel';
 
@@ -53,6 +54,11 @@ export default function NexusDeveloperPreview() {
   const [actionsLoading, setActionsLoading] = useState(false);
   const [pullsLoading, setPullsLoading] = useState(false);
   const [pullsSlow, setPullsSlow] = useState(false);
+  const [prEvidence, setPrEvidence] = useState<Panel<PublicPrVerification>>(emptyPanel);
+  const [prEvidenceKey, setPrEvidenceKey] = useState<string | null>(null);
+  const [prEvidenceOpen, setPrEvidenceOpen] = useState(false);
+  const [prEvidenceLoading, setPrEvidenceLoading] = useState(false);
+  const prEvidenceController = useRef<AbortController | null>(null);
   const [actionsReceivedAt, setActionsReceivedAt] = useState<string | null>(null);
   const [pullsReceivedAt, setPullsReceivedAt] = useState<string | null>(null);
   const loading = actionsLoading || pullsLoading;
@@ -71,6 +77,14 @@ export default function NexusDeveloperPreview() {
 
   const refreshPanel = useCallback((kind: 'actions' | 'prs', repo: string) => {
     setCopyStatus(null);
+    if (kind === 'prs') {
+      prEvidenceController.current?.abort();
+      prEvidenceController.current = null;
+      setPrEvidence(emptyPanel());
+      setPrEvidenceKey(null);
+      setPrEvidenceOpen(false);
+      setPrEvidenceLoading(false);
+    }
     controllers.current[kind]?.abort();
     const next = new AbortController();
     controllers.current[kind] = next;
@@ -139,6 +153,12 @@ export default function NexusDeveloperPreview() {
   const clearInvalidSelection = useCallback(() => {
     controllers.current.actions?.abort();
     controllers.current.prs?.abort();
+    prEvidenceController.current?.abort();
+    prEvidenceController.current = null;
+    setPrEvidence(emptyPanel());
+    setPrEvidenceKey(null);
+    setPrEvidenceOpen(false);
+    setPrEvidenceLoading(false);
     controllers.current = { actions: null, prs: null };
     if (pullsSlowTimer.current !== null) clearTimeout(pullsSlowTimer.current);
     pullsSlowTimer.current = null;
@@ -183,6 +203,7 @@ export default function NexusDeveloperPreview() {
       window.removeEventListener('popstate', syncLocation);
       controllers.current.actions?.abort();
       controllers.current.prs?.abort();
+      prEvidenceController.current?.abort();
       activeRepositoryRef.current = null;
       if (pullsSlowTimer.current !== null) clearTimeout(pullsSlowTimer.current);
     };
@@ -233,6 +254,38 @@ export default function NexusDeveloperPreview() {
   const visiblePulls = filteredPublicPulls(pulls.data, pullFilter);
   const recommendations = recommendInvestigations(actions.data, pulls.data);
   const canExport = !loading && Boolean(actions.data || pulls.data);
+
+  function inspectPrVerification(number: number) {
+    // PR detail GETs are NEVER triggered by initial load, filter, export, or URL hydration.
+    if (loading || prEvidenceLoading || !pulls.data ||
+        !pulls.data.pull_requests.some(pr => pr.number === number)) return;
+    const key = selectedRepo + ':' + number;
+    if (prEvidenceKey === key && prEvidence.data) {
+      setPrEvidenceOpen(!prEvidenceOpen);
+      return;
+    }
+    prEvidenceController.current?.abort();
+    const controller = new AbortController();
+    prEvidenceController.current = controller;
+    setPrEvidenceKey(key);
+    setPrEvidenceOpen(true);
+    setPrEvidence(emptyPanel());
+    setPrEvidenceLoading(true);
+    const query = new URLSearchParams({ repository: selectedRepo, number: String(number) });
+    void readPublicPanel<PublicPrVerification>(
+      '/api/public-pr-verification?' + query.toString(),
+      controller.signal, fetch,
+      (data): data is PublicPrVerification => isPublicPrVerification(data, selectedRepo, number),
+    ).then(result => {
+      if (prEvidenceController.current === controller && !controller.signal.aborted) {
+        setPrEvidence(result);
+      }
+    }).finally(() => {
+      if (prEvidenceController.current === controller && !controller.signal.aborted) {
+        setPrEvidenceLoading(false);
+      }
+    });
+  }
 
   async function copyEvidenceLink(key: string, url: string) {
     try {
@@ -818,6 +871,78 @@ export default function NexusDeveloperPreview() {
                   </div>
                   <p className="mt-2 text-xs leading-5 text-slate-400">{pr.explanation}</p>
                   <p className="mt-2 text-xs text-slate-400">{pr.author} · Updated {pr.updated_at.slice(0, 10)}</p>
+                  <div className="mt-3 border-t border-slate-700/50 pt-3">
+                    <button type="button"
+                      disabled={pullsLoading || prEvidenceLoading}
+                      onClick={() => inspectPrVerification(pr.number)}
+                      aria-expanded={prEvidenceOpen && prEvidenceKey === selectedRepo + ':' + pr.number}
+                      className="nexus-devops-pr-verify-btn inline-flex min-h-10 items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold">
+                      <ShieldCheck aria-hidden="true" className="h-4 w-4" />
+                      {prEvidenceOpen && prEvidenceKey === selectedRepo + ':' + pr.number && prEvidence.data
+                        ? 'Hide check & review events' : 'Inspect check & review events'}
+                    </button>
+                    <p className="mt-2 text-xs text-slate-400">
+                      On demand only: at most 3 additional public GitHub GETs for this PR,
+                      plus one NEXUS origin rate-limit decision. Nothing runs automatically.
+                    </p>
+                  </div>
+                  {prEvidenceOpen && prEvidenceKey === selectedRepo + ':' + pr.number && (
+                    <div className="nexus-devops-pr-verification mt-3 rounded-xl p-4"
+                      aria-label={'GitHub evidence for PR #' + pr.number}>
+                      {prEvidenceLoading && <p role="status" className="text-xs text-slate-300">
+                        Loading this PR’s public checks and review events…
+                      </p>}
+                      {prEvidence.error && <p role="alert" className="text-xs text-rose-300">
+                        {prEvidence.error} <a href={pr.html_url} target="_blank" rel="noopener noreferrer"
+                          className="underline">Verify directly on GitHub</a>.
+                      </p>}
+                      {prEvidence.data && (
+                        <div className="space-y-4">
+                          <p className="text-xs text-slate-300">
+                            Commit <code className="font-mono text-[#a6d3fa]">{prEvidence.data.head_sha.slice(0, 12)}</code>.
+                            {prEvidence.data.inspected_check_runs} of {prEvidence.data.total_check_runs} check runs sampled;
+                            {prEvidence.data.inspected_review_events} chronological review events sampled
+                            {prEvidence.data.more_review_events_may_exist ? ' (more may exist)' : ''}.
+                          </p>
+                          <div>
+                            <h3 className="text-xs font-semibold uppercase tracking-wide text-[#a6d3fa]">Check run outcomes</h3>
+                            {prEvidence.data.check_runs.length ? (
+                              <ul className="mt-2 space-y-2">
+                                {prEvidence.data.check_runs.map(check => (
+                                  <li key={check.id} className="text-xs text-slate-300">
+                                    <span className="font-medium text-slate-100">{check.name}</span>
+                                    {' · '}{check.status}{check.conclusion === null ? '' : ' · ' + check.conclusion}
+                                  </li>
+                                ))}
+                              </ul>
+                            ) : <p className="mt-2 text-xs text-slate-400">
+                              No check runs returned in this sample. This does not prove checks passed.
+                            </p>}
+                          </div>
+                          <div>
+                            <h3 className="text-xs font-semibold uppercase tracking-wide text-[#a6d3fa]">Review events</h3>
+                            {prEvidence.data.review_events.length ? (
+                              <ul className="mt-2 space-y-2">
+                                {prEvidence.data.review_events.map(review => (
+                                  <li key={review.id} className="text-xs text-slate-300">
+                                    <span className="font-medium text-slate-100">{review.author}</span>
+                                    {' · '}{review.state}{review.submitted_at ? ' · ' + review.submitted_at.slice(0, 10) : ''}
+                                  </li>
+                                ))}
+                              </ul>
+                            ) : <p className="mt-2 text-xs text-slate-400">
+                              No review events returned in this sample; current required approvals remain unknown.
+                            </p>}
+                          </div>
+                          <p className="text-xs leading-5 text-slate-400">{prEvidence.data.scope_note}</p>
+                          <a className="inline-flex min-h-10 items-center text-xs font-semibold text-[#a6d3fa] hover:underline"
+                            href={pr.html_url} target="_blank" rel="noopener noreferrer">
+                            Check latest status on GitHub <ArrowUpRight aria-hidden="true" className="ml-1 h-4 w-4" />
+                          </a>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </li>
               ))}
             </ul>
