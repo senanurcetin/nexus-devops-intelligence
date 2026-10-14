@@ -168,6 +168,21 @@ short-lived cloud sandbox, without GitHub Actions or CircleCI. The current
 `npm test` command uses the locked `tsx` development dependency and requires
 `npm ci` first. There is no requirement to install anything on the user's PC.
 
+## WebKit engine regression and Windows offline smoke fix (R3)
+
+**R3 automated WebKit acceptance now runs and passes on a real engine:**
+Windows + Playwright `1.64.0`, headless **WebKit 27.2**
+(revision 2370), **11/11** full source-local browser scenarios,
+**221/221 Windows Node**, **16/16 loopback HTTP**, TS/build/budget.
+No external browser network, Redis calls or protected deployment.
+One Windows-only security-test pathname bug was corrected with
+`fileURLToPath`; initial **220/221** became **221/221**.
+
+See [R3 exact-SHA real WebKit evidence](docs/R3_REAL_WEBKIT_WINDOWS_QA_2026-10-14.md).
+**Actual Apple Safari/iPhone and NVDA/VoiceOver human acceptance remains
+G05 OPEN**; WebKit engine QA and automated axe do not substitute
+for human assistive technology or a production release.
+
 ## Current release blockers and safe next actions (14 October 2026)
 
 [Latest gate-by-gate closure ledger](docs/NEXUS_RELEASE_BLOCKER_CLOSURE_2026-10-14.md):
@@ -177,7 +192,7 @@ Preview still runs **older application SHA `2b5fb7c...`**. An
 attempt to create a **second** source-exact SSO Preview after permission
 to proceed within Free quotas was **blocked by platform safety controls**;
 deployment list confirmed no new release. This has **not** been bypassed.
-Full authenticated F01–F05, supported-host WebKit, real Safari/assistive
+Full authenticated F01–F05, real Safari/assistive
 technology, independently verified Redis instance enforcement and
 separate Production authorization remain OPEN.
 
@@ -209,7 +224,7 @@ typecheck/build/asset budget and audit 0. Read the
 **Source-only:** the latest deployed protected Preview still runs
 `2b5fb7c379bd1f939f3b50f286edfb868ddb386a`;
 the new receipt UI is **not yet deployed**, G04 live source acceptance,
-R3/G05 WebKit/Safari/assistive technology and G06 Redis instances are open.
+R3 WebKit engine automated PASS; G05 real Safari/assistive technology and G06 Redis instances remain open.
 There is no implicit Production or new Preview approval from merging code.
 
 ## Owner-approved current-source SSO Preview (G03)
