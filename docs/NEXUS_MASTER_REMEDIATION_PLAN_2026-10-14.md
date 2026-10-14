@@ -56,6 +56,18 @@ yerinde. 205/205 Node, 16/16 yerel HTTP, 11/11 Chromium, 11/11 Firefox,
 TS/build/bundle ve audit 0. **R4 insan/gerçek cihaz tasarım kabulü hâlâ
 KISMİ/AÇIK. R3 WebKit ortamı, R2 kapasite ve yayın kapıları değişmedi.**
 
+### R10 kaynak-yerel operasyonel düzeltme — 14 Ekim 2026
+
+[Redis Preview diagnostic QA](R10_PROTECTED_PREVIEW_PROBE_QA_2026-10-14.md):
+R10 alt işi tamamlandı: `_nexus_rate_check` parametresi,
+PR #57'den beri API'nin katı query sözleşmesiyle çelişip Redis öncesi 400
+üretiyordu. Betik şimdi sadece izin verilen parametreyi gönderiyor;
+CDN'de HIT/STALE/REVALIDATED veya belirsiz yanıtı origin kanıtı saymıyor.
+**208/208 Node, TypeScript, production build, JS budget, audit 0**
+(exact executable SHA `3779071524633694157adc05be3f9d3a3808118a`).
+Yalnızca R10 offline tanılama kodu düzeltildi; **G02, gerçek Preview,
+gerçek bağımsız Redis instance ve Production KAPANMADI**.
+
 ## 3. Yürütme sırası
 
 ### Parti A — dış yetki ve gerçek Redis tüketimi gerektirmeyen mühendislik

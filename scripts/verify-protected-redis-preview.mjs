@@ -1,4 +1,3 @@
-import { randomUUID } from 'node:crypto';
 import { pathToFileURL } from 'node:url';
 
 const PROJECT = 'nexus-devops-intelligence';
@@ -41,6 +40,9 @@ function validRetryAfter(value) {
  * no multi-instance or WAF claims. Only run full 21-request sequence after
  * explicit approval; default is a *single* Redis-mode preflight.
  *
+ * This probe never guarantees a cache miss; if the edge serves a cached HIT,
+ * its evidence is inconclusive. Without quota clearance/owner consent, no
+ * real traffic should be sent at all.
  * Don't pass arbitrary URLs to this function: the origin is checked before
  * constructing headers, and fetch follows no redirects.
  */
@@ -50,11 +52,19 @@ export async function probeProtectedRedisPreview({
   bypassToken = '',
   confirm21 = false,
   now = () => Date.now(),
-  nonce = randomUUID(),
 }) {
   const origin = safeNexusPreviewOrigin(url);
   if (!origin) return { state: 'blocked', reason: 'not-an-allowed-protected-preview', requests: 0 };
-  const headers = bypassToken ? { 'x-vercel-protection-bypass': bypassToken } : {};
+  // Only the public route's strictly allowed "repository" parameter is sent.
+  // Do NOT use arbitrary cache-busting query keys: every public API rejects
+  // those with HTTP 400 *before* consulting the shared Redis admission gate.
+  // Request no-cache, then independently reject confirmed edge-cache hits;
+  // this is advisory to CDNs, not guaranteed proof of an origin invocation.
+  const headers = {
+    'Cache-Control': 'no-cache, no-store, max-age=0',
+    Pragma: 'no-cache',
+    ...(bypassToken ? { 'x-vercel-protection-bypass': bypassToken } : {}),
+  };
   const limit = confirm21 ? LIMIT + 1 : 1;
   const startedAt = now();
   let allowed = 0;
@@ -65,7 +75,6 @@ export async function probeProtectedRedisPreview({
     const path = index % 2 === 1 ? '/api/public-actions' : '/api/public-prs';
     const req = new URL(path, origin);
     req.searchParams.set('repository', TEST_REPOSITORY);
-    req.searchParams.set('_nexus_rate_check', `${nonce}-${index}`);
     let response;
     try {
       response = await fetcher(req.toString(), {
@@ -78,8 +87,18 @@ export async function probeProtectedRedisPreview({
     if ([301, 302, 303, 307, 308, 401, 403].includes(response.status)) {
       return { state: 'blocked', reason: 'preview-authentication-required', requests: index };
     }
-    if (response.headers.get('x-vercel-cache')?.toUpperCase() === 'HIT') {
-      return { state: 'inconclusive', reason: 'edge-cache-hit-not-an-origin-proof', requests: index };
+    // A HIT, STALE, REVALIDATED or absent CDN status is not trustworthy
+    // proof of a fresh origin execution. Only explicit MISS/BYPASS status
+    // is eligible as *one* prerequisite, never independent instance proof.
+    const cacheStatus = response.headers.get('x-vercel-cache')?.trim().toUpperCase();
+    if (cacheStatus !== 'MISS' && cacheStatus !== 'BYPASS') {
+      return {
+        state: 'inconclusive',
+        reason: cacheStatus === 'HIT'
+          ? 'edge-cache-hit-not-an-origin-proof'
+          : 'edge-cache-state-not-confirmed',
+        requests: index,
+      };
     }
     if (response.status === 429) {
       const originSource = response.headers.get('x-nexus-rate-limit-source');
