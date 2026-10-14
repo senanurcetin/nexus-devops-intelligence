@@ -779,3 +779,26 @@ body { background: #071829; color: #eff5ff; }
   overflow-wrap: anywhere;
 }
 .nexus-devops-pr-verification li { overflow-wrap: anywhere; }
+
+/* F-04 phase 2: bounded, explicitly requested workflow job evidence. */
+.nexus-devops-run-inspect {
+  border: 1px solid #527ca7;
+  background: rgba(42, 96, 143, .23);
+  color: #c3e4ff;
+}
+.nexus-devops-run-inspect:hover:not(:disabled) {
+  border-color: #a6dcff;
+  background: rgba(64, 133, 191, .30);
+}
+.nexus-devops-run-inspect:focus-visible {
+  outline: 2px solid #9edcff;
+  outline-offset: 3px;
+}
+.nexus-devops-run-inspect:disabled { cursor: wait; opacity: .45; }
+.nexus-devops-run-details {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  border: 1px solid rgba(103, 161, 204, .38);
+  background: linear-gradient(118deg, rgba(10, 31, 54, .97), rgba(18, 51, 77, .90));
+}
+.nexus-devops-run-details li { overflow-wrap: anywhere; }
