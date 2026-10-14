@@ -168,6 +168,19 @@ short-lived cloud sandbox, without GitHub Actions or CircleCI. The current
 `npm test` command uses the locked `tsx` development dependency and requires
 `npm ci` first. There is no requirement to install anything on the user's PC.
 
+## Current release blockers and safe next actions (14 October 2026)
+
+[Latest gate-by-gate closure ledger](docs/NEXUS_RELEASE_BLOCKER_CLOSURE_2026-10-14.md):
+source G04 response diagnostics and R11 local lab passed on exact SHA
+`8bb2e7c...` and were merged in PR #70. The existing protected
+Preview still runs **older application SHA `2b5fb7c...`**. An
+attempt to create a **second** source-exact SSO Preview after permission
+to proceed within Free quotas was **blocked by platform safety controls**;
+deployment list confirmed no new release. This has **not** been bypassed.
+Full authenticated F01–F05, supported-host WebKit, real Safari/assistive
+technology, independently verified Redis instance enforcement and
+separate Production authorization remain OPEN.
+
 ## Source-response acceptance without DevTools; local performance QA (G04/R11)
 
 The two initial source panels now have a native **Request diagnostics ·
