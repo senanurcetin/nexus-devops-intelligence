@@ -1,8 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
+import { existsSync } from 'node:fs';
 
-const script = new URL('../scripts/smoke-http-offline.mjs', import.meta.url);
+// URL.pathname is /C:/... on Windows, which Node treats as C:\\C:\\...
+// when passed as a filesystem path. fileURLToPath preserves the native path.
+const script = fileURLToPath(new URL('../scripts/smoke-http-offline.mjs', import.meta.url));
 
 /**
  * No local server is necessary: disallowed origins must fail before the
@@ -10,6 +14,7 @@ const script = new URL('../scripts/smoke-http-offline.mjs', import.meta.url);
  * an authenticated Preview/Production or a non-loopback network endpoint.
  */
 test('offline HTTP smoke refuses public/Preview origins and unsafe URL forms', () => {
+  assert.equal(existsSync(script), true, 'platform-native local smoke script must exist');
   for (const origin of [
     'https://nexus-devops-intelligence.vercel.app/',
     'https://nexus-devops-intelligence-qwftzbzic-senanurs-projects-102fb36c.vercel.app/',
@@ -19,7 +24,7 @@ test('offline HTTP smoke refuses public/Preview origins and unsafe URL forms', (
     'http://127.0.0.1:3000/?repository=owner%2Frepo',
     'http://127.0.0.1:3000/#fragment',
   ]) {
-    const result = spawnSync(process.execPath, [script.pathname], {
+    const result = spawnSync(process.execPath, [script], {
       env: { ...process.env, NEXUS_BASE_URL: origin },
       encoding: 'utf8',
       timeout: 4000,
