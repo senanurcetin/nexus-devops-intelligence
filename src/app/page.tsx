@@ -9,7 +9,7 @@ import {
 import { isConfirmedWorkflowFailure, parsePublicRepository, type PublicActionsSummary } from '@/lib/github-public-actions';
 import type { PublicPullSummary, PullAttention } from '@/lib/nexus-public-prs';
 import { recommendInvestigations } from '@/lib/nexus-recommendations';
-import { readPublicPanel, emptyPanel, type Panel } from '@/lib/nexus-panel-request';
+import { readPublicPanel, emptyPanel, formatPublicPanelDiagnosticReport, type Panel } from '@/lib/nexus-panel-request';
 import { isPublicActionsSample, isPublicPullSample } from '@/lib/nexus-panel-validation';
 import { filteredWorkflowRuns, workflowOutcome, workflowOutcomeCount, workflowOutcomes, type WorkflowFilter } from '@/lib/nexus-workflow-visuals';
 import { filteredPublicPulls, pullBucket, pullBucketCount, pullBuckets, type PullFilter } from '@/lib/nexus-pr-visuals';
@@ -77,6 +77,8 @@ export default function NexusDeveloperPreview() {
   const [formError, setFormError] = useState('');
   const [shareStatus, setShareStatus] = useState('');
   const [shareFallback, setShareFallback] = useState('');
+  const [diagnosticsCopyStatus, setDiagnosticsCopyStatus] = useState('');
+  const [diagnosticsCopyFallback, setDiagnosticsCopyFallback] = useState('');
   const activeRepositoryRef = useRef<string | null>(null);
   const [workflowFilter, setWorkflowFilter] = useState<WorkflowFilter>('all');
   const [pullFilter, setPullFilter] = useState<PullFilter>('all');
@@ -89,6 +91,8 @@ export default function NexusDeveloperPreview() {
 
   const refreshPanel = useCallback((kind: 'actions' | 'prs', repo: string) => {
     setCopyStatus(null);
+    setDiagnosticsCopyStatus('');
+    setDiagnosticsCopyFallback('');
     if (kind === 'actions') {
       trendController.current?.abort();
       trendController.current = null;
@@ -166,6 +170,8 @@ export default function NexusDeveloperPreview() {
     setSelectedRepo(trimmed);
     setShareStatus('');
     setShareFallback('');
+    setDiagnosticsCopyStatus('');
+    setDiagnosticsCopyFallback('');
     setWorkflowFilter('all');
     setPullFilter('all');
     setExportError('');
@@ -269,6 +275,20 @@ export default function NexusDeveloperPreview() {
       setShareFallback('');
     } catch {
       setFormError('Enter a public GitHub repository as owner/repository.');
+    }
+  }
+
+  async function copyDiagnostics() {
+    // No fetch: only sanitized, already-received browser response receipts.
+    const summary = formatPublicPanelDiagnosticReport(actions.receipt, pulls.receipt);
+    try {
+      if (!navigator.clipboard?.writeText) throw new Error('Clipboard unavailable');
+      await navigator.clipboard.writeText(summary);
+      setDiagnosticsCopyStatus('Diagnostic summary copied. No API requests sent.');
+      setDiagnosticsCopyFallback('');
+    } catch {
+      setDiagnosticsCopyStatus('Clipboard unavailable. Select and copy the text below.');
+      setDiagnosticsCopyFallback(summary);
     }
   }
 
@@ -544,6 +564,22 @@ export default function NexusDeveloperPreview() {
                   </div>
                 ))}
               </dl>
+              <button type="button" onClick={copyDiagnostics}
+                disabled={!actions.receipt && !pulls.receipt}
+                className="mt-3 inline-flex min-h-10 items-center rounded-lg border border-[#477caf] bg-[#102947] px-3 py-2 font-semibold text-[#b9ddff] hover:bg-[#17395e] disabled:cursor-not-allowed disabled:opacity-50">
+                Copy safe diagnostics · no API requests
+              </button>
+              {diagnosticsCopyStatus && (
+                <p role="status" className="mt-2 text-slate-200">
+                  {diagnosticsCopyStatus}
+                </p>
+              )}
+              {diagnosticsCopyFallback && (
+                <textarea readOnly rows={6}
+                  aria-label="Safe diagnostics to select and copy"
+                  className="mt-2 w-full rounded-lg border border-[#477caf] bg-[#091a2e] p-2 text-xs text-slate-200"
+                  value={diagnosticsCopyFallback} />
+              )}
             </details>
           </div>
         </div>
