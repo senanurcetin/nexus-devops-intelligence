@@ -173,5 +173,5 @@ test('F-04 phase 2: only explicit user click can trigger client endpoint; no raw
  assert.match(page,/runEvidenceKey === key && runEvidence.data/);
  assert.match(page,/runEvidenceController.current\?\.abort\(\)/);
  assert.match(page,/No logs are downloaded/);
- assert.ok(!page.includes('/actions/runs/'+"'" + ' + run.id + '/logs'));
+ assert.ok(!page.includes('/logs?'));
 });
