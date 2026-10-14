@@ -520,6 +520,31 @@ export default function NexusDeveloperPreview() {
                   pullsLoading ? 'loading' : 'no verified response for this selection'}
               </p>
             </div>
+            <details className="nexus-devops-diagnostics mt-3 rounded-lg border border-[#365b81] px-3 py-2 text-xs text-slate-300">
+              <summary className="cursor-pointer font-semibold text-[#8fc7ff]">
+                Request diagnostics · no new requests
+              </summary>
+              <p className="mt-2 text-slate-400">
+                Values below come only from responses already received in this browser.
+                CDN MISS/BYPASS or shared-redis mode does not prove independent
+                serverless instances or SSO enforcement.
+              </p>
+              <dl className="mt-2 grid gap-2">
+                {([
+                  ['Actions', actions.receipt],
+                  ['PRs', pulls.receipt],
+                ] as const).map(([label, receipt]) => (
+                  <div key={label} className="min-w-0 border-t border-[#365b81] pt-2">
+                    <dt className="font-semibold text-slate-200">{label}</dt>
+                    <dd className="mt-1 break-words text-slate-300">
+                      {receipt ?
+                        `HTTP ${receipt.status} · CDN ${receipt.cache} · admission ${receipt.admission} · limit source ${receipt.limitSource}` :
+                        'No HTTP response observed for this selection'}
+                    </dd>
+                  </div>
+                ))}
+              </dl>
+            </details>
           </div>
         </div>
 
