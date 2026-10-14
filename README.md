@@ -167,6 +167,20 @@ short-lived cloud sandbox, without GitHub Actions or CircleCI. The current
 `npm test` command uses the locked `tsx` development dependency and requires
 `npm ci` first. There is no requirement to install anything on the user's PC.
 
+## Five-route source integrity and fail-closed admission (S-03)
+
+All five `/api/public-*` endpoints reject **duplicate `repository` fields,
+unexpected query parameters and invalid source values** with `400 / no-store`
+*before* calling the shared Redis limiter or GitHub API. An intentionally
+simulated Redis over-limit result returns an attributed `429` and bounded
+`Retry-After`; Redis failures or incomplete credentials return `503`
+without an upstream fallback. `npm run smoke:http:offline` now exercises
+**16 negative/origin-local HTTP checks**; five additional Node tests validate
+all five routes' fake-Redis response contracts and shared hashed budget key.
+The [dated 204-test security verification](docs/S03_FIVE_PUBLIC_API_ADMISSION_QA_2026-10-14.md)
+is **not** evidence of cross-Vercel-instance Upstash enforcement or actual
+account quota. No new deployment has been triggered.
+
 ## Free-tier capacity preflight (offline, account data required)
 
 `npm run capacity:offline` is a zero-network, credential-free **G-02
