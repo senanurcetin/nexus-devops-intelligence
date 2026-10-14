@@ -47,14 +47,18 @@ async function check(path, status, type) {
 }
 
 await check('/', 200, /text\/html/i);
-for (const route of [
-  'public-actions',
-  'public-prs',
-  'public-pr-verification',
-  'public-workflow-evidence',
-  'public-workflow-trends',
-]) {
-  // Invalid input is rejected before shared Redis admission and upstream GitHub.
-  await check('/api/' + route + '?repository=not-a-repository', 400, /application\/json/i);
+const safeTargets = [
+  ['public-actions', 'repository=owner%2Fexample'],
+  ['public-prs', 'repository=owner%2Fexample'],
+  ['public-pr-verification', 'repository=owner%2Fexample&number=12'],
+  ['public-workflow-evidence', 'repository=owner%2Fexample&id=123'],
+  ['public-workflow-trends', 'repository=owner%2Fexample&end=2026-10-12'],
+];
+for (const [route, validQuery] of safeTargets) {
+  const path = '/api/' + route + '?';
+  // Invalid inputs MUST return 400 before *either* Redis admission or GitHub.
+  await check(path + 'repository=not-a-repository', 400, /application\/json/i);
+  await check(path + validQuery + '&repository=attacker%2Fother', 400, /application\/json/i);
+  await check(path + validQuery + '&debug=1', 400, /application\/json/i);
 }
-console.log('PASS: six local HTTP checks; zero intentionally valid GitHub/Upstash API requests.');
+console.log('PASS: sixteen loopback HTTP checks; zero intentionally valid GitHub/Upstash API requests.');
