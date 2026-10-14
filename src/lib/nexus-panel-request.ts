@@ -29,9 +29,11 @@ const PUBLIC_ERRORS = new Set([
   'GitHub API access is restricted or rate-limited.',
   'GitHub returned unexpected workflow data.',
   'GitHub returned unexpected pull request list data.',
+  'Use a valid public repository and PR number.',
+  'GitHub returned invalid pull request verification data.',
   'GitHub returned invalid pull request list data.',
   'GitHub returned invalid pull request status data.',
-  ...['workflow history', 'pull requests', 'pull request details'].flatMap(subject => [
+  ...['workflow history', 'pull requests', 'pull request details', 'pull request verification'].flatMap(subject => [
     `Public repository or ${subject} not found.`,
     `GitHub ${subject} request timed out.`,
     `GitHub returned invalid ${subject} JSON.`,

@@ -756,3 +756,26 @@ body { background: #071829; color: #eff5ff; }
   opacity: .45;
   cursor: not-allowed;
 }
+
+/* F-04: on-demand read-only GitHub checks/reviews detail; no auto-fanout. */
+.nexus-devops-pr-verify-btn {
+  border: 1px solid #507ca0;
+  background: rgba(38, 93, 136, .23);
+  color: #bbdfff;
+}
+.nexus-devops-pr-verify-btn:hover:not(:disabled) {
+  border-color: #9fd9ff;
+  background: rgba(67, 141, 200, .28);
+}
+.nexus-devops-pr-verify-btn:focus-visible {
+  outline: 2px solid #9dd9ff;
+  outline-offset: 3px;
+}
+.nexus-devops-pr-verify-btn:disabled { opacity: .45; cursor: wait; }
+.nexus-devops-pr-verification {
+  min-width: 0;
+  border: 1px solid rgba(95, 154, 203, .40);
+  background: linear-gradient(120deg, rgba(9, 31, 54, .96), rgba(17, 48, 74, .84));
+  overflow-wrap: anywhere;
+}
+.nexus-devops-pr-verification li { overflow-wrap: anywhere; }
