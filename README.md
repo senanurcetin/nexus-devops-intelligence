@@ -16,6 +16,7 @@ and pull request merge state. **This is not part of Ops-Copilot.**
 > proof and shared Upstash Free usage all remain **unverified**. The Vercel Hobby rate
 > limit rule is **Log-only**; it is not an enforcing 429 edge WAF.
 >
+> **Prioritized development and gap-closure plan:** [NEXUS master remediation plan](docs/NEXUS_MASTER_REMEDIATION_PLAN_2026-10-14.md) — P0 blockers, P1 visual/data quality, exact-SHA acceptance, human signoff and non-spend restrictions.
 > **Source of truth for next work:** [current release work plan](docs/NEXUS_CURRENT_RELEASE_WORK_PLAN_2026-10-14.md),
 > [current Preview/human acceptance issue #49](https://github.com/senanurcetin/nexus-devops-intelligence/issues/49),
 > [shared Redis issue #7](https://github.com/senanurcetin/nexus-devops-intelligence/issues/7),
