@@ -46,6 +46,16 @@ P0 = yayın engeli; P1 = ürün kalitesi; P2 = ertelenen kapsam. 'Offline DONE' 
 
 **G06 kararı:** Gereken bağımsız instance kanıtı düşük kotayla güvenli şekilde mümkün değilse test yapılmaması doğrudur. Sahip risk kabulü bir test PASS'i değildir; özellikle geniş public koruması ile karıştırılmamalıdır. Onaysız 21 geçerli gerçek istek yasaktır.
 
+### R4 ilk mühendislik paketi — kaynak-lokal (14 Ekim 2026)
+
+[R4 mobil hiyerarşi ve kanıt QA](R4_MOBILE_HIERARCHY_QA_2026-10-14.md):
+Kaynak `2efaefcc27c8fafe8c5f2534ac34f3f59cd35f13` üzerinde
+375px arayüzde uzun giriş/kanıt paneli daraltıldı; arama alanı erken görünür,
+share açıklaması tam genişlikte, örneklem sınırları ve iki kaynak yanıt zamanı
+yerinde. 205/205 Node, 16/16 yerel HTTP, 11/11 Chromium, 11/11 Firefox,
+TS/build/bundle ve audit 0. **R4 insan/gerçek cihaz tasarım kabulü hâlâ
+KISMİ/AÇIK. R3 WebKit ortamı, R2 kapasite ve yayın kapıları değişmedi.**
+
 ## 3. Yürütme sırası
 
 ### Parti A — dış yetki ve gerçek Redis tüketimi gerektirmeyen mühendislik
