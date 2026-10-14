@@ -99,6 +99,25 @@ ve [R1 QA](R1_EXACT_MAIN_SOURCE_QA_2026-10-14.md).
 **R5 DONE_OFFLINE; G04 gerçek SSO Preview kabulü AÇIK.**
 Mock statü testleri gerçek GitHub/Vercel/Upstash kanıtı değildir.
 
+### R2 otomatik hesap-metrik toplama alternatifi (14 Ekim)
+
+Kullanıcıdan aylık rakamları kopyalaması istenmeden,
+[resmî Upstash Management API salt-okunur okuyucusu](R2_AUTOMATED_UPSTASH_MANAGEMENT_USAGE_2026-10-14.md)
+hazırlandı. Yetkisiz varsayılan davranış **INCOMPLETE / 0 HTTP isteği**;
+yalnızca ayrı Upstash yönetim yetkisi ve açık
+`--authorized-readonly` ile hesap DB kimliği, Free planı ve aylık
+komut/bant genişliği/depolama istatistiği iki sabit Management API GET
+üzerinden alınabilir. **Bu anahtar mevcut Redis REST token'ı değildir,
+değerleri açılmaz, hiçbir canlı Upstash komutu çalıştırılmadı.**
+Exact kod `d234e9d4f62ec7ed0f97ed05462700b7aa0ef224` üzerinde
+**216/216 Node**, TS/build/budget ve audit 0 PASS.
+
+**R2 hâlâ BLOCKED:** şu anda management kimliği bağlı değil; bağlı
+Vercel Hobby ekibinin toplam kaynak kullanımı da mevcut araçlardan
+okunamadı. Metrik bilinmediğinde tahmini sıfırla değiştirilemez;
+`UPSTASH_ONLY_VERIFIED` tüm G02 onayı değildir. Ücretli
+Observability Plus etkinleştirilmez, Redis'e probe gönderilmez.
+
 ## 3. Yürütme sırası
 
 ### Parti A — dış yetki ve gerçek Redis tüketimi gerektirmeyen mühendislik
