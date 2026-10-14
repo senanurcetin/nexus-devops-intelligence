@@ -234,6 +234,20 @@ The [dated 204-test security verification](docs/S03_FIVE_PUBLIC_API_ADMISSION_QA
 is **not** evidence of cross-Vercel-instance Upstash enforcement or actual
 account quota. No new deployment has been triggered.
 
+## 14 October owner-provided Free usage snapshot (R2 partial)
+
+The owner supplied **six actual Upstash and Vercel Usage screen captures**:
+shared Upstash Free **118/500K monthly commands**, **10 KB/10 GB**
+bandwidth, **0 B / 250 MB** displayed storage and **$0.00**; entire
+Vercel Hobby team 30-day **1.01 GB / 100 GB Fast Data Transfer**, **157.28
+MB / 10 GB Fast Origin Transfer**, **23K CDN requests**, and **642 ISR reads**.
+The NEXUS project-specific counters are also documented, but these
+are **not** sufficient for a Vercel **Function Invocations, Active CPU or
+Provisioned Memory** quota screen. The code's old historical 256 MB
+Upstash storage assumption was reduced to the actual UI **250 MB**.
+See the [R2 snapshot and missing-field decision](docs/R2_OWNER_USAGE_SNAPSHOT_2026-10-14.md).
+**G02 remains INCOMPLETE** and no deployment or paid feature was enabled.
+
 ## Owner-data-free Upstash usage extraction (R2, opt-in)
 
 The owner need not copy Upstash's current-month command, bandwidth or
