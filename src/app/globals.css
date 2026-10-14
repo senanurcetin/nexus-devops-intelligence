@@ -1149,6 +1149,20 @@ body { background: #071829; color: #eff5ff; }
     font-size: .71rem;
     overflow-wrap: anywhere;
   }
+  /* Share context should read as editorial copy beneath the action, not
+     a cramped half-width sidebar alongside the action button. */
+  .nexus-devops-share {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  .nexus-devops-share > p {
+    flex: none;
+    width: 100%;
+    max-width: 100%;
+    line-height: 1.55;
+  }
+  .nexus-devops-share-button { align-self: flex-start; max-width: 100%; }
 }
 @media (max-width: 360px) {
   .nexus-devops-receipts { grid-template-columns: minmax(0, 1fr); }
