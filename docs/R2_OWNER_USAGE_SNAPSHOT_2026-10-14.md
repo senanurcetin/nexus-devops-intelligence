@@ -2,7 +2,7 @@
 
 **Date supplied:** 14 October 2026.  
 **Project:** `senanurcetin/nexus-devops-intelligence`.  
-**Source:** Six owner-uploaded screenshots reviewed within the NEXUS development conversation. The screenshots have not been published in the repository. This record stores **only non-secret displayed totals**; it does not contain private API tokens or dashboard links.
+**Source:** Ten owner-uploaded screenshots across two batches reviewed within the NEXUS development conversation. The screenshots have not been published in the repository. This record stores **only non-secret displayed totals**; it does not contain private API tokens or dashboard links.
 **Snapshot caveat:** Screenshots do not contain a reliable explicit UTC capture timestamp for all vendor counters; values are **rounded displays**, not precise underlying API account measurements. Upstash is **current month**, Vercel screenshots use **last 30 days**, whereas the Vercel function consumption may be on its own billing reset period. Do not silently equate their periods.
 
 ## 1. Actual Upstash Free database snapshot
@@ -32,13 +32,36 @@ The general view also displays incoming **31.24 MB**, outgoing **977.2 MB** with
 
 **Critical: CDN Requests is not Vercel Function Invocations. CDN Request CPU Duration is not Vercel Active Function CPU. Transfer bytes or ISR Reads are not provisioned function memory GB-hours.** Do not feed any of those substitute counters into `--vercel-invocations`, `--vercel-active-cpu-hours`, or `--vercel-provisioned-memory-gb-hours`.
 
+### Function Invocations follow-up (four owner screenshots, 14 October 2026)
+
+A further four Vercel **Functions → Invocations** screenshots show the **team total of 9,329 / 1,000,000 invocations**. This counter excludes cache hits and is not interchangeable with CDN requests. Its displayed 9,329 requests break down as:
+
+| Filter | Displayed partition | Total |
+| --- | --- | ---: |
+| Projects | `nexus-devops-intelligence` | **66** |
+| Projects | `fraud-project-web` | 2,258 |
+| Projects | `visual-qc-project` | 6,513 |
+| Projects | `datneta-web-1790467796975-4zzs` (deleted) | 491 |
+| Projects | `ops-copilot-developer-demo` | 1 |
+| Runtime | `python3.12` | 8,771 |
+| Runtime | `nodejs24.x` | 67 |
+| Runtime | `edge` | 491 |
+| Type | `function` | 8,838 |
+| Type | `middleware` | 491 |
+| Outcome | Success | 9,320 |
+| Outcome | Timeout | 9 |
+
+The project, runtime, type, and outcome partitions independently reconcile with **9,329**. The graph covers approximately 16 September to 14 October; the actual billing-period selector/reset timestamp is **not visible in this screenshot**. “Updated 20 minutes ago” is a relative timestamp, not a reliable UTC observation date. Do not treat these counters as proof of exact period alignment with the earlier Upstash current-month screenshot.
+
+**Free invocation ceiling:** 9,329 is far below the visible 1,000,000 monthly Hobby quota; this **one observed metric** is no longer missing. However, **Active Function CPU hours and Provisioned Memory GB-hours** are separate metrics and still absent. CDN Request CPU Duration (**9 s**, earlier screenshot) is not Active Function CPU usage. Neither missing field is assumed to be zero.
+
 ## 3. Gate outcome
 
 | R2 requirement | Status |
 | --- | --- |
 | Upstash database monthly commands, storage, bandwidth and displayed cost | **PARTIALLY OBSERVED from account UI**, source period noted, rounded values |
 | Whole-team Vercel data/origin transfer, CDN and ISR | **OBSERVED**, last 30 days |
-| Whole-team Vercel **Function Invocations** | **MISSING** |
+| Whole-team Vercel **Function Invocations** | **OBSERVED: 9,329 / 1,000,000**, including NEXUS project 66; exact reset window not confirmed |
 | Whole-team Vercel **Active Function CPU** | **MISSING** |
 | Whole-team Vercel **Provisioned Function Memory GB-hours** | **MISSING** |
 | Exact UTC snapshot time, Vercel relevant quota reset window and agreed origin-GET budget | **NOT VERIFIED** |
@@ -49,7 +72,7 @@ Upstash appears to have ample visible headroom **for the displayed metrics**. Ve
 
 ## 4. One remaining screenshot to reduce burden
 
-In the **same Vercel team's Usage tab** (not the individual NEXUS project), leave project filter at **All Projects**, select the current usage/billing period, then scroll/search the page for **Function Invocations**, **Active CPU** and **Provisioned Memory**. One or more screenshots showing the three readings and the period will suffice. No API keys, finance data, personal email, log token, Redis details or paid plan are needed. Do not enable Observability Plus, a paid WAF, or any plan upgrade. The existing connected Vercel billing API returned `404 costs_not_found`, which was **not** zero usage; team Observability advanced metrics have paid-tier requirements.
+In the **same Vercel team's Usage tab** (not the individual NEXUS project), leave project filter at **All Projects**, select the current usage/billing period, then scroll/search the page for **Function Invocations**, **Active CPU** and **Provisioned Memory**. One or more screenshots showing these two readings and the period will suffice. No API keys, finance data, personal email, log token, Redis details or paid plan are needed. Do not enable Observability Plus, a paid WAF, or any plan upgrade. The existing connected Vercel billing API returned `404 costs_not_found`, which was **not** zero usage; team Observability advanced metrics have paid-tier requirements.
 
 When received, use the **actual function** totals, exact period and planned origin-GET count together with the currently supplied Upstash readings (subject to data freshness and alignment) in `npm run capacity:offline` for **READY_FOR_OWNER_REVIEW / HOLD / INCOMPLETE**. Even a READY review remains **not Preview or Production deployment authorization**.
 
