@@ -1079,3 +1079,77 @@ body { background: #071829; color: #eff5ff; }
     text-align: center;
   }
 }
+
+/* R4: evidence-first mobile hierarchy. Keep all sample boundaries, live source
+   state and receipt timestamps visible; reduce redundant vertical chrome.
+   The desktop executive layout and measured source data stay unchanged. */
+.nexus-devops-receipts-heading {
+  margin-top: 10px;
+  color: #b9d1e9;
+  font-size: .71rem;
+  font-weight: 650;
+  letter-spacing: .01em;
+}
+@media (max-width: 640px) {
+  .nexus-devops-hero {
+    gap: 14px;
+    margin-bottom: 18px;
+    padding: 16px 15px;
+  }
+  .nexus-devops-hero .nexus-devops-eyebrow { margin-bottom: 9px; }
+  .nexus-devops-hero-badge {
+    margin-bottom: 10px;
+    padding-top: 5px;
+    padding-bottom: 5px;
+    font-size: .68rem;
+    letter-spacing: .055em;
+  }
+  .nexus-devops-hero h1 {
+    font-size: clamp(1.84rem, 8vw, 2.2rem);
+    line-height: 1.09;
+    letter-spacing: -.03em;
+  }
+  .nexus-devops-hero-description {
+    margin-top: 12px;
+    font-size: .875rem;
+    line-height: 1.55;
+  }
+  .nexus-devops-hero-facts {
+    gap: 5px 12px;
+    margin-top: 14px;
+    padding-top: 12px;
+    font-size: .7rem;
+    line-height: 1.4;
+  }
+  .nexus-devops-evidence-note {
+    padding: 12px 13px;
+    font-size: .78rem;
+    line-height: 1.5;
+  }
+  .nexus-devops-note-title { margin-bottom: 6px; }
+  .nexus-devops-data-state {
+    margin-top: 10px;
+    padding-top: 9px;
+    font-size: .68rem;
+    letter-spacing: .045em;
+  }
+  .nexus-devops-receipts {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0 12px;
+  }
+  .nexus-devops-receipts-heading {
+    grid-column: 1 / -1;
+    margin-top: 9px;
+    font-size: .69rem;
+  }
+  .nexus-devops-received-at {
+    min-width: 0;
+    margin-top: 4px;
+    font-size: .71rem;
+    overflow-wrap: anywhere;
+  }
+}
+@media (max-width: 360px) {
+  .nexus-devops-receipts { grid-template-columns: minmax(0, 1fr); }
+}
