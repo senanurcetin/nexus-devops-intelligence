@@ -18,7 +18,8 @@ test('navigation and source record links remain keyboard-accessible at constrain
   assert.ok(page.includes('aria-label="Dashboard sections"'));
   assert.ok(page.includes('nexus-devops-evidence-controls'));
   assert.ok(page.includes('nexus-devops-run-actions'));
-  assert.ok(page.includes('flex flex-wrap items-start justify-between gap-3 p-5'));
+  assert.ok(page.includes('nexus-devops-event min-w-0 p-5'));
+  assert.ok(page.includes('flex flex-wrap items-start justify-between gap-3'));
   assert.ok(css.includes('.nexus-devops-command-nav { min-width: 0; max-width: 100%; }'));
   assert.ok(css.includes('.nexus-devops-evidence-controls > button'));
   assert.ok(css.includes('min-height: 40px'));
