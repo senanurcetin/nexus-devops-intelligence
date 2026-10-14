@@ -168,6 +168,37 @@ short-lived cloud sandbox, without GitHub Actions or CircleCI. The current
 `npm test` command uses the locked `tsx` development dependency and requires
 `npm ci` first. There is no requirement to install anything on the user's PC.
 
+## Source-response acceptance without DevTools; local performance QA (G04/R11)
+
+The two initial source panels now have a native **Request diagnostics ·
+no new requests** disclosure under source coverage. It shows only
+allowlisted response **HTTP status**, CDN cache class and public
+rate-limit mode/source from already completed requests; malformed headers,
+cookies, IPs, tokens, raw error HTML and unknown header values are never
+shown. Opening it sends **zero** additional GETs; `MISS` and
+`shared-redis` are explicitly **not cross-instance/SSO proof**.
+This addresses the user's inability to locate Chrome DevTools Network,
+without adding an analytics backend or consuming more Upstash Free
+admissions.
+
+`npm run perf:local` (requires manual optional `playwright-core@1.64.0`)
+collects loopback-only Chromium laboratory FCP/LCP/CLS and two-panel
+timings on **intercepted static GitHub fixtures**, never a live
+Preview/Production URL. 375/1280px, three runs each:
+**253/281ms** source panels ready (median); **136/200ms** FCP and LCP;
+**0.01129/0.00325** CLS. These are **synthetic local lab measurements,
+not actual field Web Vitals**.
+On executable SHA `8bb2e7c2fc664d051f4d34d0c02b8ee4cc7494c3`:
+**221/221 Node, 16/16 local HTTP, 11/11 Chromium, 11/11 Firefox**,
+typecheck/build/asset budget and audit 0. Read the
+[G04/R11 measurement and release-gap report](docs/G04_R11_SAFE_RECEIPTS_PERFORMANCE_QA_2026-10-14.md).
+
+**Source-only:** the latest deployed protected Preview still runs
+`2b5fb7c379bd1f939f3b50f286edfb868ddb386a`;
+the new receipt UI is **not yet deployed**, G04 live source acceptance,
+R3/G05 WebKit/Safari/assistive technology and G06 Redis instances are open.
+There is no implicit Production or new Preview approval from merging code.
+
 ## Owner-approved current-source SSO Preview (G03)
 
 The owner approved a **Preview-only exact-SHA deployment** and up to
