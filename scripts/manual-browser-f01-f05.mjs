@@ -14,7 +14,9 @@
  * is blocked. Only localhost is accepted. No protected Preview or Production.
  */
 import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
+import { readFile, mkdir } from 'node:fs/promises';
+import { join } from 'node:path';
+import { execFileSync } from 'node:child_process';
 import { createRequire } from 'node:module';
 import { summarizePublicActions } from '../src/lib/github-public-actions.ts';
 import { summarizePublicPullRequests } from '../src/lib/nexus-public-prs.ts';
@@ -31,6 +33,8 @@ if (source.protocol !== 'http:' ||
   throw new Error('Browser regression is loopback-only; refuse public Preview/Production URLs.');
 }
 const base = source.origin;
+const captureDir = process.env.NEXUS_BROWSER_CAPTURE_DIR || null;
+const exactSourceTag = execFileSync('git', ['rev-parse', '--short=12', 'HEAD'], {encoding:'utf8'}).trim();
 const repoA = 'owner/one', repoB = 'owner/two';
 const stamp = '2026-10-13T12:00:00Z';
 const sha = 'a'.repeat(40);
@@ -179,6 +183,38 @@ async function runJourney(browser, name, width, scenario) {
       await page.getByRole('alert').filter({hasText:/Invalid repository in shared link/}).waitFor();
       assert.equal(calls.length, 0, 'invalid duplicate repo causes zero API calls');
       assert.equal(await page.getByRole('button', {name:'Export JSON'}).isDisabled(), true);
+    } else if (scenario === 'textzoom-200' || scenario === 'textzoom-400') {
+      // Simulated text-only enlargement using the root rem unit; unlike
+      // browser zoom this deliberately retains a 320 CSS-pixel viewport.
+      await ready(repoA);
+      await page.evaluate(size => {
+        document.documentElement.style.fontSize = size;
+      }, scenario === 'textzoom-200' ? '32px' : '64px');
+      await page.waitForTimeout(150);
+      const geometry = await page.evaluate(() => {
+        const width = document.documentElement.clientWidth;
+        const nav = document.querySelector('.nexus-devops-command-nav');
+        const controls = [...document.querySelectorAll(
+          '.nexus-devops-export-button, .nexus-devops-trend-button',
+        )].map(el => {
+          const rect = el.getBoundingClientRect();
+          return {left:rect.left, right:rect.right, width:rect.width};
+        });
+        return {
+          width,
+          documentWidth:document.documentElement.scrollWidth,
+          navInternalScroll:nav ? nav.scrollWidth > nav.clientWidth : false,
+          controls,
+        };
+      });
+      assert.ok(geometry.documentWidth <= geometry.width + 2,
+        'text-only enlargement must not widen the page');
+      assert.ok(geometry.navInternalScroll, 'navigation must retain its own horizontal scrolling');
+      assert.equal(geometry.controls.length, 3);
+      assert.ok(geometry.controls.every(c =>
+        c.width > 0 && c.left >= -2 && c.right <= geometry.width + 2),
+      'export and trend controls must remain inside viewport at 400%');
+      assert.equal(calls.length, 2, 'text-only enlargement causes no extra API calls');
     } else if (scenario === 'race') {
       // Wait until initial source calls really exist before racing their responses.
       // Without this guard a fast tester can type before React hydrates the URL.
@@ -207,6 +243,13 @@ async function runJourney(browser, name, width, scenario) {
     } else {
       await ready(repoA);
       assert.equal(calls.length, 2, 'only two initial panel API calls');
+      const chartMeasures = await page.evaluate(() => ({
+        bars:[...document.querySelectorAll('.nexus-devops-outcome-bar, .nexus-devops-pr-bar')].map(node => node.getBoundingClientRect().height),
+        cells:document.querySelectorAll('.nexus-devops-composition-item').length,
+      }));
+      assert.equal(chartMeasures.bars.length, 2, 'both independent source charts rendered');
+      assert.ok(chartMeasures.bars.every(h => h >= 22), 'sample chart height must remain readable');
+      assert.equal(chartMeasures.cells, 9, '4 Actions and 5 PR composition labels');
       const json = JSON.parse(await download('Export JSON'));
       assert.equal(json.repository, repoA);
       assert.equal(json.actions.inspected_runs, 2);
@@ -232,8 +275,26 @@ async function runJourney(browser, name, width, scenario) {
         const table = page.getByRole('region', {name:/Seven-day UTC workflow count table/});
         await table.waitFor();
         assert.equal(await table.locator('tbody tr').count(), 7);
+        const tableMeasures = await table.evaluate(node => ({
+          viewport: node.clientWidth,
+          content: node.scrollWidth,
+          trackHeights:[...node.querySelectorAll('.nexus-devops-trend-track')].map(x => x.getBoundingClientRect().height),
+          headerSize:getComputedStyle(node.querySelector('thead th')).fontSize,
+        }));
+        assert.ok(tableMeasures.trackHeights.every(h => h >= 16), 'UTC bars must be >= 16px');
+        assert.ok(parseFloat(tableMeasures.headerSize) >= 11.5, 'UTC header labels must be legible');
+        assert.ok(tableMeasures.content >= tableMeasures.viewport, 'UTC table scroll safely contained');
       }
       assert.equal(calls.length, 5, 'two panels plus three manually triggered detail GETs');
+      // Capture the inspected UTC chart while it is actually expanded,
+      // before the scenario collapses it to verify zero-refetch behavior.
+      if (captureDir) {
+        await mkdir(captureDir, {recursive:true});
+        await page.screenshot({
+          path:join(captureDir, 'nexus-'+exactSourceTag+'-'+name+'-'+width+'px-utc-expanded.png'),
+          fullPage:true, animations:'disabled',
+        });
+      }
       const hide = scenario === 'incomplete' ? null : page.getByRole('button', {name:'Hide 7-day UTC trend'});
       if (hide) {
         await hide.click();
@@ -267,7 +328,14 @@ async function runJourney(browser, name, width, scenario) {
       return r.violations.map(v => v.id);
     });
     assert.deepEqual(audit, [], 'automated axe WCAG A/AA');
+    let screenshot = null;
+    if (captureDir) {
+      await mkdir(captureDir, {recursive:true});
+      screenshot = join(captureDir, 'nexus-'+exactSourceTag+'-'+name+'-'+width+'px.png');
+      await page.screenshot({path:screenshot, fullPage:true, animations:'disabled'});
+    }
     console.log(JSON.stringify({
+      sourceSHA:exactSourceTag, screenshot,
       scenario:name, viewport:width, result:'PASS', apiGETs:calls.length,
       interceptedByPath:Object.fromEntries([...paths].map(p => [p,calls.filter(c=>c.path===p).length])),
       blockedExternalOrigins:blocked.length, axeViolations:0, pageErrors:0,
@@ -291,14 +359,19 @@ const browser = await chromium.launch({
 });
 try {
   for (const [name,width,scenario] of [
+    ['textzoom-200',320,'textzoom-200'],
+    ['textzoom-400',320,'textzoom-400'],
+    ['complete-narrow',320,'complete'],
     ['complete-mobile',375,'complete'],
+    ['complete-tablet',768,'complete'],
     ['complete-desktop',1280,'complete'],
+    ['complete-wide',1440,'complete'],
     ['partial-source-mobile',375,'partial'],
     ['incomplete-trend-desktop',1280,'incomplete'],
     ['rapid-source-switch-mobile',375,'race'],
     ['duplicate-share-link-mobile',375,'invalid'],
   ]) await runJourney(browser,name,width,scenario);
-  console.log('F01–F05 fixture browser regression: all six sessions PASSED (no live API/Redis calls).');
+  console.log('F01–F05 fixture browser regression: all eleven sessions PASSED (no live API/Redis calls).');
 } finally {
   await browser.close();
 }

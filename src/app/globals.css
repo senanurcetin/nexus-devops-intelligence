@@ -850,3 +850,232 @@ body { background: #071829; color: #eff5ff; }
   outline-offset: 2px;
   border-radius: .4rem;
 }
+
+
+/*
+ * T-02 editorial data visualization: larger marks and legible labels without
+ * changing underlying GitHub sample counts, classifications, or fetch budget.
+ * Every chart retains exact counts alongside colour, including zero values.
+ */
+.nexus-devops-outcome-bar,
+.nexus-devops-pr-bar {
+  height: 25px;
+  gap: 3px;
+  padding: 3px;
+  border-radius: 9px;
+  border-color: rgba(122, 177, 224, .38);
+  background: #061827;
+  box-shadow: inset 0 2px 8px rgba(0, 8, 23, .52);
+}
+.nexus-devops-outcome-fill,
+.nexus-devops-pr-fill {
+  border-radius: 3px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .16);
+}
+.nexus-devops-chart-caption {
+  color: #cee7ff;
+  font-size: .78rem;
+  line-height: 1.45;
+  letter-spacing: .095em;
+}
+.nexus-devops-composition-grid {
+  align-items: stretch;
+}
+.nexus-devops-composition-item {
+  position: relative;
+  padding: 14px 14px 13px;
+  border: 1px solid rgba(102, 150, 196, .32);
+  border-radius: 11px;
+  background: linear-gradient(155deg, rgba(9, 32, 54, .87), rgba(8, 24, 43, .74));
+  box-shadow: inset 0 1px 0 rgba(161, 201, 241, .035);
+}
+.nexus-devops-composition-item > p:first-child {
+  color: #c8dcf1;
+  font-size: .79rem;
+  font-weight: 600;
+  line-height: 1.4;
+}
+.nexus-devops-composition-item > p:nth-child(2) {
+  font-size: 1.8rem;
+  letter-spacing: -.035em;
+  line-height: 1.2;
+}
+.nexus-devops-composition-item > p:nth-child(2) > span {
+  display: inline-block;
+  margin-left: 7px;
+  font-size: .78rem;
+  color: #c0d3e6;
+}
+.nexus-devops-run-sequence,
+.nexus-devops-pr-sequence {
+  border-color: #3b688b;
+  background: linear-gradient(145deg, rgba(5, 25, 45, .84), rgba(8, 29, 48, .66));
+}
+.nexus-devops-run-tick,
+.nexus-devops-pr-tick {
+  background: linear-gradient(180deg, rgba(39, 88, 120, .74), rgba(17, 47, 76, .82));
+  border-color: rgba(154, 196, 230, .34);
+  font-size: .78rem;
+  letter-spacing: .025em;
+}
+.nexus-devops-run-tick:focus-visible,
+.nexus-devops-pr-tick:focus-visible {
+  outline: 2px solid #c6e8ff;
+  outline-offset: 3px;
+}
+
+/* UTC table: 7 complete creation days, not a reliability time series.
+   Preserve explicit numeric columns and a meaningful 0-volume day. */
+.nexus-devops-trend-scroll {
+  max-width: 100%;
+  border: 1px solid rgba(121, 166, 210, .33);
+  border-radius: 13px;
+  background: rgba(4, 23, 42, .54);
+  scrollbar-color: #76a7d2 #09263e;
+  scrollbar-width: thin;
+}
+.nexus-devops-trend-table {
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: .78rem;
+  font-variant-numeric: tabular-nums;
+}
+.nexus-devops-trend-table thead th {
+  position: relative;
+  padding: 13px 11px;
+  background: #163550;
+  color: #d5eafd;
+  border-bottom: 1px solid rgba(151, 203, 242, .43);
+  font-size: .74rem;
+  font-weight: 730;
+  letter-spacing: .025em;
+}
+.nexus-devops-trend-table tbody th,
+.nexus-devops-trend-table tbody td {
+  padding: 12px 11px;
+  border-bottom: 1px solid rgba(114, 158, 200, .22);
+  color: #e5f1ff;
+  font-size: .8rem;
+  line-height: 1.55;
+}
+.nexus-devops-trend-table tbody tr:nth-child(even) td {
+  background: rgba(54, 110, 153, .09);
+}
+.nexus-devops-trend-table tbody tr:hover td {
+  background: rgba(75, 148, 207, .16);
+}
+.nexus-devops-trend-table tbody tr:last-child th,
+.nexus-devops-trend-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+.nexus-devops-trend-table tbody td:not(:nth-child(2)) {
+  text-align: right;
+  font-weight: 650;
+}
+.nexus-devops-trend-table th:first-child {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  min-width: 72px;
+  white-space: nowrap;
+  background: #102b45;
+}
+.nexus-devops-trend-table thead th:first-child {
+  z-index: 3;
+  background: #163550;
+}
+.nexus-devops-trend-table tbody tr:nth-child(even) th:first-child {
+  background: #17334b;
+}
+.nexus-devops-trend-total {
+  min-width: 2ch;
+  font-weight: 800;
+  color: #fff;
+  text-align: right;
+}
+.nexus-devops-trend-track {
+  min-width: 142px;
+  height: 17px;
+  flex: 1 0 142px;
+  border: 1px solid rgba(124, 178, 219, .24);
+  border-radius: 5px;
+  background: #081b30;
+  box-shadow: inset 0 1px 3px rgba(0, 9, 24, .5);
+}
+.nexus-devops-trend-track span {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .15);
+}
+
+/* Data provenance and panel labels need to remain readable at 375 px. */
+.nexus-devops .nexus-devops-section {
+  font-size: .78rem;
+  line-height: 1.6;
+}
+.nexus-devops-insights-kicker {
+  font-size: .76rem;
+  line-height: 1.6;
+  letter-spacing: .11em;
+}
+.nexus-devops-queue-severity {
+  font-size: .73rem;
+}
+.nexus-devops-command-nav-caption,
+.nexus-devops-command-link > span,
+.nexus-devops-card-index {
+  font-size: .73rem;
+}
+@media (max-width: 680px) {
+  .nexus-devops .nexus-devops-section { font-size: .75rem; }
+  .nexus-devops-composition-item { padding: 12px 11px; }
+  .nexus-devops-composition-item > p:nth-child(2) { font-size: 1.6rem; }
+  .nexus-devops-outcome-bar, .nexus-devops-pr-bar { height: 24px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .nexus-devops-run-tick, .nexus-devops-pr-tick { transition: none; }
+}
+
+/* 400% text-only zoom and narrow viewport: sections and on-demand controls
+   must reflow instead of widening the whole document. This also preserves
+   horizontal scrolling ONLY inside intentionally scrollable data tables/nav. */
+.nexus-devops .nexus-devops-section {
+  min-width: 0;
+  flex-wrap: wrap;
+  overflow-wrap: anywhere;
+}
+.nexus-devops .nexus-devops-section::after {
+  flex: 1 1 20px;
+  min-width: 14px;
+}
+@media (max-width: 640px) {
+  /* Keep the sticky, horizontally scrollable command nav inside the viewport.
+     'clip' is not a scroll container; the nav and UTC table still scroll. */
+  .nexus-devops { overflow-x: clip; }
+  .nexus-devops-export > div:last-child {
+    flex: 1 1 100%;
+    min-width: 0;
+    width: 100%;
+  }
+  .nexus-devops-export-button {
+    min-width: 0;
+    max-width: 100%;
+    flex: 1 1 100%;
+    gap: 8px;
+    padding: 11px 12px;
+    flex-wrap: wrap;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    text-align: center;
+  }
+  .nexus-devops-trend > div:first-child { min-width: 0; }
+  .nexus-devops-trend-button {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    gap: 8px;
+    padding: 11px 12px;
+    flex-wrap: wrap;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    text-align: center;
+  }
+}
