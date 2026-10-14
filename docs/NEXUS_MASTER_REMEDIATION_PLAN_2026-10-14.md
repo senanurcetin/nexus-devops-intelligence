@@ -242,6 +242,20 @@ Tam kaynak `cc4e97de83a807cdb2a016509de7bff215bbdcce`
 #7 kapanmadı. Ücretli servis, Upstash canlı test veya
 yeni Preview/Production deploy yok.
 
+### G04 iPhone/Safari için F12 gerektirmeyen kanıt aktarımı (14 Ekim)
+
+[İndirimsiz, ağ isteği oluşturmayan güvenli API özet kopyalama](G04_COPY_SAFE_DIAGNOSTICS_2026-10-14.md):
+Mevcut `Request diagnostics` paneline **Copy safe diagnostics**
+eklendi. Kullanıcının Safari'den HTTP durum ve CDN/Redis modunu
+**çerez/token, URL, ham başlık veya gizli hata göndermeden**
+metin olarak paylaşmasına olanak verir. Pano izni reddedilirse
+readonly metin alanı gösterilir. **0 yeni origin GET**.
+Kod SHA `56c23805a55ec553d1e08a8d1e0451c01efc5e66`
+üzerinde **227/227 Node, 16/16 HTTP, 11/11 Chromium,
+11/11 Firefox**, TS/build/budget/audit 0. Yeni arayüz hâlâ
+mevcut eski Preview'da yok; G04 gerçek SSO/HTTP ve
+G06 gerçek dağıtık Redis ayrı açık kapılardır.
+
 ## 3. Yürütme sırası
 
 ### Parti A — dış yetki ve gerçek Redis tüketimi gerektirmeyen mühendislik
