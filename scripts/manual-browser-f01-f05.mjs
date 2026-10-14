@@ -369,6 +369,20 @@ async function runJourney(browser, name, width, scenario) {
       'both accepted initial panel responses expose allowlisted HTTP metadata');
       assert.equal(calls.length,before,
         'opening client-side diagnostics may NEVER trigger an origin GET');
+      await diagnostics.getByRole('button',
+        {name:'Copy safe diagnostics · no API requests'}).click();
+      const status=await diagnostics.locator('[role="status"]').textContent();
+      assert.match(status, /copied|Clipboard unavailable/,
+        'copy/share affordance must report real clipboard success or fallback');
+      if (status.includes('Clipboard unavailable')) {
+        const fallback=await diagnostics.getByRole('textbox',
+          {name:'Safe diagnostics to select and copy'}).inputValue();
+        assert.match(fallback,/Actions: HTTP 200 \| CDN MISS/);
+        assert.match(fallback,/PRs: HTTP 200 \| CDN MISS/);
+        assert.doesNotMatch(fallback,/authorization|cookie|Bearer|https:\/\//i);
+      }
+      assert.equal(calls.length,before,
+        'copying diagnostic receipts or showing fallback cannot fetch any API');
     }
     assert.deepEqual(jsErrors, [], 'no uncaught browser errors or unsafe intercepted API calls');
     assert.equal(await page.evaluate(() =>
