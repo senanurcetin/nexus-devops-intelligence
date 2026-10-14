@@ -330,7 +330,9 @@ async function runJourney(browser, name, width, scenario) {
         const search = document.querySelector('.nexus-devops-search');
         const boundary = document.querySelector('.nexus-devops-boundary-copy');
         const receipts = document.querySelectorAll('.nexus-devops-received-at');
-        if (!hero || !search || !boundary) return null;
+        const share = document.querySelector('.nexus-devops-share');
+        const shareCopy = document.querySelector('.nexus-devops-share > p');
+        if (!hero || !search || !boundary || !share || !shareCopy) return null;
         const heroBox = hero.getBoundingClientRect();
         const searchBox = search.getBoundingClientRect();
         return {
@@ -338,6 +340,8 @@ async function runJourney(browser, name, width, scenario) {
           searchTop: searchBox.top + window.scrollY,
           boundaryText: boundary.textContent ?? '',
           receiptCount: receipts.length,
+          shareWidth: share.getBoundingClientRect().width,
+          shareCopyWidth: shareCopy.getBoundingClientRect().width,
           allReceiptsHaveSource: [...receipts].every(el =>
             /^(Actions|PRs):/.test(el.textContent?.trim() ?? '')),
         };
@@ -347,6 +351,8 @@ async function runJourney(browser, name, width, scenario) {
         'data sample limits must remain visible in the compact mobile hero');
       assert.equal(placement.receiptCount, 2, 'both live source timestamps retained');
       assert.ok(placement.allReceiptsHaveSource, 'timestamps identify source panels');
+      assert.ok(placement.shareCopyWidth >= placement.shareWidth - 4,
+        'mobile share guidance must not be confined to a sidebar column');
       assert.ok(placement.heroHeight <= (width === 375 ? 700 : 790),
         'mobile intro must not monopolize the first viewport');
       assert.ok(placement.searchTop <= (width === 375 ? 850 : 970),
