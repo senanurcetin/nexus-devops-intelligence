@@ -65,6 +65,33 @@ Combining these with the prior owner Usage screenshots gives all **six** G02 met
 
 **Conditional offline review arithmetic:** at a purely illustrative **25** additional origin requests, the G02 assumption of four additional Redis commands per origin projects **218** Upstash commands and **9,354** team invocations. All six baseline values are below the calculator's conservative 80% review ceilings. This is **not** an agreed traffic budget or actual `capacity:offline` execution: exact vendor UTC snapshot/reset timing and a separately approved Preview origin budget are not recorded. G02 remains **pending formal owner review**; new Preview, Redis load and Production are not authorized.
 
+### Actual G02 offline CLI run — illustrative owner-review scenario
+
+On checked source SHA `0d33b409879a333d3143e499503e48e610e39ffa`,
+the **actual** `scripts/check-free-capacity-offline.mjs` command
+returned **`READY_FOR_OWNER_REVIEW`** for:
+Upstash 118 commands, 0 MB displayed storage, 0.00001 GB displayed
+bandwidth; team 9,329 invocations, **0.3913888889 CPU-hours** and
+**2.0 GB-hours memory**, with **25 additional origin requests assumed**.
+
+Projected values at that assumed request scope:
+Upstash **218 commands vs 400,000 engineering threshold**;
+storage **0 vs 200 MB**; bandwidth **0.00001 vs 8 GB**;
+Vercel invocations **9,354 vs 800,000**; active CPU
+**0.3913889 vs 3.2 hours**; memory **2.0 vs 288 GB-hours**.
+All six checks individually reported `withinConservativeReviewCeiling:true`.
+
+**Timestamp qualification:** `--observed-at-utc 2026-10-14T12:11:54Z`
+was an **illustrative local timestamp inferred from the screenshot
+filename under the assumed Türkiye UTC+3 offset**, not an authoritative
+Vercel or Upstash UTC reading. Therefore the tool's success is only
+an **engineering scenario**, not validated source-period alignment.
+The **25-request count has not been agreed or authorized by the owner**.
+Neither the local CLI call nor the screenshot authorizes real Redis
+commands, a new protected Preview or Production. The measured usage
+evidence can be marked collected; formal G02 release authorization
+remains a separate gate.
+
 ## 3. Gate outcome
 
 | R2 requirement | Status |
@@ -80,10 +107,14 @@ Combining these with the prior owner Usage screenshots gives all **six** G02 met
 
 Upstash appears to have ample visible headroom **for the displayed metrics**. Vercel network traffic also appears far below the two *displayed network transfer limits*. This **does not** establish a Free/zero-cost Vercel Function budget across the entire team or authorize new Preview.
 
-## 4. One remaining screenshot to reduce burden
+## 4. Remaining owner scope and period confirmation (no more metric screenshots needed)
 
-In the **same Vercel team's Usage tab** (not the individual NEXUS project), leave project filter at **All Projects**, select the current usage/billing period, then scroll/search the page for **Function Invocations**, **Active CPU** and **Provisioned Memory**. One or more screenshots showing these two readings and the period will suffice. No API keys, finance data, personal email, log token, Redis details or paid plan are needed. Do not enable Observability Plus, a paid WAF, or any plan upgrade. The existing connected Vercel billing API returned `404 costs_not_found`, which was **not** zero usage; team Observability advanced metrics have paid-tier requirements.
-
-When received, use the **actual function** totals, exact period and planned origin-GET count together with the currently supplied Upstash readings (subject to data freshness and alignment) in `npm run capacity:offline` for **READY_FOR_OWNER_REVIEW / HOLD / INCOMPLETE**. Even a READY review remains **not Preview or Production deployment authorization**.
+All six metric totals were supplied, including Functions CPU and
+provisioned memory. **No further usage metric screenshot is needed**.
+A production/release gate can proceed only after the owner separately
+agrees to an exact protected Preview SHA, a finite live origin request
+budget, and the relevant provider UTC accounting interval. The 25-request
+scenario above is not permission to conduct a Redis limit/stress test.
+Even a capacity review pass is **not** Production authorization.
 
 **Reference:** [G02 full checklist](G02_CAPACITY_PREFLIGHT_2026-10-14.md), [R2 management API reader](R2_AUTOMATED_UPSTASH_MANAGEMENT_USAGE_2026-10-14.md), [master remediation plan](NEXUS_MASTER_REMEDIATION_PLAN_2026-10-14.md), [release issue #49](https://github.com/senanurcetin/nexus-devops-intelligence/issues/49).
