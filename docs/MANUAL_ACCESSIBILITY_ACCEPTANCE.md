@@ -51,7 +51,8 @@ Kritik engeller (form çalışmıyor, sonuçlar okunamıyor, klavye tuzağı var
 
 ## Zaten doğrulanmış olanlar (insan testi yerine geçmez)
 
-- [x] Chromium, Firefox ve Playwright WebKit, 375 / 768 / 1440 pikselde temel responsive ve form denetimleri.
+- [x] Chromium ve Firefox, gerçek Playwright motorlarıyla kaynak-lokal fixture akışlarında (320 / 375 / 768 / 1280 / 1440 px) doğrulandı; bu **gerçek cihaz/ekran okuyucu kabulü değildir**.
+- [ ] **Playwright WebKit**: T-03 sırasında Amazon Linux 2023'te ICU 74/GTK/GStreamer eksikliği yüzünden tarayıcı **başlatılamadı**; uyumlu işletim sisteminde 11 senaryo tekrar çalıştırılmalı. **Gerçek Safari/iPhone kontrolü de ayrıca açık.**
 - [x] axe-core otomatik WCAG 2/2.1 A/AA denetiminde test edilen akışlarda sıfır otomatik ihlal.
 - [x] Ana arama alanından submit düğmesine Tab/Shift+Tab geçişi ve görünür odak.
 - [x] Actions/PR yükleme ve hata panellerinin ayrı davranışı, stale-response yarış senaryosu.
