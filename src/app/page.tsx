@@ -460,15 +460,15 @@ export default function NexusDeveloperPreview() {
         <div className="nexus-devops-hero mb-8 grid gap-8 lg:grid-cols-[1.5fr_1fr] lg:items-end">
           <div>
             <div className="nexus-devops-eyebrow mb-3">NEXUS / REPOSITORY OPERATIONS · 06</div>
-            <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-[#4ea8ff]/30 bg-[#4ea8ff]/10 px-3 py-1 text-xs font-medium uppercase tracking-wider text-[#4ea8ff]">
+            <div className="nexus-devops-hero-badge mb-4 inline-flex items-center gap-2 rounded-full border border-[#4ea8ff]/30 bg-[#4ea8ff]/10 px-3 py-1 text-xs font-medium uppercase tracking-wider text-[#4ea8ff]">
               <ShieldCheck className="h-4 w-4" /> Public API · Read-only preview
             </div>
             <h1 className="max-w-2xl text-4xl font-semibold tracking-tight text-white sm:text-5xl">
               Engineering signals. <span className="text-[#4ea8ff]">Linked to evidence.</span>
             </h1>
-            <p className="mt-5 max-w-2xl text-base leading-7 text-slate-400">
-              Inspect sampled GitHub workflow outcomes and reported merge states in one source-linked dashboard.
-              Investigate signals, then open the original records. No workflow execution or repository writes.
+            <p className="nexus-devops-hero-description mt-5 max-w-2xl text-base leading-7 text-slate-400">
+              Inspect sampled GitHub workflow outcomes and reported PR merge states with direct source links.
+              Read-only analysis: no workflow execution or repository writes.
             </p>
             <div className="nexus-devops-hero-facts" aria-label="Dashboard data boundaries">
               <span><span aria-hidden="true" className="nexus-devops-fact-dot" /> Public GitHub REST</span>
@@ -477,11 +477,13 @@ export default function NexusDeveloperPreview() {
             </div>
           </div>
           <div className="nexus-devops-evidence-note rounded-2xl border border-slate-800 bg-slate-900/75 p-5 text-sm leading-6 text-slate-400">
-            <div className="mb-2 flex items-center gap-2 font-semibold text-slate-200">
-              <GitBranch className="h-4 w-4 text-[#4ea8ff]" /> Limited public preview
+            <div className="nexus-devops-note-title mb-2 flex items-center gap-2 font-semibold text-slate-200">
+              <GitBranch className="h-4 w-4 text-[#4ea8ff]" /> Source coverage
             </div>
-            Results are samples: up to 10 workflow runs and 5 open PRs. Merge states can be pending.
-            No token, AI diagnosis, account-wide billing data or deployment claim.
+            <p className="nexus-devops-boundary-copy">
+              Sampled results: up to 10 workflow runs and 5 open PRs. Merge states may be pending.
+              No token, AI diagnosis, account-wide billing data or deployment claim.
+            </p>
             <div className="nexus-devops-data-state" role="status" aria-live="polite"
               data-state={loading ? 'loading' : actions.error && pulls.error ? 'failed' : actions.error || pulls.error ? 'warning' : actions.data && pulls.data ? 'ready' : 'idle'}>
               <span className="nexus-devops-state-dot" aria-hidden="true" />
@@ -508,12 +510,13 @@ export default function NexusDeveloperPreview() {
               </button>
             )}
             <div className="nexus-devops-receipts" aria-label="Last successful source responses">
+              <p className="nexus-devops-receipts-heading">Source responses · browser local time</p>
               <p className="nexus-devops-received-at">
-                Actions: {actionsReceivedAt ? `received at ${new Date(actionsReceivedAt).toLocaleTimeString()} (browser local time)` :
+                Actions: {actionsReceivedAt ? new Date(actionsReceivedAt).toLocaleTimeString() :
                   actionsLoading ? 'loading' : 'no verified response for this selection'}
               </p>
               <p className="nexus-devops-received-at">
-                PRs: {pullsReceivedAt ? `received at ${new Date(pullsReceivedAt).toLocaleTimeString()} (browser local time)` :
+                PRs: {pullsReceivedAt ? new Date(pullsReceivedAt).toLocaleTimeString() :
                   pullsLoading ? 'loading' : 'no verified response for this selection'}
               </p>
             </div>
