@@ -5,7 +5,8 @@
  * Run ONLY against a locally served production build:
  *   npm ci && npm run build
  *   npm install --no-save --package-lock=false playwright-core@1.64.0 axe-core@4.11.0
- *   npx playwright-core install chromium
+ *   npx playwright-core install chromium   # optionally: firefox / webkit
+ *   # WebKit on Linux needs compatible system libraries; Mac Safari is separate.
  *   npm run start
  *   node --import tsx scripts/manual-browser-f01-f05.mjs
  *
@@ -33,6 +34,11 @@ if (source.protocol !== 'http:' ||
   throw new Error('Browser regression is loopback-only; refuse public Preview/Production URLs.');
 }
 const base = source.origin;
+// Only explicit supported engines; never silently fall back to Chromium on failure.
+const engineName = process.env.NEXUS_BROWSER_ENGINE || 'chromium';
+if (!['chromium','firefox','webkit'].includes(engineName)) {
+  throw new Error('NEXUS_BROWSER_ENGINE must be chromium, firefox or webkit.');
+}
 const captureDir = process.env.NEXUS_BROWSER_CAPTURE_DIR || null;
 const exactSourceTag = execFileSync('git', ['rev-parse', '--short=12', 'HEAD'], {encoding:'utf8'}).trim();
 const repoA = 'owner/one', repoB = 'owner/two';
@@ -131,7 +137,8 @@ async function runJourney(browser, name, width, scenario) {
   const context = await browser.newContext({
     viewport: {width, height: 900}, acceptDownloads: true,
     serviceWorkers: 'block',
-    permissions: ['clipboard-read', 'clipboard-write'],
+    // WebKit/Firefox do not necessarily support Chromium clipboard permissions.
+    ...(engineName === 'chromium' ? {permissions:['clipboard-read','clipboard-write']} : {}),
   });
   const page = await context.newPage();
   const calls = [], jsErrors = [], blocked = [];
@@ -291,7 +298,7 @@ async function runJourney(browser, name, width, scenario) {
       if (captureDir) {
         await mkdir(captureDir, {recursive:true});
         await page.screenshot({
-          path:join(captureDir, 'nexus-'+exactSourceTag+'-'+name+'-'+width+'px-utc-expanded.png'),
+          path:join(captureDir, 'nexus-'+engineName+'-'+exactSourceTag+'-'+name+'-'+width+'px-utc-expanded.png'),
           fullPage:true, animations:'disabled',
         });
       }
@@ -331,11 +338,11 @@ async function runJourney(browser, name, width, scenario) {
     let screenshot = null;
     if (captureDir) {
       await mkdir(captureDir, {recursive:true});
-      screenshot = join(captureDir, 'nexus-'+exactSourceTag+'-'+name+'-'+width+'px.png');
+      screenshot = join(captureDir, 'nexus-'+engineName+'-'+exactSourceTag+'-'+name+'-'+width+'px.png');
       await page.screenshot({path:screenshot, fullPage:true, animations:'disabled'});
     }
     console.log(JSON.stringify({
-      sourceSHA:exactSourceTag, screenshot,
+      sourceSHA:exactSourceTag, browserEngine:engineName, screenshot,
       scenario:name, viewport:width, result:'PASS', apiGETs:calls.length,
       interceptedByPath:Object.fromEntries([...paths].map(p => [p,calls.filter(c=>c.path===p).length])),
       blockedExternalOrigins:blocked.length, axeViolations:0, pageErrors:0,
@@ -345,17 +352,20 @@ async function runJourney(browser, name, width, scenario) {
   }
 }
 
-let chromium;
+let browserType;
 try {
-  ({chromium} = await import('playwright-core'));
+  const engines = await import('playwright-core');
+  browserType = engines[engineName];
 } catch {
   throw new Error('Install optional manual-browser tools with npm install --no-save --package-lock=false playwright-core@1.64.0 axe-core@4.11.0');
 }
-const browser = await chromium.launch({
+const browser = await browserType.launch({
   headless: true,
-  ...(process.env.NEXUS_CHROMIUM_EXECUTABLE
-    ? {executablePath: process.env.NEXUS_CHROMIUM_EXECUTABLE} : {}),
-  args: ['--no-sandbox'],
+  ...(engineName === 'chromium' ? {
+    ...(process.env.NEXUS_CHROMIUM_EXECUTABLE
+      ? {executablePath: process.env.NEXUS_CHROMIUM_EXECUTABLE} : {}),
+    args:['--no-sandbox'],
+  } : {}),
 });
 try {
   for (const [name,width,scenario] of [
@@ -371,7 +381,7 @@ try {
     ['rapid-source-switch-mobile',375,'race'],
     ['duplicate-share-link-mobile',375,'invalid'],
   ]) await runJourney(browser,name,width,scenario);
-  console.log('F01–F05 fixture browser regression: all eleven sessions PASSED (no live API/Redis calls).');
+  console.log('F01–F05 '+engineName+' '+browser.version()+' fixture browser regression: all eleven sessions PASSED (no live API/Redis calls).');
 } finally {
   await browser.close();
 }
