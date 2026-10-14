@@ -13,7 +13,8 @@
     "smoke:http": "node scripts/smoke-http.mjs",
     "inspect:budget": "node scripts/inspect-q05-bundle.mjs",
     "test:routes": "node --import tsx --test tests/next-routes.test.mjs",
-    "test:redis:offline": "node --import tsx scripts/verify-local-redis-multiprocess.mjs"
+    "test:redis:offline": "node --import tsx scripts/verify-local-redis-multiprocess.mjs",
+    "smoke:http:offline": "node scripts/smoke-http-offline.mjs"
   },
   "dependencies": {
     "lucide-react": "^0.475.0",
