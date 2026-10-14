@@ -4,6 +4,8 @@
 
 **Manual Redis probe R10 compatibility (14 Oct, source-only):** Earlier versions of `scripts/verify-protected-redis-preview.mjs` attached `_nexus_rate_check` to API queries. Since strict parameter validation landed in PR #57, that parameter would produce **400/no-store before Redis**. [R10 correction and offline QA](R10_PROTECTED_PREVIEW_PROBE_QA_2026-10-14.md) remove it. A CDN `HIT`, `STALE`, `REVALIDATED`, unknown or missing cache-status header cannot prove origin execution. **No current Preview test or Redis traffic is authorized by this note; do not run even the default single-request probe before owner usage approval and a bounded Preview scope.**
 
+**Latest owner-authorized G03 Preview (14 Oct):** [exact-SHA deployment and remaining G04 evidence](G03_PROTECTED_PREVIEW_ACCEPTANCE_2026-10-14.md) — unique URL `https://nexus-devops-intelligence-jknosakps-senanurs-projects-102fb36c.vercel.app`, deployment `dpl_9sq98XLM2DZAgyBFZoFVUde2NucT`, `READY`, `target:null` (Preview) and GitHub source SHA `2b5fb7c379bd1f939f3b50f286edfb868ddb386a`. **Owner authorized at most 25 Preview-origin functional requests, NO real Redis stress and NO Production**. SSO enabled at project config level, but authenticated browser acceptance G04 **NOT VERIFIED** because external fetchers could not access the URL. Production alias remains linked to the older SHA `74cd0e3` and known READY rollback deployment. Older date-specific examples below must not be mistaken for this current deployed Preview.
+
 ## 0. Hard stop rules
 
 1. **No GitHub Actions, CircleCI, git auto-deploy, cron-based requests, paid WAF, paid Vercel/Upstash service or Production publication without explicit owner approval.** Keep `git.deploymentEnabled:false`. GitHub PR merge is not a deployment.
