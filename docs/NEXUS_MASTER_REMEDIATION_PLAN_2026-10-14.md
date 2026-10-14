@@ -118,6 +118,22 @@ okunamadı. Metrik bilinmediğinde tahmini sıfırla değiştirilemez;
 `UPSTASH_ONLY_VERIFIED` tüm G02 onayı değildir. Ücretli
 Observability Plus etkinleştirilmez, Redis'e probe gönderilmez.
 
+### R2 gerçek hesap ekranlarından elde edilen kısmi kullanım kanıtı — 14 Ekim
+
+[R2 sahibin sağladığı altı ekran görüntüsünden doğrulanan kullanım kayıtları](R2_OWNER_USAGE_SNAPSHOT_2026-10-14.md):
+**Upstash Free** 118/500.000 aylık komut, yaklaşık 10 KB/10 GB,
+gösterilen 0 B/**250 MB** ve $0,00. NEXUS proje özel
+Vercel: 1,26 MB Fast Data Transfer, 270,57 KB Fast Origin,
+195 CDN istek, 33 ISR Reads. **Tüm Vercel takımının 30 günlük**
+görünümü: 1,01 GB Fast Data Transfer / 100 GB, 157,28 MB Fast Origin
+/ 10 GB, 23 bin CDN istek, 642 ISR Reads, 9 saniye **CDN request CPU**
+(**Function CPU değildir**). Güncel G02 storage code sınırı 256 MB'dan,
+hesap paneline göre **250 MB'ye** düşürüldü (proje 80% review sınırı
+**200 MB**). **Gerçek Function Invocations, Active Function CPU,
+Provisioned Memory GB-hours, kesin UTC ölçüm zamanı ve origin-GET
+bütçesi hâlâ eksik.** CDN request sayısını Function Invocations sayısı
+yerine geçirmiyoruz. **R2 G02 sadece PARTIAL EVIDENCE, henüz PASS değil.**
+
 ## 3. Yürütme sırası
 
 ### Parti A — dış yetki ve gerçek Redis tüketimi gerektirmeyen mühendislik

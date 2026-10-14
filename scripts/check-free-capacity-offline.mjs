@@ -11,7 +11,7 @@ import {pathToFileURL} from 'node:url';
 
 const LIMITS = Object.freeze({
   upstashMonthlyCommands: 500_000,
-  upstashDataMb: 256,
+  upstashDataMb: 250, // Owner screenshot 2026-10-14 displays 250 MB, more restrictive than historical 256.
   upstashBandwidthGb: 10,
   vercelInvocations: 1_000_000,
   vercelActiveCpuHours: 4,
