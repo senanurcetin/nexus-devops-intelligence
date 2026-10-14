@@ -9,10 +9,17 @@ export const runtime = 'nodejs';
 
 /** Fixed-host, anonymous, GET-only public GitHub PR endpoint. */
 export async function GET(request: NextRequest) {
-  const repository = request.nextUrl.searchParams.get('repository') || '';
-  // Reject malformed or oversized parameters before retaining an in-flight key.
-  // Under load these must stay HTTP 400, never become a misleading busy 503.
+  const repositories = request.nextUrl.searchParams.getAll('repository');
+  let repository: string;
+  // Only one repository field and no extra parameters. Keep source identity
+  // unambiguous across all five endpoints, even if a share URL is tampered with.
+  // Invalid inputs must be rejected before Redis admission or GitHub fanout.
   try {
+    if (repositories.length !== 1 ||
+        [...request.nextUrl.searchParams.keys()].some(key => key !== 'repository')) {
+      throw new Error('Unexpected query parameters');
+    }
+    repository = repositories[0];
     parsePublicRepository(repository);
   } catch {
     return NextResponse.json(
