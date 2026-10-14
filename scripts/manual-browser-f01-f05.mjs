@@ -14,7 +14,9 @@
  * is blocked. Only localhost is accepted. No protected Preview or Production.
  */
 import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
+import { readFile, mkdir } from 'node:fs/promises';
+import { join } from 'node:path';
+import { execFileSync } from 'node:child_process';
 import { createRequire } from 'node:module';
 import { summarizePublicActions } from '../src/lib/github-public-actions.ts';
 import { summarizePublicPullRequests } from '../src/lib/nexus-public-prs.ts';
@@ -31,6 +33,8 @@ if (source.protocol !== 'http:' ||
   throw new Error('Browser regression is loopback-only; refuse public Preview/Production URLs.');
 }
 const base = source.origin;
+const captureDir = process.env.NEXUS_BROWSER_CAPTURE_DIR || null;
+const exactSourceTag = execFileSync('git', ['rev-parse', '--short=12', 'HEAD'], {encoding:'utf8'}).trim();
 const repoA = 'owner/one', repoB = 'owner/two';
 const stamp = '2026-10-13T12:00:00Z';
 const sha = 'a'.repeat(40);
@@ -207,6 +211,13 @@ async function runJourney(browser, name, width, scenario) {
     } else {
       await ready(repoA);
       assert.equal(calls.length, 2, 'only two initial panel API calls');
+      const chartMeasures = await page.evaluate(() => ({
+        bars:[...document.querySelectorAll('.nexus-devops-outcome-bar, .nexus-devops-pr-bar')].map(node => node.getBoundingClientRect().height),
+        cells:document.querySelectorAll('.nexus-devops-composition-item').length,
+      }));
+      assert.equal(chartMeasures.bars.length, 2, 'both independent source charts rendered');
+      assert.ok(chartMeasures.bars.every(h => h >= 22), 'sample chart height must remain readable');
+      assert.equal(chartMeasures.cells, 9, '4 Actions and 5 PR composition labels');
       const json = JSON.parse(await download('Export JSON'));
       assert.equal(json.repository, repoA);
       assert.equal(json.actions.inspected_runs, 2);
@@ -232,6 +243,15 @@ async function runJourney(browser, name, width, scenario) {
         const table = page.getByRole('region', {name:/Seven-day UTC workflow count table/});
         await table.waitFor();
         assert.equal(await table.locator('tbody tr').count(), 7);
+        const tableMeasures = await table.evaluate(node => ({
+          viewport: node.clientWidth,
+          content: node.scrollWidth,
+          trackHeights:[...node.querySelectorAll('.nexus-devops-trend-track')].map(x => x.getBoundingClientRect().height),
+          headerSize:getComputedStyle(node.querySelector('thead th')).fontSize,
+        }));
+        assert.ok(tableMeasures.trackHeights.every(h => h >= 16), 'UTC bars must be >= 16px');
+        assert.ok(parseFloat(tableMeasures.headerSize) >= 11.5, 'UTC header labels must be legible');
+        assert.ok(tableMeasures.content >= tableMeasures.viewport, 'UTC table scroll safely contained');
       }
       assert.equal(calls.length, 5, 'two panels plus three manually triggered detail GETs');
       const hide = scenario === 'incomplete' ? null : page.getByRole('button', {name:'Hide 7-day UTC trend'});
@@ -267,7 +287,14 @@ async function runJourney(browser, name, width, scenario) {
       return r.violations.map(v => v.id);
     });
     assert.deepEqual(audit, [], 'automated axe WCAG A/AA');
+    let screenshot = null;
+    if (captureDir) {
+      await mkdir(captureDir, {recursive:true});
+      screenshot = join(captureDir, 'nexus-'+exactSourceTag+'-'+name+'-'+width+'px.png');
+      await page.screenshot({path:screenshot, fullPage:true, animations:'disabled'});
+    }
     console.log(JSON.stringify({
+      sourceSHA:exactSourceTag, screenshot,
       scenario:name, viewport:width, result:'PASS', apiGETs:calls.length,
       interceptedByPath:Object.fromEntries([...paths].map(p => [p,calls.filter(c=>c.path===p).length])),
       blockedExternalOrigins:blocked.length, axeViolations:0, pageErrors:0,
@@ -291,14 +318,17 @@ const browser = await chromium.launch({
 });
 try {
   for (const [name,width,scenario] of [
+    ['complete-narrow',320,'complete'],
     ['complete-mobile',375,'complete'],
+    ['complete-tablet',768,'complete'],
     ['complete-desktop',1280,'complete'],
+    ['complete-wide',1440,'complete'],
     ['partial-source-mobile',375,'partial'],
     ['incomplete-trend-desktop',1280,'incomplete'],
     ['rapid-source-switch-mobile',375,'race'],
     ['duplicate-share-link-mobile',375,'invalid'],
   ]) await runJourney(browser,name,width,scenario);
-  console.log('F01–F05 fixture browser regression: all six sessions PASSED (no live API/Redis calls).');
+  console.log('F01–F05 fixture browser regression: all nine sessions PASSED (no live API/Redis calls).');
 } finally {
   await browser.close();
 }
