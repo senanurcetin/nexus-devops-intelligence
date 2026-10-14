@@ -254,6 +254,15 @@ async function runJourney(browser, name, width, scenario) {
         assert.ok(tableMeasures.content >= tableMeasures.viewport, 'UTC table scroll safely contained');
       }
       assert.equal(calls.length, 5, 'two panels plus three manually triggered detail GETs');
+      // Capture the inspected UTC chart while it is actually expanded,
+      // before the scenario collapses it to verify zero-refetch behavior.
+      if (captureDir) {
+        await mkdir(captureDir, {recursive:true});
+        await page.screenshot({
+          path:join(captureDir, 'nexus-'+exactSourceTag+'-'+name+'-'+width+'px-utc-expanded.png'),
+          fullPage:true, animations:'disabled',
+        });
+      }
       const hide = scenario === 'incomplete' ? null : page.getByRole('button', {name:'Hide 7-day UTC trend'});
       if (hide) {
         await hide.click();
