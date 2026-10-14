@@ -146,6 +146,27 @@ sayılarıdır. **Function Active CPU ve Provisioned Memory GB-hours
 hâlâ eksik**, fatura/limit penceresinin başlangıcı ve kaynak bütçesi
 de doğrulanmadı. **G02 INCOMPLETE**; hiçbir dağıtım yetkisi verilmedi.
 
+### R2 — altı gerçek kullanım metriği, şartlı kapasite incelemesi (14 Ekim)
+
+Dokuz ek Vercel Fluid Functions ekranında **takım Active CPU
+23m29s / 4h** (NEXUS 8 sn) ve **Provisioned Memory
+2.0 / 360 GB-saat** (NEXUS 0,01) görüldü. Önceki
+**9.329/1.000.000 invocation**, Upstash **118/500K komut,
+10 KB/10 GB bant, 0 B/250 MB depolama** ile tüm altı
+metriğin ekran kanıtı oluştu.
+[R2 gerçek kullanım ve yerel kapasite sonucu](R2_OWNER_USAGE_SNAPSHOT_2026-10-14.md).
+
+Kaynak SHA `0d33b409879a333d3143e499503e48e610e39ffa`
+üzerinde **25 ek origin GET varsayımıyla** gerçekten çalıştırılan
+`capacity:offline` çıktısı **`READY_FOR_OWNER_REVIEW`**,
+6/6 metrik 80% sınırın altında. **Ancak:** UTC zaman girdisi
+screenshot dosya adından ve Türkiye saat diliminden
+türetilmiş **temsili zaman**, sağlayıcı tarafından doğrulanmış
+UTC fatura/ölçüm dönemi değil. 25 istek de kullanıcı tarafından
+onaylanmış bir trafik izni değil. **R2 metrik toplama DONE;
+G02 sahibin kullanım dönemi/trafik sınırı incelemesini bekliyor,
+G03 Preview ve G07 Production yetkisi verilmedi.**
+
 ## 3. Yürütme sırası
 
 ### Parti A — dış yetki ve gerçek Redis tüketimi gerektirmeyen mühendislik
