@@ -44,6 +44,25 @@ Use the **unique generated Preview URL**, in a normal browser legitimately signe
 
 A finished G04 requires independently observed real protected Preview behavior under the agreed 25-origin cap, with actual successful authentication/expected source statuses. If the owner cannot produce that evidence, it **remains OPEN**; do not infer acceptance from build success or screenshot-free metadata.
 
+## G04 follow-up — four owner browser screenshots (14 October 2026)
+
+**Evidence source:** Four actual user-supplied NEXUS UI screenshots from the authorized post-deployment browser session, **not fixture/test images**. Screenshots are **not redistributed or committed**; only non-secret visible facts are summarized. The screenshot crops have no browser address bar or DevTools Network panel, so they **do not independently establish** the exact rendered URL, HTTP statuses, Vercel SSO challenge/identity, external cache disposition, function instance IDs, request ledger or browser/OS. The user supplied these after being asked to open this Preview.
+
+Visible screenshot content:
+
+- The NEXUS branded desktop dashboard renders with no obvious screenshot-level layout overflow or missing top panels. The selected public GitHub repository is `senanurcetin/ot-sentinel`, not a synthetic fixture label.
+- Source coverage panel states **BOTH SOURCE PANELS LOADED** with browser local time **Actions 19:28:28**, **PRs 19:28:29**. This is **user-facing client state**, not an independently observed HTTP 200/Redis/backend health metric.
+- Summary reports **10 / 10** recent sampled workflow runs as successful; **four** sampled open PRs, including **two unverified statuses**, one clean and one draft. The app explicitly states limited samples; **100% is not historic repo reliability**.
+- The workflow distribution, PR composition tiles, investigative suggestions for PR **#37** and **#36**, selected source details and original GitHub link controls are visible. This establishes **presence and internal presentation coherence**, not independently validated contents of original GitHub responses nor working external navigation.
+- F01 CSV/JSON **buttons are visible**, but **no exported file contents, file integrity or zero-request property** were verified from these screenshots. F03 copy/share button is visible but copying and browser history are untested. F04 check/review inspection buttons are present but their on-demand HTTP flow was not captured.
+- The user clicked the F05 UTC 7-day trend control. The UI displays **2026-10-07 through 2026-10-13 UTC**, **100 of 225 returned**, explicitly **Incomplete coverage**, and correctly **suppresses the daily bar chart and historical daily success-rate inference**. This is a positive user-observed partial-source-state behavior, not a complete-window trend acceptance.
+
+**Read-only independent Vercel follow-up:** Project/deployment-scoped Hobby runtime log query for the recent 30-minute interval returned an empty **grouped requestPath table**, which cannot prove that no requests occurred or reveal exact origin count. A separately fetched aggregated runtime error view reported **no runtime errors found in the selected time range**, subject to plan, retention and reporting limits. No new application HTTP request was generated for this log check.
+
+**G04 disposition: PARTIAL_REAL_BROWSER_EVIDENCE, NOT COMPLETE.** Real visual UI loading + sample data presentation + guarded incomplete F05 trend are supported by user screenshots. SSO challenge/authenticated HTTP evidence, exact status headers, source response integrity, F01 file validation, F03 browser navigation, F04 click-only details, total user-origin request count versus the **25-request cap**, mobile/keyboard/human accessibility, and independent Redis shared admission remain **NOT VERIFIED**. **Do not silently spend additional origin traffic or claim all F01–F05 tests passed.**
+
+For a minimal optional nontechnical review (no new HTTP if already visible): in Chrome/Edge, press **F12 → Network → Fetch/XHR** and type `public-` in the filter. This lists app API calls **only if DevTools had been recording while requests occurred**; reopening DevTools later cannot recover past requests. Do not refresh or repeatedly click Analyze just to produce a log, because each source refresh may consume the remaining approved origin budget. If the tab is closed or Network history absent, retaining the current PARTIAL evidence is preferable to exceeding the authorization.
+
 ## Remaining gates and stop policy
 
 - G02: six real owner usage metrics were collected and a 25-request **illustrative** local capacity calculation was within 80% caps, but vendor reset-period precision and this actual authorized Preview scope need dated review; the operator did not run a live 21-request proof.
