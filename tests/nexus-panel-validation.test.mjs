@@ -113,7 +113,9 @@ test('readPublicPanel passes validated data and preserves HTTP error semantics',
     async () => Response.json(summary),
     value => isPublicActionsSample(value, repo),
   );
-  assert.deepEqual(success, {data: summary, error: null});
+  assert.deepEqual(success, {data: summary, error: null, receipt: {
+    status:200,cache:'not reported',admission:'not reported',limitSource:'not reported',
+  }});
   const rateLimited = await readPublicPanel('/api/public-actions',
     new AbortController().signal,
     async () => Response.json({ error: 'limit' },
