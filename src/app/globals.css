@@ -802,3 +802,45 @@ body { background: #071829; color: #eff5ff; }
   background: linear-gradient(118deg, rgba(10, 31, 54, .97), rgba(18, 51, 77, .90));
 }
 .nexus-devops-run-details li { overflow-wrap: anywhere; }
+
+/* F-05: opt-in fully validated UTC window; no hidden background requests. */
+.nexus-devops-trend {
+  min-width: 0;
+  border: 1px solid rgba(108, 158, 207, .43);
+  background: linear-gradient(128deg, #0e2b47, #0b2138);
+}
+.nexus-devops-trend-button {
+  border: 1px solid #6b96bb;
+  background: rgba(55, 126, 176, .26);
+  color: #d9efff;
+}
+.nexus-devops-trend-button:hover:not(:disabled) {
+  background: rgba(81, 151, 207, .37);
+  border-color: #abd9ff;
+}
+.nexus-devops-trend-button:disabled { opacity: .5; cursor: wait; }
+.nexus-devops-trend-button:focus-visible {
+  outline: 2px solid #aadfff;
+  outline-offset: 3px;
+}
+.nexus-devops-trend-table th, .nexus-devops-trend-table td {
+  border-bottom: 1px solid rgba(131, 180, 218, .16);
+  padding: .62rem .35rem;
+  color: #dfedfa;
+}
+.nexus-devops-trend-table thead th {
+  color: #b2d3f1;
+  font-size: .7rem;
+  white-space: nowrap;
+}
+.nexus-devops-trend-track {
+  min-width: 3.5rem;
+  flex: 1;
+  display: flex;
+  align-items: stretch;
+  height: .56rem;
+  overflow: hidden;
+  border-radius: .4rem;
+  background: rgba(116, 155, 188, .13);
+}
+.nexus-devops-trend-track span { height: 100%; }
