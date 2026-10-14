@@ -6,6 +6,8 @@
 **Current deployed Preview:** `dpl_9sq98XLM2DZAgyBFZoFVUde2NucT` on **older** SHA `2b5fb7c379bd1f939f3b50f286edfb868ddb386a`, `READY`, SSO protection enabled at project configuration level.  
 **Production:** existing `READY` deployment `dpl_9fXGATNHhyhNVrN1i47k3BU4u5K5`, SHA `74cd0e344eb94255b4bc8db99e4a4dc7f3a5a0bf`, **unchanged**.
 
+**Post-ledger R3 update (14 Oct):** [Real Windows WebKit 27.2 test and Windows path correction](R3_REAL_WEBKIT_WINDOWS_QA_2026-10-14.md), executable source `7bd062d30bec50fb83ecca1ad031a14b75816a46` **221/221 Node**, **16/16 offline HTTP**, **11/11 genuine headless WebKit fixture** with zero external requests/page errors/axe violations, Next build/TS/JS budget PASS. Original Amazon Linux host remains unsupported; the WebKit engine test was completed instead on already-connected authorized Windows under a temp checkout. **R3 DONE_OFFLINE**; G05 real iOS/Safari/VoiceOver/NVDA human review and G04/G06/G07 release gates still OPEN. This report documents a source-only PR, not a new Preview or Production deployment.
+
 ## 1. Confirmed completed work
 
 | Gate / work | Status | Grounding |
@@ -25,7 +27,7 @@
 | --- | --- | --- | --- |
 | 1 | **G03 update to PR #70 source** | One new SSO-only Preview deployment pinned to full SHA `8c823bb858a6910e4041151f288c3d4866f2cf6a`, verify READY/SSO/alias/sensitive env scopes and exact SHA. Source currently cannot be evaluated in live UI | **Attempt to create new Preview was blocked by platform safety control**, not retried via alternative endpoint. Latest deployment listing confirms NO new deployment. Do not claim new receipts are already live |
 | 2 | **G04 live browser F01–F05** | Legitimate SSO browser visit of newly authorized exact-SHA Preview; in-page **Request diagnostics** HTTP code/cache mode shown without F12 or extra GET, F01 exported file verified, F03 browser URL/history checked, F04 one user-triggered PR evidence, F05 partial/complete behavior, source identity; bounded origin request ledger | App screenshot without address/headers alone is partial; don't infer HTTP status, absence of errors or exact budget |
-| 3 | **R3 / G05 real browsers & assistive tech** | WebKit on supported OS (pinned Playwright 1.64), **then independent real Safari/iOS plus NVDA/VoiceOver and signed human editorial/accessibility SR-01–12** | Amazon Linux 2023 lacks ICU 74, GTK/WPE, GStreamer/media deps. No hack/symlink counts as pass. Existing sandbox cannot directly launch Microsoft's external Ubuntu image |
+| 3 | **G05 real device / assistive tech** | **R3 real Playwright WebKit 27.2 automated tests now 11/11 PASS on Windows**, with 221/221 Node, 16/16 local HTTP; independently complete real Safari/iOS, NVDA/VoiceOver and signed human editorial/accessibility SR-01–12 | Automation is NOT human assistive technology or an Apple Safari environment; no false G05 PASS |
 | 4 | **G06 independent Vercel shared Redis / #7** | Prove two **independently identified** Vercel serverless instances use the same Redis rate-limit budget and that an actual 429/no-store/Retry-After arises **from Redis**, with valid Free delta | Neither local test, `shared-redis` response mode, one instance nor a CDN MISS proves cross-instance behavior. Previous approval explicitly excluded a live 21-request Redis stress test; don't do it |
 | 5 | **R11 field performance** | When authenticated Preview allows it, observe actual user/browser LCP/CLS/INP or explicitly record NOT MEASURED. Local fixture timings alone never imply field CWV | No paid Vercel Observability Plus, hidden background polling or unaudited API traffic |
 | 6 | **G07 Production** | Separate exact-SHA owner authorization, all relevant P0 security/real data/AT gates verified or risks explicitly accepted, preserve READY rollback, bounded post-release smoke | Do not promote Preview, alter Production aliases or start paid services under this source-work mandate |
@@ -39,7 +41,7 @@
 1. Keep PR #70 as **current GitHub source**, no automatic deploy.
 2. Obtain a supported authorized Preview deployment path for `8c823bb...`; only then activate safe visible response receipts in the SSO Preview. **No fallback that disables SSO or affects Production**.
 3. Complete G04 with actual browser evidence and finite origin budget, leveraging receipt UI to avoid requesting DevTools screenshots. Browser screenshots already received are sufficient for partial UI/F05 acceptance; don't request duplicates.
-4. Run the Playwright WebKit suite on a compatible non-paid host and separately record actual Safari/iPhone/NVDA/VoiceOver human accessibility review; do not conflate automated axe with human AT.
+4. **R3 automated WebKit is now DONE_OFFLINE**: real Windows WebKit 27.2, 11/11 Playwright fixture, 221/221 Windows Node after native path fix. Obtain independent real Apple Safari/iPhone/NVDA/VoiceOver human accessibility signoff; do not conflate axe with human AT.
 5. Define an explicit safety-reviewed, bounded and separately authorized independent Redis-instance test, or retain G06 as a release-stopping public-rate-limit risk.
 6. Only after acceptance and explicit Production go/no-go, deploy exact approved source with rollback available.
 

@@ -21,7 +21,7 @@ Hedef; salt-okunur, gerçek kaynağı gösterilen, maliyeti doğrulanmış, elit
 - F05: yalnızca tamamlanmış yedi UTC gününün hacim tablosu; eksik source coverage ile sahte tarihsel sonuç yok.
 - S03: beş public API'de belirsiz/tekrarlı parametre Redis öncesinde 400/no-store; simüle edilmiş ortak Redis sınırı 429; arızası 503.
 
-**En son doğrulanmış offline kanıt:** 205/205 Node, 16/16 loopback HTTP, Chromium 11/11, Firefox 11/11 iki ayrı çalışmada, TS/Next build, JS bundle bütçesi ve audit 0. [T03 kaynak kanıtı](T03_CROSS_ENGINE_WEBKIT_QA_2026-10-14.md). WebKit hiç başlayamadı; gerçek Safari, iPhone, VoiceOver ve korumalı gerçek Preview henüz test edilmedi. T02 görsel düzenlemeleri mühendislikçe bitti, insan estetik onayı açık.
+**En güncel kaynak-lokal çapraz platform QA:** [R3 gerçek Windows WebKit 27.2](R3_REAL_WEBKIT_WINDOWS_QA_2026-10-14.md), tam kaynak `7bd062d30bec50fb83ecca1ad031a14b75816a46`: Windows **221/221 Node**, Next build/TS, **16/16** yerel HTTP, gerçek Playwright WebKit **11/11** (axe 0 / JS hatası 0 / dış ağ 0). Önceki T03 Amazon Linux WebKit NOT RUN kanıtı tarihsel olarak saklanır. Gerçek Apple Safari/iPhone/VoiceOver ve yeni kaynağın korumalı Preview kabulü **açık**.
 
 ## 2. Açık işler — öncelik, bağımlılık, doğrulanabilir kabul
 
@@ -32,7 +32,7 @@ P0 = yayın engeli; P1 = ürün kalitesi; P2 = ertelenen kapsam. 'Offline DONE' 
 | R0 | P0 | Mühendislik: iddia/kanıt/doküman tutarlılığı | **DONE_OFFLINE** (yeniden dağıtımda kontrol) | Git main, tested application SHA, deployed Preview ve Production SHA ayrı; eski yanlış WebKit PASS işareti kaldırılmış; tarihli kaynak ve testler belirtilmiş | Yok |
 | R1 / G01 | P0 | Mühendislik: son değişikliklerden sonra immutable release candidate | **DONE_OFFLINE** (son app QA: 8bb2e7c; ayrı Preview onayı gerekir) | Tam 40-karakter SHA, temiz npm ci, tüm Node testleri, typecheck, production build, JS budget, audit, 16 HTTP, Chromium/Firefox (+ gerçekten çalıştırılmışsa WebKit) suite, loglar ve kaynak hash; herhangi hata => HOLD | R0 ve son mühendislik değişiklikleri |
 | R2 / G02 | P0 | Hesap sahibi: Upstash Free ve tüm Vercel Hobby ekibi gerçek tüketimi | **Altı gerçek kullanım metriği gözlendi; 25-istek what-if READY_FOR_OWNER_REVIEW** (dönem hizası açık) | Paylaşılan Preview+Production Redis DB aylık komut, MB, GB; tüm Hobby ekip fonksiyon invocations/CPU/memory, dönem ve UTC gözlem zamanı, ek Preview origin GET planı; offline capacity screen ve sahibin açık kabulü | Hesap dashboard erişimi |
-| R3 | P0 / G05 için | Mühendislik: WebKit gerçek testi | BLOCKED - HOST | Uyumlu Ubuntu/macOS ile playwright-core 1.64.0; webkit.launch ve mevcut 11 fixture senaryosunda gerçek test; engine+versiyon+SHA+console/axe/network+screenshot; host hatası NOT RUN kalır | R2'den bağımsız uygun ortam |
+| R3 | P0 / G05 için | Mühendislik: WebKit gerçek testi | **DONE_OFFLINE: Windows Playwright WebKit 27.2, 11/11 PASS** | Pinned playwright-core 1.64.0, actual headless WebKit launch, local intercepted F01–F05, 0 axe/errors/external, SHA `7bd062d`; **real Apple Safari/iOS/VoiceOver remains G05** | Windows test host; no live cost |
 | R4 | P1, G05 öncesi | Tasarım ve mühendislik: NEXUS görsel kalite ve marka QC | KISMİ | 320/375/768/1280/1440/(mümkünse 1920) genişlikte veri, boş/kısmi, timeout, hata, 200%-400% büyütme; grafik sayıları ve alanları okunur, kartlar tasarım bütünlüğüne sahip, marka yerleşimi estetik; insan screenshot PASS/FIX | Lokal build; gerçek kabul R7 |
 | R5 | P0 | Mühendislik: doğruluk, provenance ve beş API hata matrisi | **DONE_OFFLINE; G04 LIVE AÇIK** | 200/400/403/429/404/502/503/504; no-store/Retry-After; 2 ilk source GET; F04/F05 yalnızca click; kaynak linkleri, örneklem sınırları, CSV injection, UTC günü, missing coverage, stale race | Offline özgür, live R6 |
 | R6 / G03 | P0 | Hesap sahibi izin verir, mühendis exact-SHA protected Preview kurar | **Preview READY/exact-SHA DONE** (deployed 2b5fb7c; SSO gerçek challenge not proven) | Sadece Preview hedefi ve onaylı SHA, Vercel unique URL/ID, READY/SSO, env adları Sensitive Preview+Production (değerler açılmaz), Production alias değişmez, rollback referansı | R1, R2, ayrı Preview izni |
@@ -211,6 +211,21 @@ G06 gerçek bağımsız Vercel Redis instance provası;
 G07 Production için ayrıca onay. G02 6/6 güncel kullanım
 değeri gözlendi; ancak sağlayıcı kesin dönem bilgisi ve üretim
 izni review aşamasından bağımsız.
+
+### R3 gerçek WebKit tamamlandı, Windows güvenli yol düzeltmesi — 14 Ekim
+
+[WebKit 27.2 Windows gerçek motor QA](R3_REAL_WEBKIT_WINDOWS_QA_2026-10-14.md):
+Bağlı yetkili Windows cihazında kamuya açık projenin yalnızca geçici
+kopyası oluşturuldu; ekranda pencere açılmadı. `npm ci`,
+`playwright-core@1.64.0`, WebKit revision 2370 başlatma,
+**11/11** gerçek browser fixture, **221/221** Node, **16/16**
+lokal HTTP, TS/build/bundle PASS. 0 beklenmeyen harici ağ isteği,
+0 axe ihlali, 0 JS pageerror. İlk Windows koşusunda
+`tests/offline-http-smoke-source.test.mjs` URL.pathname
+kullanımı hatalı `C:\\C:\\...` üretiyordu; `fileURLToPath` ile
+düzeltildi ve Windows Node **220/221 → 221/221** oldu.
+R3 **DONE_OFFLINE**; Apple Safari/iOS ve insan AT G05 **OPEN**.
+Güncel SSO Preview ve Production SHA'ları otomatik değiştirilmedi.
 
 ## 3. Yürütme sırası
 
