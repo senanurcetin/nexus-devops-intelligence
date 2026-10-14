@@ -37,8 +37,10 @@ function validRetryAfter(value) {
 
 /**
  * Bounded, read-only, same-client origin diagnostic. This intentionally makes
- * no multi-instance or WAF claims. Only run full 21-request sequence after
- * explicit approval; default is a *single* Redis-mode preflight.
+ * no multi-instance or WAF claims. Without an explicit origin-request
+ * authorization, this code must do ZERO network calls. The 21-request
+ * sequence is an OPTIONAL, separately approved same-client diagnostic, not
+ * independent Vercel-instance proof.
  *
  * This probe never guarantees a cache miss; if the edge serves a cached HIT,
  * its evidence is inconclusive. Without quota clearance/owner consent, no
@@ -51,10 +53,18 @@ export async function probeProtectedRedisPreview({
   fetcher = fetch,
   bypassToken = '',
   confirm21 = false,
+  authorizedRequests = 0,
   now = () => Date.now(),
 }) {
   const origin = safeNexusPreviewOrigin(url);
-  if (!origin) return { state: 'blocked', reason: 'not-an-allowed-protected-preview', requests: 0 };
+  if (!origin) return { state: 'blocked', reason: 'not-an-allowed-protected-preview', requests: 0,
+    crossInstanceVerified: false, releaseAuthorized: false };
+  // Authorization must agree with the requested test mode. No network,
+  // including the one-request preflight, is permitted by default.
+  if (authorizedRequests !== (confirm21 ? LIMIT + 1 : 1)) {
+    return { state: 'blocked', reason: 'explicit-origin-request-authorization-required',
+      requests: 0, crossInstanceVerified: false, releaseAuthorized: false };
+  }
   // Only the public route's strictly allowed "repository" parameter is sent.
   // Do NOT use arbitrary cache-busting query keys: every public API rejects
   // those with HTTP 400 *before* consulting the shared Redis admission gate.
@@ -106,8 +116,9 @@ export async function probeProtectedRedisPreview({
         response.headers.get('cache-control')?.includes('no-store') &&
         validRetryAfter(response.headers.get('retry-after'));
       return correctHeaders && confirm21 && index === LIMIT + 1 && allowed === LIMIT
-        ? { state: 'passed', reason: 'redis-attributed-origin-429', requests: index,
-            admitted: allowed, pathsChecked: ['actions', 'prs'], crossInstanceVerified: false }
+        ? { state: 'partial', reason: 'redis-attributed-429-same-client-only', requests: index,
+            admitted: allowed, pathsChecked: ['actions', 'prs'],
+            crossInstanceVerified: false, releaseAuthorized: false }
         : { state: 'inconclusive', reason: correctHeaders
             ? 'shared-quota-already-in-use-or-window-moved'
             : '429-not-attributed-to-redis', requests: index };
@@ -122,21 +133,44 @@ export async function probeProtectedRedisPreview({
   }
   return { state: confirm21 ? 'inconclusive' : 'ready',
     reason: confirm21 ? 'no-429-within-bounded-probe' : 'redis-mode-preflight-passed',
-    requests: limit, admitted: allowed, crossInstanceVerified: false };
+    requests: limit, admitted: allowed, crossInstanceVerified: false,
+    releaseAuthorized: false };
 }
 
 const invoked = process.argv[1] &&
   import.meta.url === pathToFileURL(process.argv[1]).href;
 if (invoked) {
-  const urlFlag = process.argv.indexOf('--preview-url');
-  const url = urlFlag >= 0 ? process.argv[urlFlag + 1] : '';
+  const args = process.argv.slice(2);
+  const flag = '--preview-url';
+  const urlIndices = args.flatMap((arg, i) => arg === flag ? [i] : []);
+  const recognized = new Set([
+    flag, '--confirm-1-request', '--confirm-21-request-test',
+    '--approve-free-tier-21-origin-reads',
+  ]);
+  const valueIndex = urlIndices.length === 1 ? urlIndices[0] + 1 : -1;
+  const validArgs = urlIndices.length === 1 &&
+    valueIndex < args.length &&
+    args[valueIndex].startsWith('https://') &&
+    args.every((arg, i) => i === valueIndex || recognized.has(arg)) &&
+    (args.includes('--confirm-1-request') !==
+      args.includes('--confirm-21-request-test'));
+  // Two explicit, independent opt-ins to avoid accidentally spending the
+  // owner's shared Free Redis quota on the 21-request mode. CLI switches
+  // are still NOT permission to bypass owner approval/governance.
+  const confirm21 = args.includes('--confirm-21-request-test');
+  const authorizedRequests = validArgs
+    ? (confirm21
+      ? args.includes('--approve-free-tier-21-origin-reads') ? 21 : 0
+      : !args.includes('--approve-free-tier-21-origin-reads') ? 1 : 0)
+    : 0;
   const result = await probeProtectedRedisPreview({
-    url,
-    // This is a *preview-scoped* protection bypass token if the owner has
-    // securely provisioned one. Never read production Redis credentials.
+    url: valueIndex >= 0 ? args[valueIndex] : '',
     bypassToken: process.env.NEXUS_PREVIEW_PROTECTION_BYPASS || '',
-    confirm21: process.argv.includes('--confirm-21-request-test'),
+    confirm21,
+    authorizedRequests,
   });
   console.log(JSON.stringify(result));
-  if (!['ready', 'passed'].includes(result.state)) process.exitCode = 1;
+  // The 21-request same-client test can never indicate G06 PASS.
+  // Only a single-request preflight has a nonzero CLI "ready" meaning.
+  if (result.state !== 'ready') process.exitCode = 2;
 }
