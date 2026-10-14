@@ -4,6 +4,21 @@
 **Kapsam:** `senanurcetin/nexus-devops-intelligence` MVP (Actions ve PR salt okunur panelleri)  
 **Durum:** **İnsan tarafından ekran okuyucu testi henüz yapılmadı.** Bu belge test senaryosu, tamamlanmış denetim raporu değildir.
 
+## T-03 kaynak düzeyinde tarayıcı kanıtı — 14 Ekim 2026
+
+Bu kontrol listesinin **insan kabul durumu değişmedi**. Playwright ile
+Chromium 11/11 ve Firefox 11/11 (iki ayrı çalışma) yerel fixture
+senaryoları, otomatik axe A/AA kontrolleri ve metin büyütme geçti.
+**WebKit testi geçmedi veya çalışmadı:** test sunucusu Amazon Linux 2023'te
+gerekli ICU 74 ve GTK/GStreamer kitaplıkları bulunmadığı için motor açılmadı.
+Detay: [T-03 kaynak düzeyindeki QA raporu](T03_CROSS_ENGINE_WEBKIT_QA_2026-10-14.md).
+
+**Bu bilgi SR-01–SR-12 maddelerinin hiçbirini “insan tarafından geçti”
+şeklinde kapatmaz.** Gerçek iOS Safari, macOS Safari/WebKit, ekran okuyucu,
+klavye/odak, gerçek tarayıcı yakınlaştırması ve tasarım/estetik değerlendirme
+yetkili bir insan tarafından tarih, cihaz/sürüm ve kaynak SHA ile ayrıca
+onaylanmalıdır.
+
 ## Teste başlamadan
 
 - Uygulamanın doğrulanmış build'ini **kısa süreli bulut veya erişim korumalı preview** ortamında aç. Herkese açık yayını ve Vercel WAF korumasını birbirinden ayrı doğrula.
