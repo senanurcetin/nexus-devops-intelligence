@@ -844,3 +844,9 @@ body { background: #071829; color: #eff5ff; }
   background: rgba(116, 155, 188, .13);
 }
 .nexus-devops-trend-track span { height: 100%; }
+
+.nexus-devops-trend-scroll:focus-visible {
+  outline: 2px solid #9edcff;
+  outline-offset: 2px;
+  border-radius: .4rem;
+}
