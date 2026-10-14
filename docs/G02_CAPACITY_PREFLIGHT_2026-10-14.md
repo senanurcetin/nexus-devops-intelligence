@@ -19,11 +19,13 @@
 | Shared resource | Published Free/Hobby inclusion | Conservative G-02 review ceiling (80% of allowance) |
 | --- | ---: | ---: |
 | Upstash Free commands, all consumers on shared DB | 500,000 per month | 400,000 |
-| Upstash Free data size | 256 MB | 204.8 MB |
+| Upstash Free data size | **250 MB shown in owner Usage tab on 2026-10-14** | **200 MB** |
 | Upstash Free outbound bandwidth | 10 GB/month | 8 GB |
 | Vercel Hobby aggregate function invocations | 1,000,000 | 800,000 |
 | Vercel Hobby aggregate active CPU | 4 CPU-hours | 3.2 hours |
 | Vercel Hobby aggregate provisioned memory | 360 GB-hours | 288 GB-hours |
+
+**Owner screenshot evidence (14 October):** [R2 actual Usage-tab snapshot](R2_OWNER_USAGE_SNAPSHOT_2026-10-14.md) reports Upstash 118/500K monthly commands, 10 KB/10 GB bandwidth, displayed 0 B/250 MB storage and $0.00 at capture. The older **256 MB** static estimate has been lowered to the account's **250 MB** UI allotment; this does not alter the command/bandwidth caps. Vercel whole-team 30-day transfer and CDN/ISR were also observed, but **Vercel Functions invocations/active CPU/provisioned memory were NOT shown**. The combined G02 gate is therefore **INCOMPLETE** until those exact metrics and a bounded origin request plan are obtained. No plausible substitutes (CDN requests or CDN CPU) should be inserted as Functions usage. No new Preview/Production permission follows from usage screenshots.
 
 **Sources and date-conditional terms:** [Upstash official Redis pricing](https://upstash.com/pricing/redis), [Upstash dashboard usage metrics](https://upstash.com/docs/redis/howto/metrics-and-charts), [Upstash rate limiter command cost examples](https://upstash.com/docs/redis/sdks/ratelimit-ts/costs), [Vercel Hobby resource inclusion](https://vercel.com/docs/plans/hobby), [Vercel Usage dashboard guidance](https://vercel.com/docs/pricing/manage-and-optimize-usage). Limits should be reconfirmed before the owner accepts a release. The **80% threshold is an NEXUS engineering proposal**, not a provider-enforced threshold or a guarantee of continuous free service. Other team bandwidth/compute limits may be relevant outside this conservative screen.
 
