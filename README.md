@@ -168,6 +168,26 @@ short-lived cloud sandbox, without GitHub Actions or CircleCI. The current
 `npm test` command uses the locked `tsx` development dependency and requires
 `npm ci` first. There is no requirement to install anything on the user's PC.
 
+## G06 Redis test permission and honest acceptance verdict
+
+The manual `verify-protected-redis-preview.mjs` test **does not
+make any network request by default**. It requires an exact
+`--confirm-1-request` flag for one source preflight; the 21-request
+variant additionally needs both `--confirm-21-request-test` and
+`--approve-free-tier-21-origin-reads` **plus a separately authorized
+owner-approved live test budget**. It is **not** a scheduled job.
+
+Before this repair, a Redis-attributed 429 at request 21 returned
+`state:passed` while simultaneously returning
+`crossInstanceVerified:false`. That false implication is corrected:
+the 21st same-client Redis 429 returns **`partial`**, with explicit
+G06/Production non-authorization. Strict simulated results pass
+**224/224 Node** and **11/11 each Chromium/Firefox** on tested SHA
+`cc4e97de83a807cdb2a016509de7bff215bbdcce`.
+[Full G06 fail-closed source-level evidence](docs/G06_FAIL_CLOSED_PREVIEW_REDIS_PROBE_2026-10-14.md).
+**Real two-independent-Vercel-instance Redis admission proof remains
+OPEN**, and no new Preview/Production was deployed.
+
 ## WebKit engine regression and Windows offline smoke fix (R3)
 
 **R3 automated WebKit acceptance now runs and passes on a real engine:**
