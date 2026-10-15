@@ -111,7 +111,7 @@ function sampleTrend(repo, incomplete = false) {
   });
 }
 function fixtureResponse(path, repo, params, scenario) {
-  if (![repoA, repoB].includes(repo)) return {status: 400, body: {error: 'Fixture source not allowed'}};
+  if (![repoA, repoB].includes(repo) && !(scenario === 'absent-extra' && repo === 'senanurcetin/ot-sentinel')) return {status: 400, body: {error: 'Fixture source not allowed'}};
   if (path === '/api/public-actions') {
     return scenario === 'partial' && repo === repoA
       ? {status: 503, body: {error: 'Fixture Actions unavailable'}}
