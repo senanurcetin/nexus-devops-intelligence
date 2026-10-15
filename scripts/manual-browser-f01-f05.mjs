@@ -140,6 +140,19 @@ async function runJourney(browser, name, width, scenario) {
     // WebKit/Firefox do not necessarily support Chromium clipboard permissions.
     ...(engineName === 'chromium' ? {permissions:['clipboard-read','clipboard-write']} : {}),
   });
+  if (scenario === 'clipboard-race') {
+    // Simulate Safari permission prompts resolving/rejecting *after* a source
+    // switch. No clipboard permission, real OS clipboard or extra API access.
+    await context.addInitScript(() => {
+      Object.defineProperty(navigator, 'clipboard', {
+        configurable:true,
+        value:{writeText:() => new Promise((resolve,reject) => {
+          window.__nexusResolveClipboard = resolve;
+          window.__nexusRejectClipboard = reject;
+        })},
+      });
+    });
+  }
   const page = await context.newPage();
   const calls = [], jsErrors = [], blocked = [];
   page.on('pageerror', error => jsErrors.push(error.message));
@@ -223,6 +236,38 @@ async function runJourney(browser, name, width, scenario) {
         c.width > 0 && c.left >= -2 && c.right <= geometry.width + 2),
       'export and trend controls must remain inside viewport at 400%');
       assert.equal(calls.length, 2, 'text-only enlargement causes no extra API calls');
+    } else if (scenario === 'clipboard-race') {
+      await ready(repoA);
+      await page.getByText('Request diagnostics · no new requests', {exact:true}).click();
+      const diagnostics = page.locator('.nexus-devops-diagnostics');
+      await diagnostics.getByRole('button', {name:'Copy safe diagnostics · no API requests'}).click();
+      assert.equal(await page.evaluate(() => typeof window.__nexusResolveClipboard), 'function');
+      await page.getByRole('textbox', {name:/Public GitHub repository/}).fill(repoB);
+      await page.getByRole('button', {name:/Analyze repository/}).click();
+      await ready(repoB);
+      await page.evaluate(() => window.__nexusResolveClipboard());
+      await page.waitForTimeout(90);
+      assert.equal(await diagnostics.locator('[role="status"]').count(), 0,
+        'resolved old repository clipboard must not claim new source was copied');
+      assert.equal(await diagnostics.getByRole('textbox',
+        {name:'Safe diagnostics to select and copy'}).count(), 0);
+
+      await page.getByRole('textbox', {name:/Public GitHub repository/}).fill(repoA);
+      await page.getByRole('button', {name:/Analyze repository/}).click();
+      await ready(repoA);
+      await diagnostics.getByRole('button', {name:'Copy safe diagnostics · no API requests'}).click();
+      assert.equal(await page.evaluate(() => typeof window.__nexusRejectClipboard), 'function');
+      await page.getByRole('textbox', {name:/Public GitHub repository/}).fill(repoB);
+      await page.getByRole('button', {name:/Analyze repository/}).click();
+      await ready(repoB);
+      await page.evaluate(() => window.__nexusRejectClipboard(new Error('permission denied')));
+      await page.waitForTimeout(90);
+      assert.equal(await diagnostics.locator('[role="status"]').count(), 0,
+        'rejected old repository clipboard must not show stale Safari fallback');
+      assert.equal(await diagnostics.getByRole('textbox',
+        {name:'Safe diagnostics to select and copy'}).count(), 0);
+      assert.equal(calls.length, 8,
+        'three switches and two pending copies use only normal two-source GETs');
     } else if (scenario === 'race') {
       // Wait until initial source calls really exist before racing their responses.
       // Without this guard a fast tester can type before React hydrates the URL.
@@ -442,9 +487,10 @@ try {
     ['partial-source-mobile',375,'partial'],
     ['incomplete-trend-desktop',1280,'incomplete'],
     ['rapid-source-switch-mobile',375,'race'],
+    ['stale-safari-clipboard-switch-mobile',375,'clipboard-race'],
     ['duplicate-share-link-mobile',375,'invalid'],
   ]) await runJourney(browser,name,width,scenario);
-  console.log('F01–F05 '+engineName+' '+browser.version()+' fixture browser regression: all eleven sessions PASSED (no live API/Redis calls).');
+  console.log('F01–F05 '+engineName+' '+browser.version()+' fixture browser regression: all twelve sessions PASSED (no live API/Redis calls).');
 } finally {
   await browser.close();
 }
