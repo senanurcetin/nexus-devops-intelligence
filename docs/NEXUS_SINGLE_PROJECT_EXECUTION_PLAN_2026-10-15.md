@@ -1,6 +1,6 @@
 # NEXUS DevOps Intelligence — Tek Proje Uygulama Planı
 
-> **15 Ekim Owner-First strateji güncellemesi — nakit bütçe 0 TL:** NEXUS Community **public + MIT** kalır. [Güncel Owner-First → Self-Hosted → isteğe bağlı Community/Cloud planı](NEXUS_ZERO_BUDGET_COMMUNITY_PRODUCT_ROADMAP_2026-10-15.md) kullanıcı bulmayı ve gelir elde etmeyi zorunlu tutmaz. Tek kullanıcı ürün sahibi olabilir; gerçek kendi-repo senaryoları ve [yerel kullanım karnesi](NEXUS_OWNER_FIRST_USAGE_SCORECARD_2026-10-15.md) belirleyicidir. Eski G04/G05/G06/G07 hosted yayın güvenlik kapıları ve Preview/Production ayrı kalır. Public Vercel Hobby eski sürümü ticari SaaS değildir; Docker PR #80 kaynak adayı, gerçek Docker kabulü #81 ile açık.
+> **15 Ekim 2026 ticari karar:** NEXUS yalnizca kisisel kullanima ayrilmayacak; **satilabilir Commercial self-hosted teslimat** (ilk SKU: dogrulanmis kurulum + bounded CI Review), sonra farkli gercek Pro ozellikleri hedeflenir. 5–10 ucretsiz test kullanicisi veya pilot sart degil; kendi repolarimizda gercek kaynakli QA ve Docker/OS kabul sart. [Ticari yol](NEXUS_COMMERCIAL_NO_PILOT_GO_TO_MARKET_2026-10-15.md). MIT Community public, 0 TL pesin maliyet ve #49/#7 hosted sinirlari korunur; checkout/Pro/Cloud henuz hazir degil.
 
 
 **Plan tarihi:** 2026-10-15 · Türkiye saati  
