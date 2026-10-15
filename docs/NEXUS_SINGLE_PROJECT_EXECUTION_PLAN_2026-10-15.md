@@ -16,6 +16,10 @@
 
 [Beş public API'nin fail-closed test raporu](G06_FIVE_PUBLIC_ROUTES_FAILCLOSED_QA_2026-10-15.md): İlk iki route dışında kalan PR verification, workflow evidence ve 7 günlük trend API'leri de gerçek Next GET handler'larında simüle Redis 429/503 ve geçersiz input için sınandı. **230/230 Node, 11/11 odaklı G06 test, 16/16 local HTTP, 12/12 Chromium, 12/12 Firefox**, TS/build/JS budget ve audit 0. Canlı Upstash çağrısı veya hosted CI yok. Bu **kaynak düzeyinde risk azaltımıdır**; iki ayrı gerçek Vercel instance kanıtı (G06/#7) hâlâ **OPEN**, gerçek 21-request test izinsizdir.
 
+### 15 Ekim F03 yüklü URL temizleme — kaynak regresyonu
+
+[F03 URL kanonlaştırma QA](F03_CANONICAL_LOADED_SHARE_URL_QA_2026-10-15.md): `?repo=owner/repo&token=...` gibi paylaşılan URL'ler geçerli depo kimliğini koruyarak gereksiz parametre ve fragment'ı **history.replaceState ile ek API isteği oluşturmadan** temizler. Geçersiz `repo` kaynak seçimi yine hata verir ve sıfır API isteği üretir. Kod SHA `4c41eb7c2ab601916fe7707fce510012ed0f3a5a` üzerinde **232/232 Node, 16/16 HTTP, 14/14 Chromium, 14/14 Firefox**, TS/build/bundle/audit 0 geçmiştir. **WebKit son senaryo NOT RUN**; gerçek SSO Preview G04 ve kullanıcı AT/G06/G07 kapıları açık. Bu düzeltme mevcut giriş URL'sini temizler; geçmiş sunucu erişim kayıtlarını geri alamaz.
+
 ## A. Başlangıç — mevcut kanıtların doğru tasnifi
 
 | İş / kapı | Kanıtlanmış mevcut durum | Eksik kabul |
