@@ -1,5 +1,8 @@
 # NEXUS DevOps Intelligence — Tek Proje Uygulama Planı
 
+> **15 Ekim strateji eklemesi — nakit bütçe 0 TL:** Mevcut NEXUS Community repo **public + MIT** kalır. [Community/self-hosted → ilk pilot kullanıcılar → gelirle Cloud geçiş planı](NEXUS_ZERO_BUDGET_COMMUNITY_PRODUCT_ROADMAP_2026-10-15.md) yürürlüğe alınmıştır. Bu ürünleştirme sırası, aşağıdaki G04/G05/G06/G07 güvenlik ve gerçek canlı kabul koşullarını ortadan kaldırmaz. Public Vercel Production'ın eski sürümünü ticari SaaS kabul etme; yeni Docker paketi yapılmış değil.
+
+
 **Plan tarihi:** 2026-10-15 · Türkiye saati  
 **Tek kapsam:** `senanurcetin/nexus-devops-intelligence`. Jarvis, portföy web, Power BI, diğer GitHub depoları, e-posta/CRM ve diğer NEXUS projeleri bu iş akışına **DAHİL DEĞİL**.  
 **Doğrulanan kaynak main SHA:** `27018f829a6f1ba1f6e30ca21939138199ead164` (merged PR #74).  
