@@ -14,7 +14,7 @@ import { isPublicActionsSample, isPublicPullSample } from '@/lib/nexus-panel-val
 import { filteredWorkflowRuns, workflowOutcome, workflowOutcomeCount, workflowOutcomes, type WorkflowFilter } from '@/lib/nexus-workflow-visuals';
 import { filteredPublicPulls, pullBucket, pullBucketCount, pullBuckets, type PullFilter } from '@/lib/nexus-pr-visuals';
 import { createPublicSampleExport, createSampleFilename, serializePublicSampleCsv } from '@/lib/nexus-public-sample-export';
-import { buildRepositoryShareUrl, readRepositoryLink } from '@/lib/nexus-repository-link';
+import { buildRepositoryShareUrl, canonicalRepositoryPageUrl, readRepositoryLink } from '@/lib/nexus-repository-link';
 import { isPublicPrVerification, type PublicPrVerification } from '@/lib/nexus-pr-evidence';
 import { isPublicRunEvidence, type PublicRunEvidence } from '@/lib/nexus-workflow-run-evidence';
 import { isPublicWorkflowTrend, type PublicWorkflowTrend } from '@/lib/nexus-workflow-trends';
@@ -233,6 +233,13 @@ export default function NexusDeveloperPreview() {
   useEffect(() => {
     function syncLocation() {
       const selected = readRepositoryLink(window.location.search);
+      // Scrub unrelated query parameters and fragments without a reload,
+      // duplicate GitHub fetch or additional Upstash admission. An invalid
+      // repo remains invalid in UI state even after its URL is sanitized.
+      const canonicalUrl = canonicalRepositoryPageUrl(window.location.href, selected);
+      if (canonicalUrl !== window.location.href) {
+        window.history.replaceState(null, '', canonicalUrl);
+      }
       if (selected.kind === 'invalid') {
         clearInvalidSelection();
         return;

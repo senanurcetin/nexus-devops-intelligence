@@ -23,6 +23,33 @@ export function readRepositoryLink(search: string): RepositoryLinkSelection {
 }
 
 /**
+ * Strip unrecognized URL parameters/fragments from an already loaded page
+ * without navigation or fetch. A public repo share must never retain an
+ * unrelated token, credential-shaped query or attacker-supplied fragment in
+ * the address bar or current history entry.
+ *
+ * Invalid repo selections remain invalid in client state; this helper only
+ * sanitizes the address, and never chooses or loads a different repository.
+ */
+export function canonicalRepositoryPageUrl(
+  currentUrl: string,
+  selection: RepositoryLinkSelection,
+): string {
+  const url = new URL(currentUrl);
+  if (!['https:', 'http:'].includes(url.protocol) || !url.hostname ||
+      url.username || url.password) {
+    throw new Error('Unsupported page URL.');
+  }
+  url.search = '';
+  url.hash = '';
+  if (selection.kind === 'valid') {
+    parsePublicRepository(selection.repository);
+    url.searchParams.set('repo', selection.repository);
+  }
+  return url.toString();
+}
+
+/**
  * A share link contains *only* the public repository selection. It does not
  * carry samples, tokens, cached results, timestamps, or unrelated query keys.
  */
