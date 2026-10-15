@@ -203,6 +203,17 @@ See [R3 exact-SHA real WebKit evidence](docs/R3_REAL_WEBKIT_WINDOWS_QA_2026-10-1
 G05 OPEN**; WebKit engine QA and automated axe do not substitute
 for human assistive technology or a production release.
 
+## 15 October: NEXUS DevOps single-project execution plan
+
+**Only this repository is in scope:** `senanurcetin/nexus-devops-intelligence`.
+The [15 October execution plan](docs/NEXUS_SINGLE_PROJECT_EXECUTION_PLAN_2026-10-15.md)
+tracks verified source `27018f829a6f1ba1f6e30ca21939138199ead164`,
+P0 protected Preview G04 and independent-instance Redis G06, G05 human
+accessibility, real-user performance and separately authorized Production.
+Previous 14 October ledger entries are **historical evidence**, not the
+current source SHA. The existing protected Preview/Production are older
+than source main; merging docs/code does not automatically deploy them.
+
 ## Current release blockers and safe next actions (14 October 2026)
 
 [Latest gate-by-gate closure ledger](docs/NEXUS_RELEASE_BLOCKER_CLOSURE_2026-10-14.md):
