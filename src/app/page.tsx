@@ -80,6 +80,9 @@ export default function NexusDeveloperPreview() {
   const [diagnosticsCopyStatus, setDiagnosticsCopyStatus] = useState('');
   const [diagnosticsCopyFallback, setDiagnosticsCopyFallback] = useState('');
   const activeRepositoryRef = useRef<string | null>(null);
+  // Invalidate delayed clipboard completions when either source is refreshed,
+  // reselected or cleared. An old receipt must never reappear on a new repo.
+  const copyEvidenceGeneration = useRef(0);
   const [workflowFilter, setWorkflowFilter] = useState<WorkflowFilter>('all');
   const [pullFilter, setPullFilter] = useState<PullFilter>('all');
   const [exportError, setExportError] = useState('');
@@ -90,6 +93,7 @@ export default function NexusDeveloperPreview() {
   const pullsSlowTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const refreshPanel = useCallback((kind: 'actions' | 'prs', repo: string) => {
+    copyEvidenceGeneration.current++;
     setCopyStatus(null);
     setDiagnosticsCopyStatus('');
     setDiagnosticsCopyFallback('');
@@ -183,6 +187,7 @@ export default function NexusDeveloperPreview() {
   }, [refreshPanel]);
 
   const clearInvalidSelection = useCallback(() => {
+    copyEvidenceGeneration.current++;
     controllers.current.actions?.abort();
     controllers.current.prs?.abort();
     prEvidenceController.current?.abort();
@@ -280,13 +285,19 @@ export default function NexusDeveloperPreview() {
 
   async function copyDiagnostics() {
     // No fetch: only sanitized, already-received browser response receipts.
+    const generation = copyEvidenceGeneration.current;
+    const repositoryAtStart = activeRepositoryRef.current;
     const summary = formatPublicPanelDiagnosticReport(actions.receipt, pulls.receipt);
+    const stillCurrent = () => copyEvidenceGeneration.current === generation &&
+      activeRepositoryRef.current === repositoryAtStart;
     try {
       if (!navigator.clipboard?.writeText) throw new Error('Clipboard unavailable');
       await navigator.clipboard.writeText(summary);
+      if (!stillCurrent()) return;
       setDiagnosticsCopyStatus('Diagnostic summary copied. No API requests sent.');
       setDiagnosticsCopyFallback('');
     } catch {
+      if (!stillCurrent()) return;
       setDiagnosticsCopyStatus('Clipboard unavailable. Select and copy the text below.');
       setDiagnosticsCopyFallback(summary);
     }
@@ -294,13 +305,19 @@ export default function NexusDeveloperPreview() {
 
   async function copyRepositoryLink() {
     if (!activeRepositoryRef.current) return;
-    const url = buildRepositoryShareUrl(window.location.href, activeRepositoryRef.current);
+    const generation = copyEvidenceGeneration.current;
+    const repositoryAtStart = activeRepositoryRef.current;
+    const url = buildRepositoryShareUrl(window.location.href, repositoryAtStart);
+    const stillCurrent = () => copyEvidenceGeneration.current === generation &&
+      activeRepositoryRef.current === repositoryAtStart;
     try {
       if (!navigator.clipboard?.writeText) throw new Error('Clipboard unavailable');
       await navigator.clipboard.writeText(url);
+      if (!stillCurrent()) return;
       setShareStatus('Repository link copied. It opens a fresh public sample, not saved results.');
       setShareFallback('');
     } catch {
+      if (!stillCurrent()) return;
       setShareStatus('Clipboard unavailable. Select and copy the link below.');
       setShareFallback(url);
     }
@@ -414,12 +431,18 @@ export default function NexusDeveloperPreview() {
   }
 
   async function copyEvidenceLink(key: string, url: string) {
+    const generation = copyEvidenceGeneration.current;
+    const repositoryAtStart = activeRepositoryRef.current;
+    const stillCurrent = () => copyEvidenceGeneration.current === generation &&
+      activeRepositoryRef.current === repositoryAtStart;
     try {
       // Only canonical, source-validated GitHub URLs reach these controls.
       if (!navigator.clipboard?.writeText) throw new Error('Clipboard unavailable');
       await navigator.clipboard.writeText(url);
+      if (!stillCurrent()) return;
       setCopyStatus({ key, ok: true, message: 'GitHub source link copied.' });
     } catch {
+      if (!stillCurrent()) return;
       setCopyStatus({ key, ok: false, message: 'Clipboard unavailable. Use Review source to open the GitHub record.' });
     }
   }
