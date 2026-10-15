@@ -1,18 +1,19 @@
 # Community v0.1: deliberately localhost-only at the host port mapping layer.
-# Uses published multi-architecture Node images; no GitHub token or Redis is needed.
-FROM node:22.16.0-bookworm-slim AS deps
+# Uses a maintained Node 22 LTS patch channel (re-pin to a verified digest for release).
+# No GitHub token or Redis is needed.
+FROM node:22-bookworm-slim AS deps
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci --no-audit --no-fund
 
-FROM node:22.16.0-bookworm-slim AS builder
+FROM node:22-bookworm-slim AS builder
 WORKDIR /app
 ENV NEXT_TELEMETRY_DISABLED=1
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 RUN npm run typecheck && NEXUS_SELF_HOSTED_BUILD=1 npm run build
 
-FROM node:22.16.0-bookworm-slim AS runtime
+FROM node:22-bookworm-slim AS runtime
 WORKDIR /app
 ENV NODE_ENV=production \
     NEXT_TELEMETRY_DISABLED=1 \

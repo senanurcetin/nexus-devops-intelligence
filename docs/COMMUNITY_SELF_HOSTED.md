@@ -5,8 +5,9 @@
 ## Supported scope and prerequisites
 
 - One developer machine, one service, browser on **that same machine only**.
-- Docker Engine with Compose v2 plugin (Linux), or Docker Desktop with Compose (Windows 10/11). Start Docker Desktop before running commands.
+- **Docker Engine 28.0.0 or newer**, with Compose v2 plugin (Linux), or an up-to-date Docker Desktop with Compose (Windows 10/11). Start Docker Desktop before running commands. Check the server version with `docker version`.
 - The machine needs enough storage/memory for Docker, Node and the Next.js build; no measured minimum is asserted yet.
+- The Docker base image follows the maintained Node 22 LTS patch channel; for a tagged release, verify a fresh image and pin an approved image digest with supply-chain checks.
 - Internet access to `api.github.com` is required for real repository data. Offline page rendering does not imply offline analysis.
 - Only **public repositories** are supported. The application never asks for a GitHub token, private-repo access, Redis key, account registration, or credit card.
 
@@ -47,7 +48,7 @@ Run `docker compose ps` and verify that the published address reads `127.0.0.1:3
 docker compose port nexus 3000
 ```
 
-Verify it returns `127.0.0.1:3000`. On Linux you can additionally inspect `ss -ltn` to confirm host ports. Docker/Windows versions can differ in forwarding behavior; if binding is not loopback-only, **stop with `docker compose down`**, do not use on an untrusted network, and report version/OS without posting secrets.
+Verify it returns `127.0.0.1:3000`. On Linux you can additionally inspect `ss -ltn` to confirm host ports. IMPORTANT: Docker Engine versions **older than 28.0.0** can expose ports published to localhost to other hosts on the same L2 network ([Docker security documentation](https://docs.docker.com/engine/network/port-publishing/)). Do not install this localhost-only candidate on older engines. Custom daemon direct-routing/firewall settings also need independent review. Docker/Windows versions can differ in forwarding behavior; if binding is not loopback-only, **stop with `docker compose down`**, do not use on an untrusted network, and report version/OS without posting secrets.
 
 ## Troubleshooting
 
