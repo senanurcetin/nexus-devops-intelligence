@@ -1,6 +1,6 @@
 # NEXUS DevOps Intelligence — Tek Proje Uygulama Planı
 
-> **15 Ekim strateji eklemesi — nakit bütçe 0 TL:** Mevcut NEXUS Community repo **public + MIT** kalır. [Community/self-hosted → ilk pilot kullanıcılar → gelirle Cloud geçiş planı](NEXUS_ZERO_BUDGET_COMMUNITY_PRODUCT_ROADMAP_2026-10-15.md) yürürlüğe alınmıştır. Bu ürünleştirme sırası, aşağıdaki G04/G05/G06/G07 güvenlik ve gerçek canlı kabul koşullarını ortadan kaldırmaz. Public Vercel Production'ın eski sürümünü ticari SaaS kabul etme; yeni Docker paketi yapılmış değil.
+> **15 Ekim Owner-First strateji güncellemesi — nakit bütçe 0 TL:** NEXUS Community **public + MIT** kalır. [Güncel Owner-First → Self-Hosted → isteğe bağlı Community/Cloud planı](NEXUS_ZERO_BUDGET_COMMUNITY_PRODUCT_ROADMAP_2026-10-15.md) kullanıcı bulmayı ve gelir elde etmeyi zorunlu tutmaz. Tek kullanıcı ürün sahibi olabilir; gerçek kendi-repo senaryoları ve [yerel kullanım karnesi](NEXUS_OWNER_FIRST_USAGE_SCORECARD_2026-10-15.md) belirleyicidir. Eski G04/G05/G06/G07 hosted yayın güvenlik kapıları ve Preview/Production ayrı kalır. Public Vercel Hobby eski sürümü ticari SaaS değildir; Docker PR #80 kaynak adayı, gerçek Docker kabulü #81 ile açık.
 
 
 **Plan tarihi:** 2026-10-15 · Türkiye saati  
