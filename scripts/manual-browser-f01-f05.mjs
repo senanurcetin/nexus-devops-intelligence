@@ -184,8 +184,12 @@ async function runJourney(browser, name, width, scenario) {
     }
   });
   const initial = scenario === 'invalid'
-    ? '/?repo=owner%2Fone&repo=owner%2Ftwo'
-    : '/?repo=owner%2Fone';
+    ? '/?repo=owner%2Fone&repo=owner%2Ftwo&token=private#fragment'
+    : scenario === 'sanitized-link'
+      ? '/?repo=owner%2Fone&api_token=private&unknown=1#fragment'
+      : scenario === 'absent-extra'
+        ? '/?token=private#fragment'
+        : '/?repo=owner%2Fone';
   async function download(name) {
     const pending = page.waitForEvent('download');
     await page.getByRole('button', {name}).click();
@@ -204,6 +208,16 @@ async function runJourney(browser, name, width, scenario) {
       await page.getByRole('alert').filter({hasText:/Invalid repository in shared link/}).waitFor();
       assert.equal(calls.length, 0, 'invalid duplicate repo causes zero API calls');
       assert.equal(await page.getByRole('button', {name:'Export JSON'}).isDisabled(), true);
+      assert.equal(page.url(),base+'/', 'invalid query and URL fragment are scrubbed without a fetch');
+    } else if (scenario === 'sanitized-link') {
+      await ready(repoA);
+      assert.equal(page.url(),base+'/?repo=owner%2Fone',
+        'valid selected source keeps exactly one canonical repo query parameter');
+      assert.equal(calls.length,2, 'sanitizing a loaded valid URL never refetches sources');
+    } else if (scenario === 'absent-extra') {
+      await ready('senanurcetin/ot-sentinel');
+      assert.equal(page.url(),base+'/', 'absent repo drops unrelated URL credentials');
+      assert.equal(calls.length,2, 'sanitizing an absent query never causes extra origin GETs');
     } else if (scenario === 'textzoom-200' || scenario === 'textzoom-400') {
       // Simulated text-only enlargement using the root rem unit; unlike
       // browser zoom this deliberately retains a 320 CSS-pixel viewport.
@@ -488,9 +502,11 @@ try {
     ['incomplete-trend-desktop',1280,'incomplete'],
     ['rapid-source-switch-mobile',375,'race'],
     ['stale-safari-clipboard-switch-mobile',375,'clipboard-race'],
+    ['canonical-shared-link-mobile',375,'sanitized-link'],
+    ['unknown-query-no-repo-mobile',375,'absent-extra'],
     ['duplicate-share-link-mobile',375,'invalid'],
   ]) await runJourney(browser,name,width,scenario);
-  console.log('F01–F05 '+engineName+' '+browser.version()+' fixture browser regression: all twelve sessions PASSED (no live API/Redis calls).');
+  console.log('F01–F05 '+engineName+' '+browser.version()+' fixture browser regression: all fourteen sessions PASSED (no live API/Redis calls).');
 } finally {
   await browser.close();
 }
