@@ -168,6 +168,19 @@ short-lived cloud sandbox, without GitHub Actions or CircleCI. The current
 `npm test` command uses the locked `tsx` development dependency and requires
 `npm ci` first. There is no requirement to install anything on the user's PC.
 
+## F03 shared-link query privacy (15 October)
+
+An incoming public repository link is now canonicalized **in place**: validated
+`repo=owner/name` is retained, while unrelated query parameters and hash
+fragments are stripped using client-side `history.replaceState`, without
+reloads or additional API GETs. Duplicate/invalid repository selections still
+show an invalid input warning and do not trigger a GitHub/Redis request.
+Exact source `4c41eb7c2ab601916fe7707fce510012ed0f3a5a`:
+**232/232 Node, 16/16 local HTTP, 14/14 Chromium, 14/14 Firefox**, TS/build,
+page JS 436,153 raw/125,943 gzip under caps, npm audit 0. Source-only;
+not retroactive browser/server log erasure or authenticated live Preview proof.
+[Exact-source F03 report](docs/F03_CANONICAL_LOADED_SHARE_URL_QA_2026-10-15.md).
+
 ## G06 five-route fail-closed regression (15 October)
 
 Five real Next GET handlers—Actions, PRs, PR verification, workflow evidence
