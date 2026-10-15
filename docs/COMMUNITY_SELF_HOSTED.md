@@ -10,6 +10,7 @@
 - The Docker base image follows the maintained Node 22 LTS patch channel; for a tagged release, verify a fresh image and pin an approved image digest with supply-chain checks.
 - Internet access to `api.github.com` is required for real repository data. Offline page rendering does not imply offline analysis.
 - Only **public repositories** are supported. The application never asks for a GitHub token, private-repo access, Redis key, account registration, or credit card.
+- **Docker Desktop is not free for every commercial customer:** its free-use terms cover personal/education/open-source and eligible small businesses (fewer than 250 employees **and** less than USD 10 million annual revenue). Larger enterprises/government may require a paid Docker Desktop subscription. Linux Docker Engine is open-source and has different terms; assess the actual customer's installation and [Docker licensing](https://docs.docker.com/subscription-billing/desktop-license/) before promising a 0-cost deployment. No subscription is purchased or provisioned by this repo.
 
 ## First run — Windows PowerShell / Linux terminal
 
