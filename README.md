@@ -1,6 +1,6 @@
 # NEXUS DevOps Intelligence
 
-> **15 Oct 2026 — zero-budget product strategy:** Keep this repository **public/MIT**; do **not** switch it to private or turn the free Vercel Hobby demo into a paid SaaS service. The [Community-first, zero-spend product roadmap](docs/NEXUS_ZERO_BUDGET_COMMUNITY_PRODUCT_ROADMAP_2026-10-15.md) prioritizes one-machine **localhost-only self-hosting**, real installer/quality evidence, 5–10 pilot users and optional paid user-hosted installation services **before** separately approved hosted Cloud. **Docker installer is planned, not implemented yet.** Production and protected Preview still serve older SHAs; G04/G05/G06 remain open.
+> **15 Oct 2026 — zero-budget product strategy:** Keep this repository **public/MIT**; do **not** switch it to private or turn the free Vercel Hobby demo into a paid SaaS service. The [Community-first, zero-spend product roadmap](docs/NEXUS_ZERO_BUDGET_COMMUNITY_PRODUCT_ROADMAP_2026-10-15.md) prioritizes one-machine **localhost-only self-hosting**, real installer/quality evidence, 5–10 pilot users and optional paid user-hosted installation services **before** separately approved hosted Cloud. **A localhost-only Docker Compose candidate is available in source; an actual image build, Windows/Linux installer acceptance and release remain NOT VERIFIED.** See [self-hosted Community setup](docs/COMMUNITY_SELF_HOSTED.md). Production and protected Preview still serve older SHAs; G04/G05/G06 remain open.
 
 
 An independent, read-only dashboard for inspecting recent GitHub Actions workflow runs
