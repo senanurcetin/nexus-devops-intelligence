@@ -1,5 +1,7 @@
 # NEXUS DevOps Intelligence — Release blocker closure ledger (14 Oct 2026)
 
+> **Historical 14 October snapshot; superseded for current priorities and code/deployment references by the [15 October NEXUS-only execution plan](NEXUS_SINGLE_PROJECT_EXECUTION_PLAN_2026-10-15.md).** Read the old SHA assertions below as dated evidence, not the latest GitHub main. The 15 October inventory verified main `27018f829a6f1ba1f6e30ca21939138199ead164`; the SSO Preview and Production remain on older deployed SHAs. No live release is authorized by this note.
+
 **Scope:** `senanurcetin/nexus-devops-intelligence` only. **Cost policy:** Vercel Hobby, Upstash Free, no paid tier, no hosted CI/Actions/CircleCI, no new Production deploy without separate exact-SHA approval, no unapproved Redis load test.
 
 **Source main:** `8c823bb858a6910e4041151f288c3d4866f2cf6a` after [PR #70](https://github.com/senanurcetin/nexus-devops-intelligence/pull/70). Last exact **executable source** with complete verification `8bb2e7c2fc664d051f4d34d0c02b8ee4cc7494c3` (later branch commits only docs).  
