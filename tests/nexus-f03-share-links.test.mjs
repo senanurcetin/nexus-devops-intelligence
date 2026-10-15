@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readRepositoryLink, buildRepositoryShareUrl } from '../src/lib/nexus-repository-link.ts';
+import { readRepositoryLink, buildRepositoryShareUrl, canonicalRepositoryPageUrl } from '../src/lib/nexus-repository-link.ts';
 import { readFileSync } from 'node:fs';
 
 test('F-03: missing repo parameter preserves explicit default-selection route', () => {
@@ -69,4 +69,29 @@ test('F-03: source does not use storage, remote URL fetch or privileged integrat
   assert.ok(!helper.includes('localStorage'));
   assert.ok(!helper.includes('sessionStorage'));
   assert.ok(!helper.includes('Authorization'));
+});
+
+test('F-03: loaded valid share strips untrusted search keys and fragments without changing repo', () => {
+  const current='https://nexus.example/?token=PRIVATE&repo=owner%2Frepo&extra=1#secret';
+  const selected=readRepositoryLink(new URL(current).search);
+  assert.deepEqual(selected,{kind:'valid',repository:'owner/repo'});
+  const canonical=canonicalRepositoryPageUrl(current,selected);
+  assert.equal(canonical,'https://nexus.example/?repo=owner%2Frepo');
+  assert.equal(readRepositoryLink(new URL(canonical).search).kind,'valid');
+  assert.doesNotMatch(canonical,/token|PRIVATE|extra|secret/);
+  assert.equal(canonicalRepositoryPageUrl(canonical,selected),canonical,
+    'canonicalization must be idempotent; no repeated history edits');
+});
+
+test('F-03: invalid and absent selections scrub URL without selecting a new repo', () => {
+  const invalid='https://nexus.example/?repo=owner%2Frepo&repo=other%2Frepo&secret=token#s';
+  const parsed=readRepositoryLink(new URL(invalid).search);
+  assert.equal(parsed.kind,'invalid');
+  assert.equal(canonicalRepositoryPageUrl(invalid,parsed),'https://nexus.example/');
+  const absent='https://nexus.example/?utm_campaign=campaign&api_key=DO-NOT-RETAIN#secret';
+  assert.equal(readRepositoryLink(new URL(absent).search).kind,'absent');
+  assert.equal(canonicalRepositoryPageUrl(absent,{kind:'absent'}),'https://nexus.example/');
+  assert.throws(()=>canonicalRepositoryPageUrl('javascript:alert(1)',{kind:'absent'}));
+  assert.throws(()=>canonicalRepositoryPageUrl('file:///tmp/token',{kind:'absent'}));
+  assert.throws(()=>canonicalRepositoryPageUrl('https://user:pw@nexus.example/',{kind:'absent'}));
 });
