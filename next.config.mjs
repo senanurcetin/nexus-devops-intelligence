@@ -15,6 +15,9 @@ const securityHeaders = [
 ];
 
 const nextConfig = {
+  // Generate self-hosted standalone output only for explicit Docker builds.
+  // Leave Vercel's existing output/deployment behavior unchanged.
+  ...(process.env.NEXUS_SELF_HOSTED_BUILD === '1' ? { output: 'standalone' } : {}),
   async headers() {
     return [{ source: '/:path*', headers: securityHeaders }];
   },
