@@ -5,6 +5,9 @@
 **Karar:** **Mevcut public + MIT repo public kalacak.** Şu anda lisans, görünürlük, fiyatlandırma, runtime veya üretim dağıtımı değiştirilmez. Ticari SaaS, müşterilerden somut talep/gelir olmadan işletilmeye başlanmaz.  
 **Başlangıç nakit bütçesi:** 0 TL. Bu, müşterinin kendi cihazında elektrik/internet/işletim maliyeti olmayacağı veya geliştirici emeğinin maliyetsiz olduğu anlamına gelmez.
 
+> **15 Ekim 2026 Owner-First karar güncellemesi:** Bu planın varsayılan müşterisi / ilk gerçek kullanıcısı ürün sahibidir. **Dış pilot, 5–10 kullanıcı, ücretli talep, gelir ve SaaS lansmanı hiçbir iç kullanım veya Community kaynak sürümü için kabul koşulu değildir.** Aşağıdaki D–F bölümleri ve yürütme tablosu bu karara göre yeniden düzenlenmiştir. Dış kullanıcı ve gelir olursa ayrıca, isteğe bağlı değerlendirilir.
+
+
 ## 0. Strateji ve kontrol sınırları
 
 **Konumlandırma:** `NEXUS DevOps Community` = public GitHub Actions / Pull Request read-only evidence dashboard; `NEXUS Cloud` = gelecekte izinli GitHub App, yönetilen barındırma, abonelik; `NEXUS Self-Hosted` = önce tek bilgisayarda loopback-only Docker kurulum, ihtiyaç doğrulanırsa kurumsal kapalı ağ sürümü. EXE en sona bırakılır; mevcut Next.js server API'lerinin güvenli biçimde EXE'ye taşınması ikinci dağıtım yüzeyi demektir.
@@ -47,52 +50,56 @@
 
 **Çıkış kriteri:** Zaman damgalı en az iki işletim sistemi test raporu ve baştan sona kullanıcı rehberi; gerçek GitHub release yalnız tüm belgeli güvenlik/görsel kabul koşulları sağlanınca.
 
-## D. P1 — İlk 5–10 pilot kullanıcı, ücretsiz müşteri keşfi
+## D. P1 — Owner-First: Ürünü kendimiz için çalıştır ve doğrula (zorunlu)
 
-**D1.** Hedef: freelance geliştiriciler, küçük startup'lar, açık kaynak bakımcıları ve yoğun GitHub Actions kullanan 5–10 bağımsız ekip/kişi. İsteğe bağlı tanıtım/iletişim; spam veya izinsiz otomatik gönderim yok, ücretli reklam yok.
+**D1. Tek kullanıcı varsayımı:** NEXUS DevOps'un ilk ve tek kullanıcısı proje sahibi olabilir. Bu durum başarısızlık değildir. Başarılı ürün: sahibinin günlük veya ihtiyaç halinde yürüttüğü GitHub CI/PR incelemelerini daha hızlı, daha anlaşılır ve kanıt bağlantılarıyla yapmasına yardımcı olan, güvenilir, bakım maliyeti makul, yerel bir araçtır. Başkalarının kurulumu, kayıt olması, bağış yapması, gelir elde edilmesi ya da kullanım verisi göndermesi **gerekmez**.
 
-**D2.** Her pilot için: kuruluş/kişi kimliğini gereğinden fazla toplama; kullanıcıya yükleme süresi, anlamlı risk tespitleri, tekrar açma sıklığı, hangi rapora ihtiyaç duyduğu, “buna para öder miydin / ne için” soruları. Repo ve özel kod paylaşmak zorunda bırakılmaz; opsiyonel anonim geri bildirim.
+**D2. Kapsam:** İlk olarak kullanıcının erişilebilen **public** GitHub repolarındaki gerçek Actions/PR örnekleriyle çalış. Mevcut 10-run/5-PR örneklem sınırını, on-demand F04 ayrıntıları ve F05 tam UTC kapsama uyarılarını sakla; bilinmeyen, erişilemeyen, eski veya eksik veriyi otomatik olarak sağlıklı/başarılı gösterme. Kullanıcının özel repo analizine ihtiyacı doğarsa anonim Community API sınırını zorlamadan, yeni yetkilendirme mimarisini **ayrı karar** olarak ele al.
 
-**D3.** Başarı ölçütü (hipotez, vaat değil): en az 5 gerçek kurulum; 3 kişinin ikinci kez kullanması; 2 bağımsız ücretli kurulum/özelleştirme ihtiyacı; sistematik kritik hata yok. 30 günde gerçekleşmezse ücretli SaaS'a geçilmez, kullanıcı ihtiyacına göre ürün daraltılır.
+**D3. Tek kişilik ölçüm:** İlgili veri barındıran 1–3 public repo ile elle yapılmış tekrarlanabilir senaryolar kullan. Repo hiç workflow/PR içermiyorsa “bilgi yok” doğru sonuçtur; sahte incident türetme. Her gerçek kullanımda isteğe bağlı olarak neyin incelendiğini, referans GitHub linkini, yaklaşık manuel süreyi, NEXUS süresini, doğruluk/hata durumunu ve faydayı yerel notta kaydet. Notlar uygulama telemetrisi veya public GitHub issue olarak otomatik gönderilmez. Örnek kayıt: [Owner kullanım karnesi](NEXUS_OWNER_FIRST_USAGE_SCORECARD_2026-10-15.md).
 
-**Çıkış kriteri:** Gerçek geri bildirim ve çözülen sorun listesi; ücretli müşteri sayısı olduğundan fazla sunulmaz.
+**D4. 30 günlük karar hipotezi (dış kullanıcı gerekmez):** Birincil OS'de başarılı yerel başlangıç ve durdurma, temiz yeniden başlatma, sıfır kritik gizlilik/güvenlik sorunu, 400/429/503 gibi kaynak hata durumlarının dürüst gösterimi; **en az üç gerçek sahibi-kullanım oturumu** (farklı günlerde mümkünse), her oturumda yanlış olumlu “temiz” sonucu olmaması. Ek değer sinyali: kaynak bağlantısıyla **en az bir** kararın kolaylaşması, veya manuel incelemeye göre ölçülmüş süre avantajı; gerçek veri bunu sağlamıyorsa “fayda henüz kanıtlanmadı” yaz. Hedefler çalışma hipotezidir; tutmaması “ürün kapandı” demek değil, özellik daraltma / duraklatma sebebidir.
 
-## E. P2 — İlk gelir: satılan şey barındırma değil hizmet
+**D5. Dağıtım ayrımı:** Önce **owner-local** tek OS kabulüyle yalnız sahibin kullandığı test/alpha kurulum yapılabilir. Windows+Ubuntu iki gerçek OS kabulü, Docker image provenance ve yayın güvenliği tamamlanmadan “çok platformlu doğrulanmış Community release” denmez. PR [#80](https://github.com/senanurcetin/nexus-devops-intelligence/pull/80), [#82](https://github.com/senanurcetin/nexus-devops-intelligence/pull/82) ve [#81](https://github.com/senanurcetin/nexus-devops-intelligence/issues/81) bağlamında sürüm/QA kapıları korunur. Ayrı GHCR, Community Web veya Cloudflare Pages dağıtımı yalnız kendi kullanımında somut kolaylık gösterirse ve yeni güvenlik/QA gereksinimleri geçerse ele alınır; ön şart değildir.
 
-**E1.** Ticari platformu ücretsiz Hobby'de işletmek yerine müşterinin **kendi barındırdığı ortam için isteğe bağlı kurulum, eğitim, veri/CI analizi ve özelleştirme hizmeti** sunulabilir. Ücretsiz MIT kod satılabilir ama rakipler de kopyalayabilir; esas değer güvenilir kurulum/özel entegrasyon/hız ve destektir. Her iş için kapsam, teslimat, geri alma, izinler ve açık fiyat anlaşması; vergi/fatura ve sözleşme konuları yerel mevzuata göre ayrıca değerlendirilir.
+**Çıkış kriteri:** 1 kişinin tekrar kullanabildiği, kaynakla doğruladığı ve kişisel DevOps iş akışına değer katıp katmadığını objektifçe değerlendirebildiği yerel uygulama. **5–10 dış pilot yokluğu bir blokaj değildir.**
 
-**E2.** İlk işlerden önce sunucuyu, alan adını veya veritabanını cebimizden finanse etmeyiz; müşterinin sağladığı/ödediği altyapıyla yürütürüz. En az bir gerçek gelir veya ödeme taahhüdü gelmeden ücretli bulut planına geçilmez. Tek seferlik gelir = düzenli SaaS geliri değildir.
+## E. P2 — İsteğe bağlı dış Community kullanıcıları ve gelir (zorunlu değil)
 
-**E3.** Ticari modüller için yeni, hak sahipliği açık kodu private repoda geliştirmenin gerekliliği kullanıcı talebiyle belirlenir; Community MIT kaynakları ve eski haklar korunur.
+**E1. Dış kullanıcılar:** Public MIT repo ve doğru README/kullanım rehberi bulunabilir kalır. Başka kullanıcı kendi isteğiyle gelirse issue/geri bildirim üzerinden desteklenebilir. İstenmeyen outreach, rastgele tanıtım, reklam, topluluk büyüklüğü, 5–10 kurulum veya dönüşüm oranı, **sürüm veya ürün değerinin ön şartı değildir**. İsteğe bağlı kullanıcıların sayısı 0 olabilir; 0 kullanıcılı ayda proje “başarısız” sayılmaz.
 
-**Çıkış kriteri:** Ölçülmüş gerçek talep, maliyet hesabı ve gelir/hosting oranı.
+**E2. Gelir:** Kurulum, CI/CD health review veya özelleştirme talebi kendiliğinden doğarsa müşteri ortamında destek/hizmet modeli değerlendirilebilir. Gerçek müşteri, hizmet kapsamı, lisans, güvenlik, vergi/fatura ve açık fiyat onayını gerektirir. Hiç talep olmazsa ödeme platformu, CRM, satış hunisi, fiyat sayfası, çok kiracılı veri tabanı, premium özel repo veya satıcı hesabı **kurulmaz**. Gelir hedefi 0 TL olabilir; nakit çıkışı da 0 TL hedefiyle devam edilir.
 
-## F. P3 — Sonra NEXUS Cloud SaaS
+**E3. Destek maliyeti ve proje kararı:** Haftalık sürdürme yükü faydayı aşıyorsa özellikleri azalt veya geliştirmenin hızını düşür. GitHub topluluğu dış katkıya açık kalabilir fakat tek geliştiricinin sınırsız ücretsiz destek SLA'sı yoktur. “Portföy/profesyonel referans + kendi işinde kullanılan araç” kalıcı, geçerli bir ürün sonucudur.
 
-Yalnız D ve E'de doğrulanmış müşteriler oluşunca ayrı onaylı kararla:
-- GitHub App installation-level scoped read-only authorization; kullanıcı, organizasyon ve repo isolation; GitHub callback/webhook güvenliği.
-- Multi-tenant auth, tenant-scoped data persistence, veri silme ve KVKK/GDPR değerlendirmesi, log redaksiyonu, support/recovery; arka plan job kota kontrolü.
-- Gerçek SSO + protected Preview exact SHA (G04), manual VoiceOver/NVDA (G05), iki bağımsız Vercel Function + ortak Redis admission (G06) gibi **seçilen barındırma mimarisinde geçerli** gereksinimleri test et. Tek-machine localhost Docker için “iki Vercel instance” bir acceptance gereksinimi değildir; **public shared multi-instance SaaS** için hâlâ zorunlu.
-- Barındırma ticari kullanıma izin veren ücretli plan veya uygun kendi sunucusu üzerinden ayrıca fiyatlandırılır; ücretsiz Hobby'yi ticari ödeme trafiği için kullanma.
-- Fiyat ve aylık işlem maliyeti doğrulanmadan ödeme altyapısı bağlanmaz.
-- Sonra ihtiyaç kanıtlanırsa Electron/Tauri Windows EXE kararı verilir; ilk dağıtım yolu değildir.
+**Çıkış kriteri:** Yok; E bölümü tamamlanması gereken bir kapı değildir. Dış kullanıcı veya müşteri çıkması durumunda ayrı ürün kararıyla etkinleşir.
 
-**NO-GO:** müşteri yokken sürekli ücretli barındırma, geliştirici cihazını kamuya port-forward etme, token paylaşma, kullanıcıdan ayrı izin almadan GitHub App özel depolarına erişme, kilidi atlayarak Preview yaratma, hosted CI/Actions çalıştırma, izinsiz Upstash 21-call canlı sınama, varsayımsal gelir ya da tamamlama iddiası.
+## F. P3 — NEXUS Cloud SaaS (yalnızca talep + finansman + ayrı karar ile)
 
-## Öncelikli hemen sonraki iş ve yürütme takip tablosu
+Cloud'a geçiş **bir sonraki zorunlu aşama değildir**. Owner-local Community uygulaması tek kullanıcıyla süresiz sürdürülebilir. Cloud kararı ancak uzaktan erişim, ekip işbirliği veya müşterinin barındırılmış servis talebi gibi **tekrarlanan somut bir sorun**, finansman ve ayrı ürün sahibi onayı varsa değerlendirilir; dış kullanıcı/güvenli finansman yoksa **HOLD süresiz** kalır.
 
-| Sıra | PR/iş paketi | Bağımlılık | Kabul |
+Cloud için, ancak karar alınırsa:
+- GitHub App scoped read-only installation yetkileri; tenant isolation, güvenli webhook/callback, hesap erişim kontrolleri.
+- Auth, depolama, deletion ve KVKK/GDPR değerlendirmesi; log redaksiyonu, destek, yedekleme, bounded background jobs, finansal üst limit.
+- Seçilen barındırma mimarisinde gerçek protected Preview/SSO ve insan erişilebilirlik kabulü; birden çok instance varsa gerçek shared limiter kanıtı. Eski Vercel #49/#7 açık takipleri, localhost-alpha doğrulamasının yerini tutmaz.
+- Ticari kullanıma uygun hosting ve gerçek aylık maliyet; önce gelirin veya onaylı kaynağın olması, sonra harcama.
+
+**NO-GO:** kullanıcı bulmak için ürünü bitmiş sayma, sahte demo/telemetri/kullanıcı, ödeme veya gelir tahmini üretme; zorunlu ücretli hosting; güvenlik/kapı atlayarak internet yayını; özel token veya key isteme; 21-call Redis stress veya yeni Actions/CI çalışmasını mevcut izin olmadan tetikleme.
+
+## Öncelikli hemen sonraki iş ve yürütme takip tablosu — Owner-First
+
+| Sıra | İş paketi | Bağımlılık | Kabul |
 | --- | --- | --- | --- |
-| 1 | Public/MIT/NO-SPEND + güncel kaynaklı ürün statüsü dokümantasyonu | Yok | Public repo değişmez; README yanlış deploy iddiası içermez |
-| 2 | `output:standalone`, Dockerfile + `.dockerignore` | Node QA | Lokal image build + nonroot + no secret COPY |
-| 3 | Loopback-only `compose.yaml`, start/stop, health/invalid-input smoke | 2 | 127.0.0.1 bind; tek node local-only; external exposure yok |
-| 4 | Windows/Ubuntu Community onboarding, troubleshooting | 2–3 | Gerçek iki OS üzerinde talimat doğrulama |
-| 5 | G04/G05/ G06 SaaS yayına hazırlık; ayrı kapılar | #49/#7 | Sahte canlı PASS yok, Production izinli |
-| 6 | 5–10 ücretsiz pilot ve kullanıcı görüşmesi | 4 | Gerçek kurulum/geri bildirim |
-| 7 | İlk isteğe bağlı kurulum/özelleştirme hizmeti | 6 | Gerçek ücretli iş talebi |
-| 8 | Ticari SaaS fizibilitesi ve ayrı private premium modüller | 7 | Gelir + bütçe + lisans/izin kararı |
+| 1 | Public/MIT/NO-SPEND + owner-first durum belgesi | Yok | Pilot ve gelir varsayımı kaldırıldı; deploy iddiaları doğru |
+| 2 | #80 self-hosted standalone/Docker kaynağı ve offline kalite | Güncel SHA | Test/TS/build/doğruluk kanıtı; başarısız test raporlanır |
+| 3 | Birincil OS'de localhost kurulum/smoketest | 2, gerçek Docker host | Tek makine 127.0.0.1, nonroot, 400/no-store; gerçek kullanılabilir |
+| 4 | Kendi public repolarında 30 gün boyunca ihtiyaç temelli kullanım | 3 | 3 dürüst kaynaklı kullanım oturumu; değer/fayda kararı |
+| 5 | #82 Community yönergeleri ve release checklist | Kod kapıları | Açık kaynak katkı mümkün; müşteri/pilot bağımlılığı yok |
+| 6 | İkinci OS/GHCR veya Community Web (isteğe bağlı) | Kullanım ihtiyacı | Gerçek QA; yayınlamadan önce güvenlik kabulü |
+| 7 | Başkalarının isteğe bağlı katkı/kullanımı (opsiyonel) | Kendi isteği | 0 kullanıcı kabul edilir |
+| 8 | Ücretli hizmet / Cloud (opsiyonel) | Gerçek talep + finansman + onay | Hiç talep olmazsa HOLD; harcama yok |
 
-**İş planının uygulanması için “private yap” işlemi gerekmiyor.** Kullanıcı yeni “devam et” beklenmeden tek-proje günlük geliştirmeyi zaten yetkilendirdi; yine de her planlı çalışma kendi çalıştırma ortamı ve güvenli sınırları içinde yapılır; sohbetin kesintisiz çalışan bağımsız bir process olduğu iddia edilmez.
+**Yürütme ritmi:** Bu plan ilgili sohbet/izinli görevlendirme süresince izlenir. Sürekli arka planda çalışan bir ajan, sayaç, bildirim veya kullanıcı izleme olmadığı açıkça kabul edilir. Dış pilot kullanıcı için zaman sınırı/dönüşüm baskısı oluşturulmaz.
 
 ## Başvuru kaynakları
 
