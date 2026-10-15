@@ -1,6 +1,6 @@
 # NEXUS Community — first external release gate
 
-**Date:** 2026-10-15. **State: NO-GO / release not published.** This checklist applies only to `senanurcetin/nexus-devops-intelligence` and is separate from any Vercel/Cloud launch approval.
+**Date:** 2026-10-15. **State: NO-GO / release not published.** **Owner-first decision:** zero outside users and zero revenue are valid. External pilot recruitment is NOT a Community or personal-use gate. This checklist applies only to `senanurcetin/nexus-devops-intelligence` and is separate from any Vercel/Cloud launch approval.
 
 ## Zero-spend boundaries
 
@@ -22,19 +22,27 @@
 - [ ] Run interactive keyboard/mobile and at least one real Chrome/Firefox smoke on the packaged build; real human assistive technology acceptance is a separate explicit gate.
 - [ ] Run image/dependency security checks and manual secret inspection **without posting secrets**.
 
+## Owner-only local alpha gate (no external pilots needed)
+
+- [ ] One real maintainer OS install (Docker Engine >=28), source SHA, port and safety checks are recorded before labeling the app usable by its owner.
+- [ ] Record at least one real owner workflow/PR inspection with an authentic **public** GitHub source link, or explicitly record "no eligible event" without inventing insights.
+- [ ] Record **NOT RUN** for missing platform/browser evidence; owner-local alpha is not a verified cross-platform public release.
+- [ ] Owner can continue using the app with **0 outside users / 0 revenue**. No telemetry, account registration or sales process required.
+- [ ] Optional 30-day owner evaluation is logged in [owner-first scorecard](NEXUS_OWNER_FIRST_USAGE_SCORECARD_2026-10-15.md) after the plan branch is merged.
+
 ## Community publication gate
 
 - [ ] Publish accurate English setup instructions, optional example screenshot with provenance, FAQ and known limitations; do not claim made-up screenshots or usage.
 - [ ] Verify issue forms and PR template receive actionable reports without requesting secrets.
 - [ ] Review MIT LICENSE, third-party notices, security contact and support boundaries.
 - [ ] Select version/tag only after passing build and safety evidence; publish full tag and SHA as **Community alpha**, not production-certified SaaS.
-- [ ] Recruit 5–10 *real* pilot users through voluntary opt-in public outreach; no bought ads or unsolicited mass mail.
-- [ ] Count completed installs, return visits, blockers and requested services; no fake installation/revenue metrics.
+- [ ] Public community documentation is accurate and discoverable. **External pilot recruitment is optional, NOT a release gate**; no paid ads or unsolicited mass mail.
+- [ ] Count actual installations, issues and opt-in feedback only when they exist. **0 external installations / 0 revenue is acceptable**; never invent users or revenue.
 
-## Revenue gate — later
+## Optional revenue gate — only if real demand appears
 
 - [ ] Record at least one independently verified paid installation/customization request or payment commitment before funding managed hosting.
 - [ ] Price any work with explicit scope and customer-provided infrastructure; check local invoicing/tax and relevant software licenses.
 - [ ] Only consider a separate, owner-approved NEXUS Cloud plan after usage evidence, security architecture, tenant separation and a sustainable cost model.
 
-**Go/No-Go owner signoff:** pending. Do not merge/release/charge solely because this document exists.
+**Owner decision:** no external pilot or sales target is required. **Public release Go/No-Go signoff:** pending technical and safety acceptance; do not merge/release/charge solely because this document exists.

@@ -22,7 +22,9 @@ test('Community release cannot be inferred from a doc or unverified build', () =
   assert.match(doc, /Docker Engine 28\+/);
   assert.match(doc, /NOT RUN/);
   assert.match(doc, /localhost/);
-  assert.match(doc, /5.10/);
+  assert.match(doc, /0 outside users/);
+  assert.match(doc, /External pilot recruitment is optional/);
+  assert.match(doc, /owner-first scorecard/);
   const pr = read('.github/PULL_REQUEST_TEMPLATE.md');
   assert.match(pr, /NOT RUN/);
   assert.match(pr, /No CI, Preview, Production/);
