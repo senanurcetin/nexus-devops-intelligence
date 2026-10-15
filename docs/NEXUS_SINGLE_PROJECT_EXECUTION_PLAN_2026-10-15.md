@@ -12,6 +12,10 @@
 
 [Gerçek kaynak SHA'ya bağlı G04 clipboard race QA](G04_CLIPBOARD_SOURCE_SWITCH_RACE_QA_2026-10-15.md): Seçilen GitHub repository değiştikten sonra önceki panoya kopyalama çağrısının geç gelen başarı/hata sonucu artık yeni kaynak üzerinde “kopyalandı” veya yanlış fallback oluşturamaz. Çevrimdışı test **227/227 Node, 16/16 HTTP, 12/12 Chromium, 12/12 Firefox**, JS bütçesi ve audit 0 başarılı. Mevcut Windows WebKit cihazı çevrimdışı olduğundan **yeni 12. senaryo WebKit NOT RUN**; eski 11/11 kanıtı korunur ama genişletilmez. Güncel kaynak hâlâ Preview/Production'da yayınlanmış değildir; G04 gerçek SSO/F01–F05 kabulü, G05 insan AT, G06 canlı iki-instance Redis ve G07 Production ayrı açık kapılardır.
 
+### 15 Ekim G06 tüm route Redis sözleşmesi
+
+[Beş public API'nin fail-closed test raporu](G06_FIVE_PUBLIC_ROUTES_FAILCLOSED_QA_2026-10-15.md): İlk iki route dışında kalan PR verification, workflow evidence ve 7 günlük trend API'leri de gerçek Next GET handler'larında simüle Redis 429/503 ve geçersiz input için sınandı. **230/230 Node, 11/11 odaklı G06 test, 16/16 local HTTP, 12/12 Chromium, 12/12 Firefox**, TS/build/JS budget ve audit 0. Canlı Upstash çağrısı veya hosted CI yok. Bu **kaynak düzeyinde risk azaltımıdır**; iki ayrı gerçek Vercel instance kanıtı (G06/#7) hâlâ **OPEN**, gerçek 21-request test izinsizdir.
+
 ## A. Başlangıç — mevcut kanıtların doğru tasnifi
 
 | İş / kapı | Kanıtlanmış mevcut durum | Eksik kabul |

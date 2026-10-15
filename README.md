@@ -168,6 +168,17 @@ short-lived cloud sandbox, without GitHub Actions or CircleCI. The current
 `npm test` command uses the locked `tsx` development dependency and requires
 `npm ci` first. There is no requirement to install anything on the user's PC.
 
+## G06 five-route fail-closed regression (15 October)
+
+Five real Next GET handlers—Actions, PRs, PR verification, workflow evidence
+and seven-day trend—now have offline route-level tests for invalid input before
+Redis, shared-Redis origin 429/no-store/Retry-After with identical opaque bucket,
+and Redis-unavailable fail-closed 503 with **zero GitHub fanout**. Exact-source
+QA: **230/230 Node, 16/16 compiled local HTTP, 12/12 Chromium, 12/12 Firefox**, 
+TypeScript/build/budget and audit 0. These tests use synthetic in-process
+Redis EVAL responses, never Upstash or Production; **G06 real multi-instance
+acceptance remains OPEN**. See [G06 exact-SHA five-route test report](docs/G06_FIVE_PUBLIC_ROUTES_FAILCLOSED_QA_2026-10-15.md).
+
 ## G06 Redis test permission and honest acceptance verdict
 
 The manual `verify-protected-redis-preview.mjs` test **does not

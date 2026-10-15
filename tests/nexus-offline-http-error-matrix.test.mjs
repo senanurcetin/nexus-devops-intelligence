@@ -3,6 +3,9 @@ import assert from 'node:assert/strict';
 import { NextRequest } from 'next/server';
 import { GET as actionsGET } from '../src/app/api/public-actions/route.ts';
 import { GET as prsGET } from '../src/app/api/public-prs/route.ts';
+import { GET as verificationGET } from '../src/app/api/public-pr-verification/route.ts';
+import { GET as workflowEvidenceGET } from '../src/app/api/public-workflow-evidence/route.ts';
+import { GET as workflowTrendGET } from '../src/app/api/public-workflow-trends/route.ts';
 import { readPublicPanel } from '../src/lib/nexus-panel-request.ts';
 
 const backend = 'https://fixture-only.upstash.io';
@@ -19,6 +22,28 @@ function request(path, repository = repo) {
     headers: { 'x-vercel-forwarded-for': '198.51.100.99' },
   });
 }
+/**
+ * All five public routes consume the SAME shared Redis gate. Three detail
+ * routes are opt-in, so give valid path-specific parameters to ensure their
+ * 429/503 result comes from admission rather than an unrelated HTTP 400.
+ * Every fetch in these tests is a process-local intercept, never a real URL.
+ */
+const allRouteCases = [
+  ['/api/public-actions', actionsGET, {}],
+  ['/api/public-prs', prsGET, {}],
+  ['/api/public-pr-verification', verificationGET, {number:'21'}],
+  ['/api/public-workflow-evidence', workflowEvidenceGET, {id:'91'}],
+  ['/api/public-workflow-trends', workflowTrendGET,
+    {end:new Date(Date.now() - 86_400_000).toISOString().slice(0,10)}],
+];
+
+function requestForFullGate(path, additions, repository = repo) {
+  const query = new URLSearchParams({repository,...additions});
+  return new NextRequest('http://localhost:3000' + path + '?' + query, {
+    headers:{'x-vercel-forwarded-for':'198.51.100.99'},
+  });
+}
+
 function json(value, status = 200, headers = {}) {
   return Response.json(value, { status, headers });
 }
@@ -203,5 +228,64 @@ test('offline matrix: rate-limit adapter bounds Retry-After and never parses WAF
     assert.match(result.error, expected);
     assert.doesNotMatch(result.error, /private-error|html/);
     assert.equal(calls, 1);
+  }
+});
+
+test('G06: all five routes validate public source BEFORE Redis or upstream requests', async () => {
+  await withFakeRuntime(() => {
+    throw Error('Invalid inputs must never reach Redis or GitHub');
+  }, async calls => {
+    for (const [path,get,params] of allRouteCases) {
+      const response = await get(requestForFullGate(path,params,'../secret'));
+      assert.equal(response.status,400,path);
+      assertNoLeak(response,await response.json());
+    }
+    assert.equal(calls.length,0);
+  });
+});
+
+test('G06: each of the five routes denies a shared Redis 21st request at origin', async () => {
+  await withFakeRuntime(url => {
+    assert.equal(url,backend);
+    return json({result:[21,33]});
+  }, async calls => {
+    for (const [path,get,params] of allRouteCases) {
+      const response = await get(requestForFullGate(path,params));
+      assert.equal(response.status,429,path);
+      assert.equal(response.headers.get('x-nexus-rate-limit-source'),'shared-redis',path);
+      assert.equal(response.headers.get('retry-after'),'33',path);
+      assertNoLeak(response,await response.json());
+    }
+    assert.equal(calls.length,5,'one and only one Redis EVAL per route');
+    assert.ok(calls.every(c => c.location===backend && c.init.method==='POST' &&
+      c.init.cache==='no-store'),'GitHub must not be contacted on shared Redis denial');
+    const buckets = calls.map(c => JSON.parse(c.init.body)[3]);
+    assert.equal(new Set(buckets).size,1,
+      'all five routes must use same opaque per-client Redis bucket');
+  });
+});
+
+test('G06: all five routes fail closed on unavailable Redis, without GitHub fanout', async () => {
+  for (const outcome of [
+    () => json({error:'private authentication details'},401),
+    () => json({result:[20,-3]}),
+    () => Promise.reject(new Error('private network diagnostics')),
+  ]) {
+    await withFakeRuntime(url => {
+      assert.equal(url,backend);
+      return outcome();
+    }, async calls => {
+      for (const [path,get,params] of allRouteCases) {
+        const response = await get(requestForFullGate(path,params));
+        assert.equal(response.status,503,path);
+        assert.equal(response.headers.get('retry-after'),'5',path);
+        assert.equal(response.headers.get('x-nexus-rate-limit-source'),
+          'shared-redis-unavailable',path);
+        assertNoLeak(response,await response.json());
+      }
+      assert.equal(calls.length,5);
+      assert.ok(calls.every(c=>c.location===backend),
+        'GitHub must never run after failed shared Redis admission');
+    });
   }
 });
