@@ -8,6 +8,10 @@
 **Production SHA:** `74cd0e344eb94255b4bc8db99e4a4dc7f3a5a0bf`, deployment `dpl_9fXGATNHhyhNVrN1i47k3BU4u5K5`. **No Production authorization**.  
 **Critical distinction:** PR #74's safe-copy API response diagnostics are **only in source**, not in existing SSO Preview or Production. Merging a docs PR is not a deployment; `git.deploymentEnabled=false`.
 
+### 15 Ekim G04 devam çalışması — Safari pano yarış düzeltmesi
+
+[Gerçek kaynak SHA'ya bağlı G04 clipboard race QA](G04_CLIPBOARD_SOURCE_SWITCH_RACE_QA_2026-10-15.md): Seçilen GitHub repository değiştikten sonra önceki panoya kopyalama çağrısının geç gelen başarı/hata sonucu artık yeni kaynak üzerinde “kopyalandı” veya yanlış fallback oluşturamaz. Çevrimdışı test **227/227 Node, 16/16 HTTP, 12/12 Chromium, 12/12 Firefox**, JS bütçesi ve audit 0 başarılı. Mevcut Windows WebKit cihazı çevrimdışı olduğundan **yeni 12. senaryo WebKit NOT RUN**; eski 11/11 kanıtı korunur ama genişletilmez. Güncel kaynak hâlâ Preview/Production'da yayınlanmış değildir; G04 gerçek SSO/F01–F05 kabulü, G05 insan AT, G06 canlı iki-instance Redis ve G07 Production ayrı açık kapılardır.
+
 ## A. Başlangıç — mevcut kanıtların doğru tasnifi
 
 | İş / kapı | Kanıtlanmış mevcut durum | Eksik kabul |

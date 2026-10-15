@@ -203,6 +203,10 @@ See [R3 exact-SHA real WebKit evidence](docs/R3_REAL_WEBKIT_WINDOWS_QA_2026-10-1
 G05 OPEN**; WebKit engine QA and automated axe do not substitute
 for human assistive technology or a production release.
 
+## G04 clipboard-source consistency (15 October)
+
+In source-only PR following #75, async Safari-style clipboard permission results are ignored after the selected public GitHub repository changes. Three copy handlers check a per-selection generation to prevent a copied notice or old fallback from reappearing on a new repo. An intercepted mobile Playwright scenario tests delayed permission success **and** denial: **12/12 Chromium, 12/12 Firefox**, 227/227 Node, 16/16 offline HTTP; WebKit 12th scenario **NOT RUN** because the connected host was offline. Read the [exact-SHA test evidence](docs/G04_CLIPBOARD_SOURCE_SWITCH_RACE_QA_2026-10-15.md). This is not deployed to the still-older SSO Preview; G04/G05/G06 live acceptance remains OPEN.
+
 ## 15 October: NEXUS DevOps single-project execution plan
 
 **Only this repository is in scope:** `senanurcetin/nexus-devops-intelligence`.
