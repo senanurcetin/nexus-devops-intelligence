@@ -1,6 +1,6 @@
 # NEXUS DevOps — Owner-First 30 Günlük Gerçek Kullanım Karnesi
 
-**Başlangıç:** 2026-10-15 · **Kapsam:** yalnız ürün sahibi · **Bütçe:** yeni ücretli hizmet 0 TL · **Durum:** şablon; gerçek kullanım yapıldığına dair iddia değildir.
+**Başlangıç:** 2026-10-15 · **Kapsam:** pilotsuz ticari sürüm öncesi gerçek *iç QA* · **Bütçe:** yeni ücretli hizmet 0 TL · **Durum:** şablon; gerçek kullanım yapıldığı iddia edilmez. **Ticari satış hedefi aktif, ücretsiz dış test kullanıcı zorunlu değildir.**
 
 ## Amaç ve sınırlar
 
@@ -38,13 +38,13 @@ Süreler kullanıcıya ait yaklaşık gözlemler olabilir; tahmin ile ölçülen
 | Dış kullanıcı | **0 kabul edilir** | Yalnız gerçek gönüllü katkı varsa |
 | Gelir | **0 TL kabul edilir** | Varsayımsal müşteri/gelir yazılmaz |
 
-**Karar dalları:** Fayda kanıtlıysa owner-local aracı sürdür/iyileştir. Fayda belirsizse tek bir senaryoya odaklanıp kapsamı küçült. Kullanım gereksizse geliştirmeyi duraklat, kodu public/MIT olarak sakla. Bir dış kullanıcı/ücretli talep kendiliğinden çıkarsa **ayrı** ürün kararı değerlendir; otomatik SaaS yatırımı yapma.
+**Karar dalları:** Teknik QA yeterliyse Commercial Setup & CI Review paketinin satış/teslimat hazırlığına devam et. Yetersizse gerçek sorunları gider; ticari iddiaları genişletme. 0 pilot ile satış kanalı hazırlanabilir; 0 siparişte gelir 0 kaydedilir. Premium Pro modülleri yeni özellik ve lisans hakları tamamlanana dek pazarlanmaz. Cloud için finansman + ayrı karar gerekir.
 
 ## Haftalık gözden geçirme (opsiyonel, zorunlu otomasyon yok)
 
 - 1. hafta: güvenli localhost kurulum, test ve ilk gerçek kaynağı doğrulama.
 - 2. hafta: kaynak bağlantısı/doğruluk ve ihtiyaç halinde UI/rapor iyileştirmesi.
 - 3. hafta: 2. veya 3. gerçek kullanım seansı; varsa manuel karşılaştırma ve bir darboğaz.
-- 4. hafta: sürdürülebilirlik kararı; *0 pilot / 0 müşteri ile de ürün devam edebilir*.
+- 4. hafta: satışa hazır olma değerlendirmesi (QA + kurulum + hukuki/ödeme + pazarlama), *0 pilot kabul edilir, gelir gerçekleşmediyse 0 kaydedilir*.
 
 Açık olmayan QA'yı PASS yapma; yayınlanmayan özelliği kullanılabilir diye sunma. Yerel notlar kişisel veriye dönüşüyorsa herkese açık repoya commit etme.
