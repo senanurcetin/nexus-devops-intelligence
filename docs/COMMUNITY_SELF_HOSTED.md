@@ -31,6 +31,16 @@ This is **not** a public endpoint; do not enable router port forwarding, cloud t
 
 ## Check the actual host binding
 
+Run the safe, **invalid-input-only** offline-upstream smoke from the checked-out repository after Compose reports healthy:
+
+```sh
+npm run smoke:community:localhost
+# Optional if the host loopback mapping is changed to port 3001:
+node scripts/verify-community-localhost.mjs 3001
+```
+
+This script contacts **127.0.0.1 only**: it checks the homepage and five intentionally invalid GitHub repo API requests, asserting 400/no-store and protective headers. No valid upstream GitHub request, credential or shared Redis probe is generated. It is not a substitute for actually checking the published Docker port or live data functionality.
+
 Run `docker compose ps` and verify that the published address reads `127.0.0.1:3000->3000/tcp` (display format varies). To inspect the mapping, use:
 
 ```sh

@@ -34,4 +34,6 @@ test('Community build context excludes credentials and developer-only artifacts'
   }
   assert.match(read('README.md'), /COMMUNITY_SELF_HOSTED\.md/);
   assert.match(read('docs/COMMUNITY_SELF_HOSTED.md'), /NOT RUN/);
+  assert.match(read('package.json'), /smoke:community:localhost/);
+  assert.match(read('scripts/verify-community-localhost.mjs'), /127\\.0\\.0\\.1/);
 });
