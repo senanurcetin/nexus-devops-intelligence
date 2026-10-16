@@ -26,14 +26,29 @@ test('Community Compose publishes only host loopback, no Redis or secrets', () =
   assert.doesNotMatch(compose, /(?:GITHUB_TOKEN|UPSTASH_REDIS_REST_TOKEN|secrets:|volumes:)/);
 });
 
-test('Community build context excludes credentials and developer-only artifacts', () => {
-  const rules = new Set(read('.dockerignore').split(/\r?\n/).map(line => line.trim()));
-  for (const forbidden of ['.git', '.env', '.env.*', '**/.env.*', '.npmrc',
-    'node_modules', '.next', 'tests', 'docs', 'scripts', '**/*.pem']) {
-    assert.ok(rules.has(forbidden), `missing .dockerignore rule: ${forbidden}`);
+test('Community build context is default-deny and allows only build inputs', () => {
+  const rules = read('.dockerignore').split(/\r?\n/)
+    .map(line => line.trim()).filter(line => line && !line.startsWith('#'));
+  assert.equal(rules[0], '*', 'unknown and untracked files must be excluded by default');
+  assert.deepEqual(rules.filter(rule => rule.startsWith('!')), [
+    '!package.json', '!package-lock.json', '!next.config.mjs', '!next-env.d.ts',
+    '!postcss.config.mjs', '!tsconfig.json', '!LICENSE',
+    '!src', '!src/**', '!public', '!public/**',
+  ], 'the only context exceptions must be explicit build inputs');
+
+  const lastInclude = rules.indexOf('!public/**');
+  for (const blocked of [
+    '**/.env', '**/.env.*', '**/.npmrc', '**/.git/**', '**/.ssh/**',
+    '**/*.pem', '**/*.key', '**/*.p12', '**/*.pfx',
+    '**/credentials*.json', '**/*service-account*.json', '**/*secret*.json',
+    '**/id_rsa*', '**/id_ed25519*', '**/node_modules/**', '**/.next/**',
+  ]) {
+    assert.ok(rules.indexOf(blocked) > lastInclude,
+      'sensitive path must be excluded AFTER source re-inclusion: ' + blocked);
   }
+  assert.match(read('Dockerfile'), /^COPY \. \.$/m);
   assert.match(read('README.md'), /COMMUNITY_SELF_HOSTED\.md/);
   assert.match(read('docs/COMMUNITY_SELF_HOSTED.md'), /NOT RUN/);
   assert.match(read('package.json'), /smoke:community:localhost/);
-  assert.match(read('scripts/verify-community-localhost.mjs'), /127\\.0\\.0\\.1/);
+  assert.match(read('scripts/verify-community-localhost.mjs'), /127\.0\.0\.1/);
 });
