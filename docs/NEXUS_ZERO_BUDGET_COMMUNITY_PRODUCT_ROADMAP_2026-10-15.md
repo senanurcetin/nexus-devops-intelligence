@@ -2,8 +2,11 @@
 
 **Karar tarihi:** 15 Ekim 2026 · **Kapsam:** yalnızca `senanurcetin/nexus-devops-intelligence`  
 **Kaynak başlangıç SHA:** `98febb079d7141c0cba9694b81330dd2919891f5`  
-**Karar:** **Mevcut public + MIT repo public kalacak.** Şu anda lisans, görünürlük, fiyatlandırma, runtime veya üretim dağıtımı değiştirilmez. Ticari SaaS, müşterilerden somut talep/gelir olmadan işletilmeye başlanmaz.  
+**Karar:** Community public/MIT kalır. Ticari satış hazırlığı zorunlu iş koludur fakat Cloud ancak finansman ve ayrı onayla açılır; mevcut runtime/deploy/lisans değiştirilmez.  
 **Başlangıç nakit bütçesi:** 0 TL. Bu, müşterinin kendi cihazında elektrik/internet/işletim maliyeti olmayacağı veya geliştirici emeğinin maliyetsiz olduğu anlamına gelmez.
+
+> **15 Ekim 2026 — yeni TICARI KARAR (onceki owner-only yaklasimini gunceller):** NEXUS satilabilir bir yazilim ve hizmet paketi olarak hazirlanacak. **Harici pilot, ucretsiz beta, 5–10 kullanici ve erken musteri bulma teknik yayina hazirlik kosulu DEGILDIR.** Sahip olarak kendi gercek GitHub projelerimizde dogfooding + otomatik/yerel QA kullanacagiz. Ilk satis ve gelir yine hedefimiz; ancak gercek odeme olmadan ticari basari iddia edilmeyecek. Ilk satilabilir paket verified self-hosted kurulum + bounded CI inceleme; daha sonra yeni, haklari kontrol edilmis Pro kodu. Public MIT haklari degismez; Cloud gelire ve ayri onaya baglidir. [Detayli ticari plan](NEXUS_COMMERCIAL_NO_PILOT_GO_TO_MARKET_2026-10-15.md).
+
 
 ## 0. Strateji ve kontrol sınırları
 
@@ -47,52 +50,46 @@
 
 **Çıkış kriteri:** Zaman damgalı en az iki işletim sistemi test raporu ve baştan sona kullanıcı rehberi; gerçek GitHub release yalnız tüm belgeli güvenlik/görsel kabul koşulları sağlanınca.
 
-## D. P1 — İlk 5–10 pilot kullanıcı, ücretsiz müşteri keşfi
+## D. P1 — Gerçek alıcı test kullanıcısı aramadan teknik QA (zorunlu)
 
-**D1.** Hedef: freelance geliştiriciler, küçük startup'lar, açık kaynak bakımcıları ve yoğun GitHub Actions kullanan 5–10 bağımsız ekip/kişi. İsteğe bağlı tanıtım/iletişim; spam veya izinsiz otomatik gönderim yok, ücretli reklam yok.
+Dış pilot sayısı **0** olabilir. Ürünün ilk ve gerçek teknik kullanıcısı sahibi olacak: 1–3 public GitHub repository üzerinde Actions/PR kaynakları kontrol edilir; en az üç mümkün gerçek kullanım senaryosu kaynak kanıtıyla, 400/429/503/504, quota ve eksik data fail-closed durumları offline fixture'larla doğrulanır. Sadece iç test ile 'müşteri talebi doğrulandı' denmez. README'de bugünkü gerçek sınırlar (10-run/5-PR sample, yalnız public, token yok, tam repo geneli analiz yok, AI root cause yok) korunur.
 
-**D2.** Her pilot için: kuruluş/kişi kimliğini gereğinden fazla toplama; kullanıcıya yükleme süresi, anlamlı risk tespitleri, tekrar açma sıklığı, hangi rapora ihtiyaç duyduğu, “buna para öder miydin / ne için” soruları. Repo ve özel kod paylaşmak zorunda bırakılmaz; opsiyonel anonim geri bildirim.
+Teknik satılabilirlik: source exact-SHA `npm ci/test/typecheck/build`, üçüncü taraf lisans ve secret kontrolü, Docker Engine 28+ loopback-only, nonroot, start/stop/rollback; satılacak hedef OS'de gerçek kurulum ve destek provası. PR #80 / #81 açık. **NOT RUN** PASS'e çevrilmez. Ücretli satış için paket ve söz verilen müşteri destek senaryosu kanıtlanmalı.
 
-**D3.** Başarı ölçütü (hipotez, vaat değil): en az 5 gerçek kurulum; 3 kişinin ikinci kez kullanması; 2 bağımsız ücretli kurulum/özelleştirme ihtiyacı; sistematik kritik hata yok. 30 günde gerçekleşmezse ücretli SaaS'a geçilmez, kullanıcı ihtiyacına göre ürün daraltılır.
+## E. P1 — Satılabilir ürün ve doğrudan satış yolu (zorunlu hedef, dış pilot yok)
 
-**Çıkış kriteri:** Gerçek geri bildirim ve çözülen sorun listesi; ücretli müşteri sayısı olduğundan fazla sunulmaz.
+| Paket | Değer ve ücretlendirme | Mevcut durum |
+| --- | --- | --- |
+| **Community** | MIT lisanslı ücretsiz public GitHub analiz çekirdeği | Mevcut MVP, Docker PR #80 henüz kabul edilmedi |
+| **Commercial Setup & CI Review** | Müşterinin kendi makinesinde doğrulanmış kurulum, sınırları belli gerçek CI/PR inceleme raporu, destek/onboarding; **hizmet/teslimat** ücretli, MIT kullanım hakları sürer | İlk satış için seçilen SKU; henüz satılabilir olarak doğrulanmadı |
+| **Pro Self-Hosted** | **Yeni** hakları temiz proprietary kod ve gerçekten ek kabiliyetler için yazılım lisansı + açık güncelleme/destek şartları | Taslak; private repo/yeni özellikler ve lisans incelemesi daha sonra, bugün Pro yok |
+| **Cloud SaaS** | Gelirle finanse edilen hosted abonelik | HOLD |
 
-## E. P2 — İlk gelir: satılan şey barındırma değil hizmet
+MIT kaynak kodu başkaları da satabilir veya yeniden dağıtabilir. Bir ücretli lisans 'Community kullanmaya devam etme hakkını' iptal edemez. Pro ayrı geliştirilmiş nitelikli özellik gerektirir; GitHub App özel repo veya geçmiş veri saklama ancak gerçekten uygulanıp güvenlik koşulları sağlandığında pazarlanır.
 
-**E1.** Ticari platformu ücretsiz Hobby'de işletmek yerine müşterinin **kendi barındırdığı ortam için isteğe bağlı kurulum, eğitim, veri/CI analizi ve özelleştirme hizmeti** sunulabilir. Ücretsiz MIT kod satılabilir ama rakipler de kopyalayabilir; esas değer güvenilir kurulum/özel entegrasyon/hız ve destektir. Her iş için kapsam, teslimat, geri alma, izinler ve açık fiyat anlaşması; vergi/fatura ve sözleşme konuları yerel mevzuata göre ayrıca değerlendirilir.
+**Sales readiness, pilotsuz:** İngilizce gerçek ürün sayfası + dürüst ekran görüntüleri, Community/paid karşılaştırması, net kurulum/OS kısıtları, teslimat-kapsam-SLA olmayan açık destek süresi, iade ve sipariş şartları, maliyet bazlı fiyat hipotezi, satış iletişim/teklif formu, izinli doğrudan B2B görüşmeleri. İlk ödemeden önce satıcı/şirket vergi-fatura şartları ve payment provider merchant approval; örn. Türkiye'de uygun tahsilat veya uygun Merchant of Record araştırılır. Paddle/Lemon Squeezy country eligibility hesap onayı değildir. Mevcut Vercel Hobby ticari SaaS olarak kullanılmaz. Ücretli reklam, soğuk spam, CRM aboneliği, domain ve ücretli hosting yok.
 
-**E2.** İlk işlerden önce sunucuyu, alan adını veya veritabanını cebimizden finanse etmeyiz; müşterinin sağladığı/ödediği altyapıyla yürütürüz. En az bir gerçek gelir veya ödeme taahhüdü gelmeden ücretli bulut planına geçilmez. Tek seferlik gelir = düzenli SaaS geliri değildir.
+**Pazar ölçümü:** sales-ready (teknik+hukuk+teslimat) ve *ilk gerçek satış* iki ayrı aşama. Hiç müşteri çıkmazsa gelir 0 kaydedilir; ürün yine satış amacıyla geliştirilebilir, ama gelir uydurulmaz. Doğrudan ödeme/kredi kartı entegrasyonu hazır olmadan satış tamamlandı denmez. Ücretsiz pilot toplamak hiçbir dönüm noktasının koşulu değildir.
 
-**E3.** Ticari modüller için yeni, hak sahipliği açık kodu private repoda geliştirmenin gerekliliği kullanıcı talebiyle belirlenir; Community MIT kaynakları ve eski haklar korunur.
+## F. P2 — Gelir veya onaylı finansman sonrası Cloud
 
-**Çıkış kriteri:** Ölçülmüş gerçek talep, maliyet hesabı ve gelir/hosting oranı.
+Cloud otomatik sonraki aşama değildir. İşletim geliri veya ayrı fon, tenant isolation, GitHub App scoped authorization, kullanıcı verisi/KVKK/GDPR, takvimli destek, ödeme/fatura, gerçek çok-instance rate limiting ve Preview/Production güvenliği tamamlanmadan abonelik servisi açılmaz. #49 ve #7 hosted kapıları açık kalır. Mevcut Vercel Hobby abonelik SaaS için kullanılmaz.
 
-## F. P3 — Sonra NEXUS Cloud SaaS
+## Önceliklendirilmiş pilotsuz satış çalışma planı
 
-Yalnız D ve E'de doğrulanmış müşteriler oluşunca ayrı onaylı kararla:
-- GitHub App installation-level scoped read-only authorization; kullanıcı, organizasyon ve repo isolation; GitHub callback/webhook güvenliği.
-- Multi-tenant auth, tenant-scoped data persistence, veri silme ve KVKK/GDPR değerlendirmesi, log redaksiyonu, support/recovery; arka plan job kota kontrolü.
-- Gerçek SSO + protected Preview exact SHA (G04), manual VoiceOver/NVDA (G05), iki bağımsız Vercel Function + ortak Redis admission (G06) gibi **seçilen barındırma mimarisinde geçerli** gereksinimleri test et. Tek-machine localhost Docker için “iki Vercel instance” bir acceptance gereksinimi değildir; **public shared multi-instance SaaS** için hâlâ zorunlu.
-- Barındırma ticari kullanıma izin veren ücretli plan veya uygun kendi sunucusu üzerinden ayrıca fiyatlandırılır; ücretsiz Hobby'yi ticari ödeme trafiği için kullanma.
-- Fiyat ve aylık işlem maliyeti doğrulanmadan ödeme altyapısı bağlanmaz.
-- Sonra ihtiyaç kanıtlanırsa Electron/Tauri Windows EXE kararı verilir; ilk dağıtım yolu değildir.
+| Adım | İş | Tamamlama ölçütü |
+| --- | --- | --- |
+| 1 | Commercial ürün SKU ve MIT hak sınırı | Doğru pozisyonlama |
+| 2 | PR #80 Docker + #81 yerel OS/güvenlik QA | Teknik satılabilir sürüm |
+| 3 | Owner GitHub projelerinde 3 gerçek kaynaklı inceleme | Pilot olmadan gerçek teknik kanıt |
+| 4 | Ücretli kurulum + CI inceleme teslimat dokümanı ve destek/sınır | Müşteri paketi |
+| 5 | Gerçek portföy sayfası + doğru ekran görüntüsü + teklif kanalı | Pazarlama hazır |
+| 6 | Mevzuat, satıcı doğrulaması, ödeme/fatura, iade/şartlar | Sipariş kabulü hazır |
+| 7 | Yeni premium Pro kabiliyetleri / ayrı lisans ve private kod | Gerçek yazılım lisansı satışı |
+| 8 | İlk gerçek ücretli müşteri ve maliyet defteri | Gelir gerçekleşirse kaydet; garanti değil |
+| 9 | Cloud ihtiyacı | Gerçek gelir veya onaylı bütçe olana dek HOLD |
 
-**NO-GO:** müşteri yokken sürekli ücretli barındırma, geliştirici cihazını kamuya port-forward etme, token paylaşma, kullanıcıdan ayrı izin almadan GitHub App özel depolarına erişme, kilidi atlayarak Preview yaratma, hosted CI/Actions çalıştırma, izinsiz Upstash 21-call canlı sınama, varsayımsal gelir ya da tamamlama iddiası.
-
-## Öncelikli hemen sonraki iş ve yürütme takip tablosu
-
-| Sıra | PR/iş paketi | Bağımlılık | Kabul |
-| --- | --- | --- | --- |
-| 1 | Public/MIT/NO-SPEND + güncel kaynaklı ürün statüsü dokümantasyonu | Yok | Public repo değişmez; README yanlış deploy iddiası içermez |
-| 2 | `output:standalone`, Dockerfile + `.dockerignore` | Node QA | Lokal image build + nonroot + no secret COPY |
-| 3 | Loopback-only `compose.yaml`, start/stop, health/invalid-input smoke | 2 | 127.0.0.1 bind; tek node local-only; external exposure yok |
-| 4 | Windows/Ubuntu Community onboarding, troubleshooting | 2–3 | Gerçek iki OS üzerinde talimat doğrulama |
-| 5 | G04/G05/ G06 SaaS yayına hazırlık; ayrı kapılar | #49/#7 | Sahte canlı PASS yok, Production izinli |
-| 6 | 5–10 ücretsiz pilot ve kullanıcı görüşmesi | 4 | Gerçek kurulum/geri bildirim |
-| 7 | İlk isteğe bağlı kurulum/özelleştirme hizmeti | 6 | Gerçek ücretli iş talebi |
-| 8 | Ticari SaaS fizibilitesi ve ayrı private premium modüller | 7 | Gelir + bütçe + lisans/izin kararı |
-
-**İş planının uygulanması için “private yap” işlemi gerekmiyor.** Kullanıcı yeni “devam et” beklenmeden tek-proje günlük geliştirmeyi zaten yetkilendirdi; yine de her planlı çalışma kendi çalıştırma ortamı ve güvenli sınırları içinde yapılır; sohbetin kesintisiz çalışan bağımsız bir process olduğu iddia edilmez.
+**NO-GO:** teknik QA yerine ücretsiz kullanıcı sayısı koymak, sahte gelir/test/referans, MIT hakkını geri almak, private işlevler hazır olmadan Pro'yu satmak, G04/G05/G06 bypass, izinsiz CI/Upstash/live deploy/harcama. [Ticari plan](NEXUS_COMMERCIAL_NO_PILOT_GO_TO_MARKET_2026-10-15.md).
 
 ## Başvuru kaynakları
 
