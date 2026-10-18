@@ -1,0 +1,38 @@
+# Fail closed: only the files needed to build the public Community app may
+# enter the Docker build context. Untracked local files are excluded by default.
+*
+!package.json
+!package-lock.json
+!next.config.mjs
+!next-env.d.ts
+!postcss.config.mjs
+!tsconfig.json
+!LICENSE
+!src
+!src/**
+!public
+!public/**
+
+# Defense in depth: these exclusions come AFTER directory re-inclusion.
+**/.env
+**/.env.*
+**/.npmrc
+**/.git
+**/.git/**
+**/.ssh
+**/.ssh/**
+**/*.pem
+**/*.key
+**/*.p12
+**/*.pfx
+**/credentials*.json
+**/*service-account*.json
+**/*secret*.json
+**/id_rsa*
+**/id_ed25519*
+**/*.log
+**/*.tsbuildinfo
+**/node_modules
+**/node_modules/**
+**/.next
+**/.next/**

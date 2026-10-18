@@ -2,6 +2,7 @@
 
 > **15 Oct 2026 — COMMERCIAL PREPARATION / NO REQUIRED PILOT USERS:** NEXUS will be prepared for direct commercial sales without a mandatory free-beta recruitment phase. The first proposed paid SKU is a verified, customer-hosted installation + bounded CI/PR review deliverable; NEXUS Pro software licensing requires **genuinely new rights-cleared premium functionality** in a separately approved private codebase. The existing public MIT Community license remains intact. Internal source-linked usage and exact-SHA security/OS QA remain required, while outside pilot users are optional (zero acceptable). **No paid product, checkout, Pro license or Cloud SaaS is live or ready to sell yet.** See the [commercial sales plan](docs/NEXUS_COMMERCIAL_NO_PILOT_GO_TO_MARKET_2026-10-15.md) and [zero-spend roadmap](docs/NEXUS_ZERO_BUDGET_COMMUNITY_PRODUCT_ROADMAP_2026-10-15.md). Docker #80/#81 and hosted release gates remain open; Vercel Hobby must not host a commercial SaaS.
 
+> **Unreleased local Community candidate (draft PR #80):** The localhost-only Docker Compose installation is proposed in source, not published or accepted on Windows/Ubuntu. See [candidate installation](docs/COMMUNITY_SELF_HOSTED.md) and [version/release gates](docs/COMMUNITY_VERSIONING_AND_INSTALLATION.md). No release tag, Docker runtime acceptance, Vercel Preview or Production deployment is authorized by this draft.
 
 An independent, read-only dashboard for inspecting recent GitHub Actions workflow runs
 and pull request merge state. **This is not part of Ops-Copilot.**
