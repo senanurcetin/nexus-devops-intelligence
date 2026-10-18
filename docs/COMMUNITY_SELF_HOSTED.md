@@ -34,15 +34,33 @@ This is **not** a public endpoint; do not enable router port forwarding, cloud t
 
 ## Check the actual host binding
 
-Run the safe, **invalid-input-only** offline-upstream smoke from the checked-out repository after Compose reports healthy:
+**Node.js is optional on the Docker host.** A Docker-only user can run the image and inspect HTTP output without installing Node/npm. After Compose reports healthy, test the **host** listener from the same computer using a GET request (not a HEAD-only request).
+
+Linux shell with `curl` installed:
 
 ```sh
-npm run smoke:community:localhost
-# Optional if the host loopback mapping is changed to port 3001:
+curl --silent --show-error --include --max-time 5 http://127.0.0.1:3000/
+curl --silent --show-error --include --max-time 5 'http://127.0.0.1:3000/api/public-actions?repository=invalid-repo'
+```
+
+Windows PowerShell using `curl.exe` (to avoid its `curl` alias):
+
+```powershell
+curl.exe --silent --show-error --include --max-time 5 "http://127.0.0.1:3000/"
+curl.exe --silent --show-error --include --max-time 5 "http://127.0.0.1:3000/api/public-actions?repository=invalid-repo"
+```
+
+Expect **200** for the homepage; malformed repository API requests must produce **400**, `Cache-Control: no-store`, `X-Frame-Options: DENY` and `X-Content-Type-Options: nosniff`. Repeat this invalid-input check on `/api/public-prs`, `/api/public-pr-verification`, `/api/public-workflow-evidence`, and `/api/public-workflow-trends`. These checks make **no valid GitHub upstream request**.
+
+If Node.js 22+ is already present on the host, an optional six-request scripted smoke is available without installing npm dependencies:
+
+```sh
+node scripts/verify-community-localhost.mjs
+# For a deliberately changed host port (e.g., 3001):
 node scripts/verify-community-localhost.mjs 3001
 ```
 
-This script contacts **127.0.0.1 only**: it checks the homepage and five intentionally invalid GitHub repo API requests, asserting 400/no-store and protective headers. No valid upstream GitHub request, credential or shared Redis probe is generated. It is not a substitute for actually checking the published Docker port or live data functionality.
+The automated smoke asserts all five invalid routes and protective headers; it does **not** check the published Docker port or prove Windows/Linux acceptance. See [version identity and release gates](COMMUNITY_VERSIONING_AND_INSTALLATION.md) before selecting any source/tag.
 
 Run `docker compose ps` and verify that the published address reads `127.0.0.1:3000->3000/tcp` (display format varies). To inspect the mapping, use:
 
