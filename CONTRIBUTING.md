@@ -4,7 +4,7 @@ Contributions are welcome as small, independently reviewable changes to this **p
 
 ## Before editing
 
-1. Check an existing issue **and** open PRs for duplicates; propose an issue with expected/observed behavior and safe reproduction if no issue exists. Confirm scope before building. The form/template proposal in [#82](https://github.com/senanurcetin/nexus-devops-intelligence/pull/82) is **draft**, not live in `main`.
+1. Check an existing issue **and** open PRs for duplicates; propose an issue with expected/observed behavior and safe reproduction if no issue exists. Confirm scope before building. Bug reports and feature requests now use [structured GitHub issue forms](https://github.com/senanurcetin/nexus-devops-intelligence/issues/new/choose) (merged via [#82](https://github.com/senanurcetin/nexus-devops-intelligence/pull/82)); report security concerns privately via [SECURITY.md](SECURITY.md).
 2. Fork or branch from a known `main` commit and record the full SHA. Node >=22.16 and the committed lockfile are prerequisites for current source work.
 3. Keep the change small and support it with tests using **synthetic fixtures and injected GitHub fetches**, not live API requests, customer data or credentials.
 
