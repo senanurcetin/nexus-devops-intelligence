@@ -9,13 +9,10 @@ import { parsePublicRepository } from './github-public-actions.ts';
 export function normalizeRepositoryInput(input: string): string {
   const candidate = input.trim();
   if (/^https?:\/\//i.test(candidate)) {
-    const url = new URL(candidate);
-    if (url.protocol !== 'https:' || url.hostname !== 'github.com' ||
-        url.username || url.password || url.port || url.search || url.hash) {
-      throw new Error('Only a public GitHub repository URL is supported.');
-    }
-    const match = /^\/([^/]+)\/([^/]+)\/?$/.exec(url.pathname);
-    if (!match) throw new Error('Use a GitHub repository root URL.');
+    // Match the *raw* URL: URL() normalizes /../ and percent encodings,
+    // which could silently turn an unsafe deep link into a different repo.
+    const match = /^https:\/\/github\.com\/([A-Za-z0-9_.-]+)\/([A-Za-z0-9_.-]+)\/?$/i.exec(candidate);
+    if (!match) throw new Error('Use a credential-free HTTPS GitHub repository root URL.');
     const repository = match[1] + '/' + match[2];
     parsePublicRepository(repository);
     return repository;
