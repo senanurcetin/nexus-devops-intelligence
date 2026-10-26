@@ -1,0 +1,50 @@
+name: Bug report
+description: Report a reproducible NEXUS Community issue without sensitive data
+title: "[Bug] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        NEXUS Community currently supports public GitHub repositories only.
+        NEVER post tokens, API keys, private repository links, sensitive logs or personal data.
+        Send security vulnerabilities privately using the contact in SECURITY.md.
+  - type: input
+    id: source
+    attributes:
+      label: Source version or commit
+      description: A release tag or exact commit SHA, if known
+      placeholder: "e.g. full Git SHA or not known"
+    validations:
+      required: true
+  - type: dropdown
+    id: environment
+    attributes:
+      label: Environment
+      options:
+        - Windows with Docker Desktop
+        - Ubuntu/Linux with Docker Engine
+        - Local Node.js developer mode
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      description: Use public or fabricated repo names only
+      placeholder: "1. Open localhost... 2. Enter public repository... 3. Observe..."
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior and sanitized evidence
+      description: Redact IPs, personal data, cookies, Authorization headers and tokens before posting
+    validations:
+      required: true

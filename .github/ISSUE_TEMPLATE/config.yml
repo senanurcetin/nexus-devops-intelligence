@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Report a security vulnerability privately
+    url: https://github.com/senanurcetin/nexus-devops-intelligence/security/policy
+    about: Do not disclose exploits, tokens, private logs or customer information in public issues.
+  - name: Contributor guide and project support
+    url: https://github.com/senanurcetin/nexus-devops-intelligence/blob/main/CONTRIBUTING.md
+    about: Read installation, scope and source-verification guidance before proposing a change.

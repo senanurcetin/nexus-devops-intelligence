@@ -520,3 +520,16 @@ Do not disclose GitHub tokens or private CI logs in public issues.
 ## Archived cloud verification (13 October 2026)
 
 An **early independent-repository snapshot** at `e51b38057dbc3be35fed4020e7b42434071c7783` was verified manually in a disposable Node 24 Vercel Sandbox, with **24** tests, TypeScript/build and a bounded public GitHub HTTP smoke. The dependency lockfile was committed at that milestone. These observations did **not** exercise today's F01–F05 source, newer Redis gate, live Preview, human accessibility or current Production. Later milestone results are recorded in [the integrated QA report](docs/F01_F05_INTEGRATED_RELEASE_QA_2026-10-14.md) and [release register](docs/NEXUS_CURRENT_RELEASE_WORK_PLAN_2026-10-14.md). No hosted GitHub Actions or CircleCI jobs were used.
+
+## Contributor onboarding and Community release evidence (updated 26 October 2026)
+
+The structured [bug/feature issue forms and PR template](https://github.com/senanurcetin/nexus-devops-intelligence/pull/82) were merged into `main` on **26 October 2026**. Security reports are routed away from public issues. The Docker installer remains **unmerged and unreleased**: [candidate PR #80](https://github.com/senanurcetin/nexus-devops-intelligence/pull/80) and [Windows/Ubuntu acceptance issue #81](https://github.com/senanurcetin/nexus-devops-intelligence/issues/81) are still open.
+
+- [Current Community release decision: NO-GO, exact SHA, verification matrix](docs/NEXUS_COMMUNITY_RELEASE_DECISION_2026-10-18.md)
+- [Reproducible local installation, maintenance, release notes and rollback playbook](docs/COMMUNITY_MAINTENANCE_AND_RELEASE.md) (**future acceptance instructions**, not completed tests)
+- [First contribution and public-repository example](docs/COMMUNITY_FIRST_CONTRIBUTION.md)
+- [Updated architecture: five read-only routes and release surfaces](docs/architecture.md)
+- [Upstream Xarray/Altair/DuckDB candidate research and duplicate exclusions](docs/OPEN_SOURCE_OPPORTUNITY_POOL_2026-10-18.md)
+- [Maintainer/contributor requirements](CONTRIBUTING.md)
+
+The **18 October documentation review** did not execute an exact-head full suite. Subsequent 26 October checks exercised the focused forms tests on PR #82 and the source tests/build on PR #87; neither is a successful Docker image or two-OS acceptance. **No Community Docker deployment, GitHub Release/tag, download count, customer adoption, payment or hosted CI run is claimed.**

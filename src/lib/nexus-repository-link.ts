@@ -1,5 +1,26 @@
 import { parsePublicRepository } from './github-public-actions.ts';
 
+/**
+ * Accept an ordinary public GitHub repository link pasted into the search box,
+ * while retaining strict owner/repo identifiers in all APIs and shared URLs.
+ * No HTTP request is made. Reject URL credentials, query strings, fragments,
+ * subpages, other hosts, and insecure schemes rather than persisting them.
+ */
+export function normalizeRepositoryInput(input: string): string {
+  const candidate = input.trim();
+  if (/^https?:\/\//i.test(candidate)) {
+    // Match the *raw* URL: URL() normalizes /../ and percent encodings,
+    // which could silently turn an unsafe deep link into a different repo.
+    const match = /^https:\/\/github\.com\/([A-Za-z0-9_.-]+)\/([A-Za-z0-9_.-]+)\/?$/i.exec(candidate);
+    if (!match) throw new Error('Use a credential-free HTTPS GitHub repository root URL.');
+    const repository = match[1] + '/' + match[2];
+    parsePublicRepository(repository);
+    return repository;
+  }
+  parsePublicRepository(candidate);
+  return candidate;
+}
+
 /** Only a public GitHub owner/repository identifier is accepted from a link. */
 export type RepositoryLinkSelection =
   | { kind: 'absent' }
@@ -56,7 +77,8 @@ export function canonicalRepositoryPageUrl(
 export function buildRepositoryShareUrl(baseUrl: string, repository: string): string {
   parsePublicRepository(repository);
   const url = new URL(baseUrl);
-  if (!['https:', 'http:'].includes(url.protocol) || !url.hostname) {
+  if (!['https:', 'http:'].includes(url.protocol) || !url.hostname ||
+      url.username || url.password) {
     throw new Error('Unsupported share link origin.');
   }
   url.search = new URLSearchParams({ repo: repository }).toString();

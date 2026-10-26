@@ -6,7 +6,7 @@ import {
   Activity, AlertCircle, ArrowRight, ArrowUpRight, CheckCircle2,
   Check, Copy, Download, GitBranch, GitPullRequest, RefreshCw, ShieldCheck, TriangleAlert,
 } from 'lucide-react';
-import { isConfirmedWorkflowFailure, parsePublicRepository, type PublicActionsSummary } from '@/lib/github-public-actions';
+import { isConfirmedWorkflowFailure, type PublicActionsSummary } from '@/lib/github-public-actions';
 import type { PublicPullSummary, PullAttention } from '@/lib/nexus-public-prs';
 import { recommendInvestigations } from '@/lib/nexus-recommendations';
 import { readPublicPanel, emptyPanel, formatPublicPanelDiagnosticReport, type Panel } from '@/lib/nexus-panel-request';
@@ -14,7 +14,7 @@ import { isPublicActionsSample, isPublicPullSample } from '@/lib/nexus-panel-val
 import { filteredWorkflowRuns, workflowOutcome, workflowOutcomeCount, workflowOutcomes, type WorkflowFilter } from '@/lib/nexus-workflow-visuals';
 import { filteredPublicPulls, pullBucket, pullBucketCount, pullBuckets, type PullFilter } from '@/lib/nexus-pr-visuals';
 import { createPublicSampleExport, createSampleFilename, serializePublicSampleCsv } from '@/lib/nexus-public-sample-export';
-import { buildRepositoryShareUrl, canonicalRepositoryPageUrl, readRepositoryLink } from '@/lib/nexus-repository-link';
+import { buildRepositoryShareUrl, canonicalRepositoryPageUrl, readRepositoryLink, normalizeRepositoryInput } from '@/lib/nexus-repository-link';
 import { isPublicPrVerification, type PublicPrVerification } from '@/lib/nexus-pr-evidence';
 import { isPublicRunEvidence, type PublicRunEvidence } from '@/lib/nexus-workflow-run-evidence';
 import { isPublicWorkflowTrend, type PublicWorkflowTrend } from '@/lib/nexus-workflow-trends';
@@ -269,9 +269,9 @@ export default function NexusDeveloperPreview() {
 
   function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const nextRepo = repository.trim();
+    let nextRepo: string;
     try {
-      parsePublicRepository(nextRepo);
+      nextRepo = normalizeRepositoryInput(repository);
       const shareUrl = buildRepositoryShareUrl(window.location.href, nextRepo);
       if (nextRepo !== activeRepositoryRef.current) {
         window.history.pushState(null, '', shareUrl);
@@ -286,7 +286,7 @@ export default function NexusDeveloperPreview() {
       setShareStatus('');
       setShareFallback('');
     } catch {
-      setFormError('Enter a public GitHub repository as owner/repository.');
+      setFormError('Enter owner/repository or a public https://github.com/owner/repository URL.');
     }
   }
 
@@ -619,7 +619,7 @@ export default function NexusDeveloperPreview() {
             <label className="flex-1 text-sm font-medium text-slate-300">
               Public GitHub repository
               <input value={repository} onChange={event => { setRepository(event.target.value); setFormError(''); setShareStatus(''); setShareFallback(''); }}
-                maxLength={200} required autoComplete="off" placeholder="owner/repository"
+                maxLength={240} required autoComplete="off" placeholder="owner/repository or https://github.com/owner/repository"
                 aria-invalid={Boolean(formError)} aria-describedby={formError ? 'repository-error' : 'repository-hint'}
                 className="mt-2 block w-full rounded-xl border border-[#365b81] bg-[#071829] px-4 py-3 text-base text-slate-100 outline-none focus:border-[#4ea8ff] focus:ring-2 focus:ring-[#4ea8ff]/20" />
             </label>
@@ -630,7 +630,7 @@ export default function NexusDeveloperPreview() {
             </button>
           </form>
           {formError ? <p id="repository-error" className="mt-3 text-sm text-rose-300" role="alert">{formError}</p>
-            : <p id="repository-hint" className="mt-3 text-xs text-slate-400">Use an owner/repository name; public repositories only.</p>}
+            : <p id="repository-hint" className="mt-3 text-xs text-slate-400">Use owner/repository or paste a public GitHub repository URL; no tokens or subpage links.</p>}
           <p className="mt-3 text-xs text-slate-400" aria-live="polite">
             {loading ? 'Reading public GitHub REST API records…' : selectedRepo ? `Selected: ${selectedRepo}` : 'No repository selected.'}
           </p>
