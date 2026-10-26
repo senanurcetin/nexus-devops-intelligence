@@ -1,0 +1,53 @@
+name: Feature request
+description: Suggest a Community improvement with a concrete developer workflow
+title: "[Feature] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for helping prioritize NEXUS Community. Do not include private
+        repository information, credentials or identifiable customer data.
+        Private repository access, hosted SaaS and billing are not available today.
+  - type: dropdown
+    id: area
+    attributes:
+      label: Primary area
+      options:
+        - GitHub Actions analysis
+        - Pull request evidence
+        - Export and reporting
+        - Local installation
+        - Accessibility and usability
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem in your current workflow
+      description: What do you do manually today, and where does the tool fall short?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed improvement
+      description: Describe the smallest behavior that would solve the problem
+    validations:
+      required: true
+  - type: dropdown
+    id: frequency
+    attributes:
+      label: How often would you use this?
+      options:
+        - Every workday
+        - Weekly
+        - Monthly or less
+        - Not sure yet
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Workaround or alternative
+      description: Optional; avoid links to private repositories
