@@ -19,6 +19,13 @@ Explain the user problem and the exact files/routes changed. Keep this PR limite
 - **PR merge is not Vercel deployment.** No CI, Preview, Production, Redis stress, paid service or Cloud spending without separately documented authorization.
 - Human VoiceOver/NVDA and real multi-instance Redis proofs must not be relabeled PASS using mocks.
 
+
+## Authorship and AI assistance
+
+- State whether AI tools were used. If used, name the tools and identify which code, tests or documentation they helped produce.
+- The contributor is responsible for reviewing, understanding and being able to explain every change; do not claim tests or human review that did not happen.
+- No credentials, customer data or private build logs in prompts, screenshots or public PR comments.
+
 ## Screenshots/evidence
 
 Only include sanitized proof with environment, viewport, date and source SHA. Do not upload tokens or private repository payloads.
