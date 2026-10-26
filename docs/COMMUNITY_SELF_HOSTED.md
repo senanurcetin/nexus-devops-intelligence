@@ -70,6 +70,20 @@ docker compose port nexus 3000
 
 Verify it returns `127.0.0.1:3000`. On Linux you can additionally inspect `ss -ltn` to confirm host ports. IMPORTANT: Docker Engine versions **older than 28.0.0** can expose ports published to localhost to other hosts on the same L2 network ([Docker security documentation](https://docs.docker.com/engine/network/port-publishing/)). Do not install this localhost-only candidate on older engines. Custom daemon direct-routing/firewall settings also need independent review. Docker/Windows versions can differ in forwarding behavior; if binding is not loopback-only, **stop with `docker compose down`**, do not use on an untrusted network, and report version/OS without posting secrets.
 
+## Read-only acceptance for an already running container
+
+After starting an existing local Compose installation **and** confirming it has become healthy, run from the project root:
+
+```sh
+npm run verify:community:runtime
+```
+
+This optional maintainer command requires Node.js 22+ on the host. It runs **only read-only Docker version/config/ps/inspect/port commands and six invalid-repository localhost GET checks**. It never runs `docker compose up`, pulls or builds an image, changes configuration, starts a service, accesses a real GitHub repository or checks Upstash. If the Docker daemon is stopped, the command **fails closed** (nonzero exit status); an offline fixture PASS is not container acceptance.
+
+It verifies Docker Engine 28+, expected Compose service and exact host `127.0.0.1:3000` mapping, a running healthy non-root container, dropped capabilities, no privilege escalation, no unexpected mounts/environment, and the five API validation responses. Any mismatch is a release **NO-GO**. Output is a short PASS/FAIL without dumping Docker-inspected environment variables or other container metadata.
+
+Even a PASS is **not** proof of firewall isolation, external network inaccessibility, image vulnerability scanning, a verified base-image digest, or acceptance on both Windows and Ubuntu. These remain manual, OS-specific release checks in [issue #81](https://github.com/senanurcetin/nexus-devops-intelligence/issues/81).
+
 ## Troubleshooting
 
 | Observation | Action |
