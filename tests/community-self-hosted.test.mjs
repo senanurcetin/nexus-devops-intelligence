@@ -50,5 +50,8 @@ test('Community build context is default-deny and allows only build inputs', () 
   assert.match(read('README.md'), /COMMUNITY_SELF_HOSTED\.md/);
   assert.match(read('docs/COMMUNITY_SELF_HOSTED.md'), /NOT RUN/);
   assert.match(read('package.json'), /smoke:community:localhost/);
+  assert.match(read('package.json'), /verify:community:runtime/);
+  assert.match(read('docs/COMMUNITY_SELF_HOSTED.md'), /read-only Docker version\/config\/ps\/inspect\/port/i);
+  assert.match(read('scripts/verify-community-runtime.mjs'), /verifyCommunityRuntime/);
   assert.match(read('scripts/verify-community-localhost.mjs'), /127\.0\.0\.1/);
 });
