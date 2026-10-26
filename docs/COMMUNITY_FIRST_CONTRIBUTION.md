@@ -1,6 +1,6 @@
 # First contribution and maintainer onboarding — NEXUS Community
 
-**Status:** documentation for the source repository; **not** an assertion of a published Docker Community release. The first localhost-only installer exists only in [draft #80](https://github.com/senanurcetin/nexus-devops-intelligence/pull/80); structured issue/PR forms exist only in [draft #82](https://github.com/senanurcetin/nexus-devops-intelligence/pull/82). Both require acceptance on main. Start with [CONTRIBUTING](../CONTRIBUTING.md) and [release decision](NEXUS_COMMUNITY_RELEASE_DECISION_2026-10-18.md).
+**Status:** documentation for the source repository; **not** an assertion of a published Docker Community release. The first localhost-only installer exists only in [draft #80](https://github.com/senanurcetin/nexus-devops-intelligence/pull/80); structured issue and PR forms are now live on `main` after [merged #82](https://github.com/senanurcetin/nexus-devops-intelligence/pull/82). The Docker installer still needs separate runtime acceptance. Start with [CONTRIBUTING](../CONTRIBUTING.md) and [release decision](NEXUS_COMMUNITY_RELEASE_DECISION_2026-10-18.md).
 
 ## 1. What the product actually does
 
@@ -40,7 +40,7 @@ For technical reproductions, use injected GitHub fetch mocks and the tests in `t
 
 ## 4. Small, testable contribution path
 
-1. Search [open issues](https://github.com/senanurcetin/nexus-devops-intelligence/issues) and [existing PRs](https://github.com/senanurcetin/nexus-devops-intelligence/pulls) for overlapping work. Read the issue, owner notes and any release gate; open a short, specific issue if none exists. Current PR #82 issue templates are **not live yet**.
+1. Search [open issues](https://github.com/senanurcetin/nexus-devops-intelligence/issues) and [existing PRs](https://github.com/senanurcetin/nexus-devops-intelligence/pulls) for overlapping work. Read the issue, owner notes and any release gate; open a short, specific issue if none exists. The [issue chooser](https://github.com/senanurcetin/nexus-devops-intelligence/issues/new/choose) now offers structured public bug/feature forms and a private-security-report link.
 2. Choose **one** area: a source-evidence claim, a focused API error-path test, a link/docs correction, one privacy-safe UX fix, or accessibility reproduction.
 3. Define before/after and a test that would demonstrate a behavioral defect. Use mocked GitHub API responses and tiny synthetic fixtures; no third-party customer data, private log snippets, real credentials or real quota-stress tests.
 4. Make changes to the source and targeted `tests/*.test.mjs`, run `npm test`, `npm run typecheck`, `npm run build`. For Docker changes, follow [issue #81](https://github.com/senanurcetin/nexus-devops-intelligence/issues/81) and provide actual Compose/Windows/Ubuntu evidence. Explicitly mark missing tests `NOT RUN`, not PASS.
