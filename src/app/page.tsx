@@ -14,6 +14,7 @@ import { isPublicActionsSample, isPublicPullSample } from '@/lib/nexus-panel-val
 import { filteredWorkflowRuns, workflowOutcome, workflowOutcomeCount, workflowOutcomes, type WorkflowFilter } from '@/lib/nexus-workflow-visuals';
 import { filteredPublicPulls, pullBucket, pullBucketCount, pullBuckets, type PullFilter } from '@/lib/nexus-pr-visuals';
 import { createPublicSampleExport, createSampleFilename, serializePublicSampleCsv } from '@/lib/nexus-public-sample-export';
+import { createAuditBrief, createAuditBriefFilename } from '@/lib/nexus-audit-brief';
 import { buildRepositoryShareUrl, canonicalRepositoryPageUrl, readRepositoryLink, normalizeRepositoryInput } from '@/lib/nexus-repository-link';
 import { isPublicPrVerification, type PublicPrVerification } from '@/lib/nexus-pr-evidence';
 import { isPublicRunEvidence, type PublicRunEvidence } from '@/lib/nexus-workflow-run-evidence';
@@ -454,7 +455,7 @@ export default function NexusDeveloperPreview() {
     }
   }
 
-  function downloadSample(format: 'csv' | 'json') {
+  function downloadSample(format: 'csv' | 'json' | 'md') {
     setExportError('');
     if (!canExport) return;
     try {
@@ -468,14 +469,16 @@ export default function NexusDeveloperPreview() {
       });
       const serialized = format === 'csv'
         ? '\uFEFF' + serializePublicSampleCsv(snapshot)
-        : JSON.stringify(snapshot, null, 2) + '\n';
+        : format === 'md' ? createAuditBrief(snapshot) : JSON.stringify(snapshot, null, 2) + '\n';
       const file = new Blob([serialized], {
-        type: format === 'csv' ? 'text/csv;charset=utf-8' : 'application/json;charset=utf-8',
+        type: format === 'csv' ? 'text/csv;charset=utf-8'
+          : format === 'md' ? 'text/markdown;charset=utf-8' : 'application/json;charset=utf-8',
       });
       const blobUrl = URL.createObjectURL(file);
       const anchor = document.createElement('a');
       anchor.href = blobUrl;
-      anchor.download = createSampleFilename(snapshot.repository, snapshot.exported_at_utc, format);
+      anchor.download = format === 'md' ? createAuditBriefFilename(snapshot)
+        : createSampleFilename(snapshot.repository, snapshot.exported_at_utc, format);
       document.body.appendChild(anchor);
       try {
         anchor.click();
@@ -679,6 +682,7 @@ export default function NexusDeveloperPreview() {
             <p className="mt-1 max-w-3xl text-xs leading-5 text-slate-300">
               Downloads only currently visible, filtered records from verified source panels.
               Includes repository, UTC receipt time, sample limits and applied filters.
+              The Markdown audit brief adds bounded source-linked investigation notes, not a release decision.
               No new GitHub or Redis request. This is not a repository-wide report.
             </p>
             {!canExport && <p className="mt-2 text-xs text-slate-400" role="status">
@@ -694,6 +698,10 @@ export default function NexusDeveloperPreview() {
             <button type="button" onClick={() => downloadSample('json')} disabled={!canExport}
               className="nexus-devops-export-button inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-xl px-4 py-3 text-xs font-semibold sm:flex-none">
               <Download aria-hidden="true" className="h-4 w-4" /> Export JSON
+            </button>
+            <button type="button" onClick={() => downloadSample('md')} disabled={!canExport}
+              className="nexus-devops-export-button inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-xl px-4 py-3 text-xs font-semibold sm:flex-none">
+              <Download aria-hidden="true" className="h-4 w-4" /> Audit Brief (.md)
             </button>
           </div>
         </section>
