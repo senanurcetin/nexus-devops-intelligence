@@ -53,10 +53,10 @@ test('Queue handoff uses all previously inspected verified rows, regardless of v
 test('Missing source is explicitly labelled and never assumed healthy', () => {
   const report = createInvestigationHandoff(input({actions: null, actionsReceivedAt: null}));
   assert.match(report.markdown, /Actions: UNAVAILABLE \/ UNVERIFIED/);
-  assert.match(report.markdown, /PR #17/);
+  assert.match(report.markdown, /github\.com\/owner\/example\/pull\/17/);
   const noPr = createInvestigationHandoff(input({prs: null, prsReceivedAt: null}));
   assert.match(noPr.markdown, /Pull requests: UNAVAILABLE \/ UNVERIFIED/);
-  assert.match(noPr.markdown, /Actions run #11/);
+  assert.match(noPr.markdown, /github\.com\/owner\/example\/actions\/runs\/11/);
 });
 
 test('No observed alerts is not a clean CI or merge-ready verdict', () => {
