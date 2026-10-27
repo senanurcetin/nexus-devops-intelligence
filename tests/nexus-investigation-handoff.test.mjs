@@ -32,7 +32,7 @@ const input = (changes = {}) => ({
 test('Handoff prioritizes verified PR conflict and failed workflow with canonical source links', () => {
   const { filename, markdown } = createInvestigationHandoff(input());
   assert.match(filename, /investigation-handoff\.md$/);
-  assert.ok(markdown.indexOf('PR #17') < markdown.indexOf('Actions run #11'));
+  assert.ok(markdown.indexOf('/pull/17') < markdown.indexOf('/actions/runs/11'));
   assert.match(markdown, /https:\/\/github\.com\/owner\/example\/pull\/17/);
   assert.match(markdown, /https:\/\/github\.com\/owner\/example\/actions\/runs\/11/);
   assert.match(markdown, /Inspected workflows: 1 of 12/);
@@ -45,8 +45,8 @@ test('Handoff prioritizes verified PR conflict and failed workflow with canonica
 test('Queue handoff uses all previously inspected verified rows, regardless of visual filters', () => {
   const record = input({ workflowFilter: 'success', pullFilter: 'clean' });
   const md = createInvestigationHandoff(record).markdown;
-  assert.match(md, /PR #17/);
-  assert.match(md, /Actions run #11/);
+  assert.match(md, /https:\/\/github\.com\/owner\/example\/pull\/17/);
+  assert.match(md, /https:\/\/github\.com\/owner\/example\/actions\/runs\/11/);
   assert.match(md, /Visual filters: ignored/);
 });
 
