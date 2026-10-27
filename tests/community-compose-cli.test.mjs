@@ -26,6 +26,7 @@ test('Community Compose CLI resolves a loopback-only least-privilege service', t
   assert.deepEqual(Object.keys(doc.services).sort(), ['nexus']);
   const service = doc.services.nexus;
   assert.ok(service.build, 'The service must build locally from this checkout');
+  assert.equal(service.read_only, true, 'Community runtime must use an immutable root filesystem');
   assert.equal(service.privileged, undefined);
   assert.notEqual(service.network_mode, 'host');
   assert.ok(!service.volumes?.length, 'Unexpected bind mount');
