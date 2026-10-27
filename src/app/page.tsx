@@ -15,6 +15,7 @@ import { filteredWorkflowRuns, workflowOutcome, workflowOutcomeCount, workflowOu
 import { filteredPublicPulls, pullBucket, pullBucketCount, pullBuckets, type PullFilter } from '@/lib/nexus-pr-visuals';
 import { createPublicSampleExport, createSampleFilename, serializePublicSampleCsv } from '@/lib/nexus-public-sample-export';
 import { createAuditBrief, createAuditBriefFilename } from '@/lib/nexus-audit-brief';
+import { createInvestigationHandoff } from '@/lib/nexus-investigation-handoff';
 import { buildRepositoryShareUrl, canonicalRepositoryPageUrl, readRepositoryLink, normalizeRepositoryInput } from '@/lib/nexus-repository-link';
 import { isPublicPrVerification, type PublicPrVerification } from '@/lib/nexus-pr-evidence';
 import { isPublicRunEvidence, type PublicRunEvidence } from '@/lib/nexus-workflow-run-evidence';
@@ -455,30 +456,35 @@ export default function NexusDeveloperPreview() {
     }
   }
 
-  function downloadSample(format: 'csv' | 'json' | 'md') {
+  function downloadSample(format: 'csv' | 'json' | 'md' | 'queue') {
     setExportError('');
     if (!canExport) return;
     try {
-      const snapshot = createPublicSampleExport({
+      const input = {
         repository: selectedRepo,
         actions: actions.data,
         prs: pulls.data,
         actionsReceivedAt, prsReceivedAt: pullsReceivedAt,
         workflowFilter, pullFilter,
         exportedAt: new Date().toISOString(),
-      });
+      };
+      const snapshot = createPublicSampleExport(input);
+      const handoff = format === 'queue' ? createInvestigationHandoff(input) : null;
       const serialized = format === 'csv'
         ? '\uFEFF' + serializePublicSampleCsv(snapshot)
-        : format === 'md' ? createAuditBrief(snapshot) : JSON.stringify(snapshot, null, 2) + '\n';
+        : format === 'md' ? createAuditBrief(snapshot)
+          : format === 'queue' ? handoff!.markdown : JSON.stringify(snapshot, null, 2) + '\n';
       const file = new Blob([serialized], {
         type: format === 'csv' ? 'text/csv;charset=utf-8'
-          : format === 'md' ? 'text/markdown;charset=utf-8' : 'application/json;charset=utf-8',
+          : format === 'md' || format === 'queue'
+            ? 'text/markdown;charset=utf-8' : 'application/json;charset=utf-8',
       });
       const blobUrl = URL.createObjectURL(file);
       const anchor = document.createElement('a');
       anchor.href = blobUrl;
       anchor.download = format === 'md' ? createAuditBriefFilename(snapshot)
-        : createSampleFilename(snapshot.repository, snapshot.exported_at_utc, format);
+        : format === 'queue' ? handoff!.filename
+          : createSampleFilename(snapshot.repository, snapshot.exported_at_utc, format);
       document.body.appendChild(anchor);
       try {
         anchor.click();
@@ -981,11 +987,18 @@ export default function NexusDeveloperPreview() {
                 Prioritized from the displayed GitHub sample only; these are not AI diagnoses or permission to merge.
               </p>
             </div>
-            <a href="https://docs.github.com/en/rest/actions/workflow-runs"
-              target="_blank" rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 text-sm font-medium text-[#4ea8ff] hover:text-white">
-              GitHub API docs <ArrowRight className="h-4 w-4" />
-            </a>
+            <div className="flex flex-wrap items-center gap-3">
+              <button type="button" onClick={() => downloadSample('queue')} disabled={!canExport}
+                aria-label="Download source-linked investigation handoff Markdown"
+                className="nexus-devops-export-button inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-4 py-3 text-xs font-semibold">
+                <Download aria-hidden="true" className="h-4 w-4" /> Investigation Handoff (.md)
+              </button>
+              <a href="https://docs.github.com/en/rest/actions/workflow-runs"
+                target="_blank" rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 text-sm font-medium text-[#4ea8ff] hover:text-white">
+                GitHub API docs <ArrowRight className="h-4 w-4" />
+              </a>
+            </div>
           </div>
           {recommendations.length > 0 ? (
             <ol className="nexus-devops-queue mt-5 grid gap-3 lg:grid-cols-2">
