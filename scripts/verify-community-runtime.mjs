@@ -12,7 +12,7 @@ import { verifyCommunityLocalhost } from './verify-community-localhost.mjs';
 
 const COMPOSE_FILE = 'compose.yaml';
 const EXPECTED_ENV = new Set([
-  'PATH', 'NODE_VERSION', 'YARN_VERSION', 'NODE_ENV',
+  'PATH', 'NODE_VERSION', 'YARN_VERSION', 'SSL_CERT_FILE', 'NODE_ENV',
   'NEXT_TELEMETRY_DISABLED', 'HOSTNAME', 'PORT',
 ]);
 
@@ -47,7 +47,7 @@ export function verifyComposeConfig(doc) {
 export function verifyRuntimeInspection(container) {
   assert.equal(container.State?.Running, true, 'NEXUS container is not running');
   assert.equal(container.State?.Health?.Status, 'healthy', 'NEXUS container is not healthy');
-  assert.ok(['node', '1000', '1000:1000'].includes(container.Config?.User),
+  assert.ok(['node', '1000', '1000:1000', '65532', '65532:65532'].includes(container.Config?.User),
     'NEXUS must run as non-root node user');
   const host = container.HostConfig || {};
   assert.equal(host.Privileged, false, 'Privileged container is forbidden');

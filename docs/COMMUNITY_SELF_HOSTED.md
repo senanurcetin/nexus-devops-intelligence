@@ -1,13 +1,13 @@
 # NEXUS Community — localhost-only self-hosted candidate
 
-**Status (2026-10-15):** Source-level Docker/Compose packaging candidate. Docker image build, Compose runtime, real Windows and Ubuntu acceptance have **NOT RUN** in the authoring environment; do not label this a verified release. This is not the hosted Cloud/SaaS product.
+**Status (2026-10-27):** Docker Desktop/WSL2 Windows image build and localhost runtime were verified on an isolated candidate. Independent native Ubuntu Docker Engine, protected Preview/Production and human accessibility acceptance remain **NOT RUN**. Still DRAFT/NO-GO, not a release. This is not the hosted Cloud/SaaS product.
 
 ## Supported scope and prerequisites
 
 - One developer machine, one service, browser on **that same machine only**.
 - **Docker Engine 28.0.0 or newer**, with Compose v2 plugin (Linux), or an up-to-date Docker Desktop with Compose (Windows 10/11). Start Docker Desktop before running commands. Check the server version with `docker version`.
 - The machine needs enough storage/memory for Docker, Node and the Next.js build; no measured minimum is asserted yet.
-- The Docker base image follows the maintained Node 22 LTS patch channel; for a tagged release, verify a fresh image and pin an approved image digest with supply-chain checks.
+- The build uses a pinned official Node 22 Bookworm image index, while the runtime is pinned Google Distroless Node 22 Debian 13 with numeric non-root UID 65532 (no shell or bundled npm). Review and re-pin BOTH approved digests for future security updates; scan the final built image, not only the base.
 - The Docker build context is **default-deny**: only the dependency manifests, Next/TypeScript/PostCSS configuration, LICENSE and `src/` / optional `public/` are included. Local untracked files, documentation, scripts and tests are excluded. If a future build needs another asset, explicitly review and add it to `.dockerignore`; do not move credentials into `src/` or `public/`. Source assertions alone do not prove image contents; inspect the actual build before release.
 - Internet access to `api.github.com` is required for real repository data. Offline page rendering does not imply offline analysis.
 - Only **public repositories** are supported. The application never asks for a GitHub token, private-repo access, Redis key, account registration, or credit card.
@@ -30,7 +30,7 @@ docker compose logs --tail=80 nexus
 docker compose down
 ```
 
-This is **not** a public endpoint; do not enable router port forwarding, cloud tunnels, LAN access or Docker port mappings to `0.0.0.0`. Container `HOSTNAME=0.0.0.0` listens *inside the isolated container* only; Compose maps it exclusively to host `127.0.0.1`. The runtime has a non-root `node` user and drops Linux capabilities. A locally installed app without authentication is **not suitable for public exposure**.
+This is **not** a public endpoint; do not enable router port forwarding, cloud tunnels, LAN access or Docker port mappings to `0.0.0.0`. Container `HOSTNAME=0.0.0.0` listens *inside the isolated container* only; Compose maps it exclusively to host `127.0.0.1`. The runtime uses non-root numeric UID 65532 and drops Linux capabilities. A locally installed app without authentication is **not suitable for public exposure**.
 
 ## Check the actual host binding
 
@@ -114,3 +114,13 @@ This is an **unhardened developer fallback**: the default Next.js bind may be re
 Static source checks: `npm test` (includes Compose/Docker safety contract); `npm run typecheck`; `npm run build`. Runtime checks require **real Docker**: `docker compose config`, a fresh `docker compose up --build -d`, inspection of non-root runtime user/host port, `curl -i http://127.0.0.1:3000/`, `curl -i 'http://127.0.0.1:3000/api/public-actions?repository=invalid'` (expect 400 and `Cache-Control: no-store`), and manual Windows/Ubuntu browser verification. Do **not** claim those have passed until executed on each target platform.
 
 No SaaS tenant isolation, billing, authentication, telemetry, support SLA, signed installers or GitHub App is included. Past protected Vercel Preview/Production builds are **not** this Community image. Existing Preview human/Redis gates stay open for hosted release.
+
+## 27 October 2026 Windows runtime evidence — NOT a release approval
+
+- The build and verification used a pinned official Node 22 builder image and a pinned Google Distroless Node 22 / Debian 13 non-root runtime image. The runtime contains no shell and no bundled npm CLI; do not attempt shell-based docker exec debugging.
+- On an isolated Windows Docker Desktop 4.78.0 / Engine 29.5.3 / Compose 5.1.4 host, the Distroless test image ID was sha256:0f36744daae71b13902277bc86c01471649a13e7c1051d686dd3f03bc4158ce7. The application was healthy on host 127.0.0.1:3000 and the community runtime verifier completed all 6 local HTTP checks, with no valid upstream GitHub requests during this particular image test. Test containers and network were removed.
+- Source-local tests: 259/259 passed with controlled test concurrency; TypeScript passed; npm audit returned 0. A first default parallel run experienced an unrelated browser origin subprocess timeout under simultaneous Windows workloads; the isolated browser origin test passed 2/2. Do not conceal this environmental limitation when relying on unattended test automation.
+- Independent Trivy 0.76.1 scanner on the actual Distroless app image ID (high+critical vulnerability filter, 27 October 2026 DB): 0 CRITICAL / 0 HIGH, both OS and bundled app packages. This is time-scoped scan evidence, not a guarantee against medium/low findings, unknown vulnerabilities, external code provenance, supply-chain compromise, licensing issues or future CVEs. Re-scan every proposed release.
+- On the predecessor Node Bookworm runtime, Trivy had reported 1 CRITICAL / 67 HIGH. The reduced runtime package surface, pinned digest and non-root numeric UID are deliberate safety improvements; avoid reintroducing a shell/npm runtime without a new security review.
+- One prior bounded real public GitHub PR read on the preceding, otherwise identical application source returned HTTP 200 and passed restart/health testing. Do not claim that live-read experiment was executed on the later Distroless image until independently repeated.
+- Still NO-GO: separate native Ubuntu Docker Engine acceptance; physical-device, Safari/WebKit, NVDA/VoiceOver and owner review; protected exact-SHA Preview, live Free Redis/WAF verification and explicit separate Production authorization. Do not publish a release/tag from this candidate yet.

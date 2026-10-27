@@ -165,3 +165,12 @@ test('invalid local HTTP results never produce a successful runtime acceptance',
     }),
   }));
 });
+
+test('distroless UID 65532 with CA bundle path remains accepted but root remains denied', () => {
+  const container = clone(inspection);
+  container.Config.User = '65532';
+  container.Config.Env.push('SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt');
+  assert.equal(verifyRuntimeInspection(container), true);
+  container.Config.User = '0';
+  assert.throws(() => verifyRuntimeInspection(container));
+});

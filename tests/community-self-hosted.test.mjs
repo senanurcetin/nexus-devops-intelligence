@@ -11,9 +11,9 @@ test('Community standalone build is explicit, leaving Vercel defaults alone', ()
   const docker = read('Dockerfile');
   assert.match(docker, /NEXUS_SELF_HOSTED_BUILD=1 npm run build/);
   assert.match(docker, /npm ci --no-audit --no-fund/);
-  assert.match(docker, /COPY --from=builder --chown=node:node \/app\/\.next\/standalone/);
-  assert.match(docker, /^USER node$/m);
-  assert.match(docker, /CMD \["node", "server\.js"\]/);
+  assert.match(docker, /COPY --from=builder --chown=65532:65532 \/app\/\.next\/standalone/);
+  assert.match(docker, /^USER 65532$/m);
+  assert.match(docker, /CMD \["server\.js"\]/);
   assert.doesNotMatch(docker, /(?:GITHUB_TOKEN|GH_TOKEN|UPSTASH_REDIS_REST_TOKEN|VERCEL_TOKEN)/);
 });
 
@@ -56,11 +56,11 @@ test('Community build context is default-deny and allows only build inputs', () 
   assert.match(read('scripts/verify-community-localhost.mjs'), /127\.0\.0\.1/);
 });
 
-test('Community Docker base image is digest pinned consistently across all stages', () => {
+test('Community Docker builder and minimal non-root runtime use approved immutable digests', () => {
   const docker = read('Dockerfile');
-  const bases = [...docker.matchAll(/^FROM (node:22-bookworm-slim@sha256:[a-f0-9]{64}) AS (deps|builder|runtime)$/gm)];
+  const bases = [...docker.matchAll(/^FROM ([^\s]+@sha256:[a-f0-9]{64}) AS (deps|builder|runtime)$/gm)];
   assert.deepEqual(bases.map(([, , stage]) => stage), ['deps', 'builder', 'runtime']);
-  assert.equal(new Set(bases.map(([, source]) => source)).size, 1,
-    'All stages must use the same immutable official Node image index');
-  assert.equal(bases.length, 3);
+  assert.equal(bases[0][1], bases[1][1], 'Both build stages share one official Node digest');
+  assert.match(bases[0][1], /^node:22-bookworm-slim@sha256:/);
+  assert.match(bases[2][1], /^gcr\.io\/distroless\/nodejs22-debian13:nonroot@sha256:/);
 });
