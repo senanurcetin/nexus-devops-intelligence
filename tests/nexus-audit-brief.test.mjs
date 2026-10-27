@@ -88,3 +88,17 @@ test('Audit brief: rejects inconsistent manually provided snapshot', () => {
   assert.throws(() => createAuditBrief(tampered), /Inconsistent workflow sample/);
   assert.throws(() => createAuditBrief({ ...source, actions: null, pull_requests: null }));
 });
+
+test('Audit brief: neutralizes raw HTML, ampersands and Unicode line separators', () => {
+  const hostile = snapshot({
+    actions: { ...actions, runs: [run(11, '<img src=x onerror=alert(1)> & risky\u2028## forged')] },
+    prs: { ...pulls, pull_requests: [pr(7, '<script>alert(1)</script>\u2029## fake')] },
+  });
+  const md = createAuditBrief(hostile);
+  assert.doesNotMatch(md, /<img|<script>|<\/script>/);
+  assert.doesNotMatch(md, /[\u2028\u2029]/u);
+  assert.match(md, /&lt;img/);
+  assert.match(md, /&lt;script&gt;/);
+  assert.match(md, /&amp; risky/);
+  assert.doesNotMatch(md, /^## fake/m);
+});
