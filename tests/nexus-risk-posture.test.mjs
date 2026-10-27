@@ -32,7 +32,8 @@ const inspect=(changes={})=>assessRepositoryRiskPosture({
 
 test('Strong observed signals have distinct source-backed counts without global risk score',()=>{
  const out=inspect({actions:actions([run(9,'timed_out')],600),
-  pulls:prs([pr(2)],[details(2,'dirty')],true)});
+  pulls:prs([pr(2),pr(3),pr(4),pr(5),pr(6)],
+    [details(2,'dirty'),details(3),details(4),details(5),details(6)],true)});
  assert.equal(out.state,'investigate_observed');
  assert.equal(out.workflow.failed,1);
  assert.equal(out.workflow.inspected,1);
