@@ -1,6 +1,6 @@
 # Gerçek bir GitHub projesinde regresyon testi: GitHub zaman damgaları
 
-> Durum (27 Ekim 2026): Bu hata düzeltmesi **ChatGPT/GPT-6 destekli** inceleme ve GitHub araçlarıyla hazırlandı. **Codex CLI/uygulaması bu değişiklik için çalıştırılmadı.** Bu rehber, aynı sorunun Codex ile ayrı ve gerçek bir oturumda yeniden uygulanabilmesi için bir eğitim senaryosudur; Codex başarı hikâyesi ya da yayımlanmış video kanıtı değildir.
+> Durum (27 Ekim 2026): Bu hata düzeltmesi **ChatGPT/GPT-6 destekli** inceleme ve GitHub araçlarıyla hazırlandı. **Codex CLI 0.164.0 ile bağımsız yeniden üretim 27 Ekim 2026 tarihinde denendi; mevcut ChatGPT hesabının kullanım limiti nedeniyle kod okunmadan/değiştirilmeden durdu.** Bu rehber, aynı sorunun Codex ile ayrı ve gerçek bir oturumda yeniden uygulanabilmesi için bir eğitim senaryosudur; Codex başarı hikâyesi ya da yayımlanmış video kanıtı değildir.
 
 ## 1. Problem ve neden önemli?
 
@@ -37,7 +37,11 @@ Başlangıç kaynak blob'uyla eşleştiği Git SHA üzerinden denetlenen yerel d
 
 ## 5. Sonuç ve tekrarlanabilir komutlar
 
-Yama uygulandıktan sonra aynı çevrimdışı hedef test Node v22.16.0 üzerinde yeniden çalıştırıldı: **2/2 PASS, 0 FAIL**. Bunlar **yerel çıkarılmış kaynak dosyası** ve sentetik fikstürlerle alınmış sonuçlardır; CI ya da tam uygulama testlerine eşdeğer değildir.
+Yama uygulandıktan sonra aynı çevrimdışı hedef test Node v22.16.0 üzerinde yeniden çalıştırıldı: **2/2 PASS, 0 FAIL**.
+
+**Windows kaynak testleri (27 Ekim 2026):** İzole, temiz GitHub klonunda `ba1974f1cdbedc203f1730ea5c8b660f61e64bb6` commit'i, Node v24.13.0 ve npm 11.6.2 ile doğrulandı. `npm ci --ignore-scripts --no-audit --no-fund`: PASS; `node --import tsx --test tests/nexus-panel-timestamps.test.mjs`: **2/2 PASS**; `npm test`: **240/240 PASS**; `npm run typecheck`: PASS; `npm run build`: PASS (Next.js 15.5.27). Build kaynak kodu değiştirmedi; otomatik üretilen `next-env.d.ts` farkı yerel klonda geri alındı. Bunlar **CI veya Production kabulü değildir**.
+
+**Bağımlılık güvenliği (27 Ekim 2026):** `npm audit --omit=dev --json` ve `npm audit --json` her ikisi de **exit 1, bir kritik bulgu** verdi: `next@15.5.27` sürümü [GHSA-2464-fhr4-w9xw](https://github.com/advisories/GHSA-2464-fhr4-w9xw) ve [GHSA-p3m5-59mp-jv5r](https://github.com/advisories/GHSA-p3m5-59mp-jv5r) kapsamındadır. Kayıtlarda ilk güvenli yama sürümü `15.5.28` olarak belirtiliyor. Dependency yükseltmesi bu PR'ın kapsamına sessizce eklenmez; ayrı bir güvenlik çalışması ve exact-SHA doğrulaması gereklidir.
 
 Yeni test GitHub reposuna da eklendi. Normal paket bağımlılıklarının bulunduğu bir ortamda aşağıdaki komutlar ayrıca çalıştırılmalıdır:
 
@@ -47,7 +51,7 @@ Yeni test GitHub reposuna da eklendi. Normal paket bağımlılıklarının bulun
     npm run typecheck
     npm run build
 
-Şu an **NOT RUN**: tam npm test paketi, TypeScript derlemesi, Next.js build, npm audit, tarayıcı smoke ve Production kontrolleri. Bu kılavuzun hazırlanması deployment veya release onayı anlamına gelmez.
+**NOT RUN:** gerçek Codex kaynak düzeltmesi, tarayıcı smoke, OS kabulü ve Production/Preview kontrolleri. **FAIL/BLOK:** npm audit (1 kritik Next.js bağımlılığı). Tüm testler geçse de bu kılavuz deployment veya release onayı değildir.
 
 ## 6. Codex ile uygulamalı yeniden üretim (henüz gerçekleştirilmedi)
 
@@ -55,7 +59,7 @@ Yeni test GitHub reposuna da eklendi. Normal paket bağımlılıklarının bulun
 
 > NEXUS DevOps Intelligence deposundaki src/lib/nexus-panel-validation.ts zaman damgası denetimini incele. Date.parse('1') ve 2026-02-30 örneklerini önce yalnızca çevrimdışı sentetik testlerle yeniden üret; başlangıç testini çalıştırıp çıktıyı kaydet. Sonra en küçük güvenli ISO 8601 UTC düzeltmesini yap, aynı testleri ve mevcut uygun doğrulamaları çalıştır. Başka branch'lere dokunma, Vercel/GitHub Actions tetikleme, Production'a deploy yapma, gizli bilgi isteme. Uygulanan komutları, başarısızlıkları, gerçek test çıktılarını ve commit SHA'yı açıkça raporla.
 
-**Kanıt kontrol listesi:** gerçek Codex oturum/tarih kaydı, kullanılan prompt, önce FAIL sonra PASS çıktı dosyaları, branch ve commit SHA, bağımsız kullanıcı gözden geçirmesi, gizli bilgi redaksiyonu. Bu kayıtlar henüz üretilmemiştir. Bir ajan tarafından hazırlanmış kodu geriye dönük olarak 'Codex yazdı' diye etiketleme.
+**Kanıt kontrol listesi:** gerçek Codex oturum/tarih kaydı, kullanılan prompt, önce FAIL sonra PASS çıktı dosyaları, branch ve commit SHA, bağımsız kullanıcı gözden geçirmesi, gizli bilgi redaksiyonu. Codex CLI ile bağımsız oturum başlatıldı ancak kullanım kotası nedeniyle hiçbir kaynak değişikliği veya Codex test çıktısı oluşturulamadı. Gerçek Codex geliştirme kanıtı hâlâ **YOK**. Bir ajan tarafından hazırlanmış kodu geriye dönük olarak 'Codex yazdı' diye etiketleme.
 
 ## 7. Güvenlik, sınırlamalar ve öğrenilenler
 
