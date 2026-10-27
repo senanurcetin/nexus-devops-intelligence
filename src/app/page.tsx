@@ -16,6 +16,7 @@ import { filteredPublicPulls, pullBucket, pullBucketCount, pullBuckets, type Pul
 import { createPublicSampleExport, createSampleFilename, serializePublicSampleCsv } from '@/lib/nexus-public-sample-export';
 import { createAuditBrief, createAuditBriefFilename } from '@/lib/nexus-audit-brief';
 import { createInvestigationHandoff } from '@/lib/nexus-investigation-handoff';
+import { assessRepositoryRiskPosture } from '@/lib/nexus-risk-posture';
 import { buildRepositoryShareUrl, canonicalRepositoryPageUrl, readRepositoryLink, normalizeRepositoryInput } from '@/lib/nexus-repository-link';
 import { isPublicPrVerification, type PublicPrVerification } from '@/lib/nexus-pr-evidence';
 import { isPublicRunEvidence, type PublicRunEvidence } from '@/lib/nexus-workflow-run-evidence';
@@ -339,6 +340,12 @@ export default function NexusDeveloperPreview() {
   const prList = pulls.data?.pull_requests ?? [];
   const visiblePulls = filteredPublicPulls(pulls.data, pullFilter);
   const recommendations = recommendInvestigations(actions.data, pulls.data);
+  const riskPosture = assessRepositoryRiskPosture({
+    repository: selectedRepo,
+    actions: actions.data, pulls: pulls.data,
+    actionsReceivedAt, prsReceivedAt: pullsReceivedAt,
+    asOf: new Date(),
+  });
   const canExport = !loading && Boolean(actions.data || pulls.data);
 
   function inspectUtcTrend() {
@@ -999,6 +1006,24 @@ export default function NexusDeveloperPreview() {
                 GitHub API docs <ArrowRight className="h-4 w-4" />
               </a>
             </div>
+          </div>
+          <div aria-label="Bounded evidence risk assessment"
+            data-risk-posture={riskPosture.state}
+            className="mt-5 rounded-xl border border-slate-700/70 bg-slate-950/60 p-4">
+            <p className="text-xs font-semibold uppercase tracking-wide text-[#a6d3fa]">Source-backed posture · not a risk score</p>
+            <p className="mt-2 text-sm font-semibold text-slate-100">{riskPosture.headline}</p>
+            <div className="mt-3 grid gap-2 text-xs text-slate-300 sm:grid-cols-2">
+              <p>Actions: {riskPosture.workflow.freshness} · {riskPosture.workflow.inspected} inspected · {riskPosture.workflow.failed} failed
+                {riskPosture.workflow.truncated ? ' · additional runs uninspected' : ''}</p>
+              <p>PRs: {riskPosture.pullRequests.freshness} · {riskPosture.pullRequests.inspected} inspected · {riskPosture.pullRequests.conflicts} conflicts
+                {riskPosture.pullRequests.reviewStates + riskPosture.pullRequests.unknown > 0
+                  ? ' · ' + (riskPosture.pullRequests.reviewStates + riskPosture.pullRequests.unknown) + ' need review'
+                  : ''}
+              </p>
+            </div>
+            <p className="mt-2 text-xs leading-5 text-slate-400">
+              {riskPosture.evidenceLimitations.join(' · ')}. An unobserved issue is never proof that CI or a PR is safe.
+            </p>
           </div>
           {recommendations.length > 0 ? (
             <ol className="nexus-devops-queue mt-5 grid gap-3 lg:grid-cols-2">
