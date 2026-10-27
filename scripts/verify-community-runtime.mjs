@@ -35,6 +35,7 @@ export function verifyComposeConfig(doc) {
   assert.equal(port.host_ip, '127.0.0.1', 'Compose host port must bind only to IPv4 loopback');
   assert.equal(Number(port.target), 3000);
   assert.equal(Number(port.published), 3000);
+  assert.equal(service.read_only, true, 'Container root filesystem must be read-only');
   assert.deepEqual(service.cap_drop, ['ALL']);
   assert.ok(service.security_opt?.includes('no-new-privileges:true'));
   assert.ok(!service.privileged && service.network_mode !== 'host');
@@ -51,6 +52,7 @@ export function verifyRuntimeInspection(container) {
     'NEXUS must run as non-root node user');
   const host = container.HostConfig || {};
   assert.equal(host.Privileged, false, 'Privileged container is forbidden');
+  assert.equal(host.ReadonlyRootfs, true, 'Container root filesystem must be read-only');
   assert.notEqual(host.NetworkMode, 'host', 'Host networking is forbidden');
   assert.deepEqual(host.CapDrop, ['ALL']);
   assert.ok(host.SecurityOpt?.includes('no-new-privileges:true'));
