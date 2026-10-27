@@ -1,6 +1,7 @@
 import type { SampleExportInput } from './nexus-public-sample-export.ts';
 import { createPublicSampleExport, createSampleFilename } from './nexus-public-sample-export.ts';
 import { recommendInvestigations } from './nexus-recommendations.ts';
+import { assessRepositoryRiskPosture } from './nexus-risk-posture.ts';
 
 /**
  * Client-only handoff of up to five source-backed investigation suggestions.
@@ -22,6 +23,13 @@ export function createInvestigationHandoff(input: SampleExportInput): {
   });
   const sourceRoot = 'https://github.com/' + snapshot.repository;
   const suggestions = recommendInvestigations(input.actions, input.prs);
+  const posture = assessRepositoryRiskPosture({
+    repository: input.repository,
+    actions: input.actions, pulls: input.prs,
+    actionsReceivedAt: input.actionsReceivedAt,
+    prsReceivedAt: input.prsReceivedAt,
+    asOf: new Date(input.exportedAt),
+  });
   const lines = [
     '# NEXUS DevOps — Investigation Handoff',
     '',
@@ -51,7 +59,23 @@ export function createInvestigationHandoff(input: SampleExportInput): {
   } else {
     lines.push('- Pull requests: UNAVAILABLE / UNVERIFIED; no statement about merge readiness');
   }
-  lines.push('', '## Suggested investigations — up to five', '');
+  lines.push(
+    '', '## Source-bounded assessment', '',
+    '- Assessment: ' + safeMarkdownText(posture.headline),
+    '- State: ' + posture.state + '; release authorized: no',
+    '- Actions receipt: ' + posture.workflow.freshness +
+      '; ' + posture.workflow.failed + ' observed failed out of ' + posture.workflow.inspected + ' inspected',
+    '- Workflow runs not inspected: ' + posture.workflow.uninspected +
+      (posture.workflow.freshness === 'unverified' ? ' (unknown; source unverified)' : ''),
+    '- PR receipt: ' + posture.pullRequests.freshness +
+      '; ' + posture.pullRequests.conflicts + ' conflict(s), ' +
+      posture.pullRequests.reviewStates + ' restricted/behind/unstable, ' +
+      posture.pullRequests.unknown + ' unknown out of ' + posture.pullRequests.inspected + ' inspected',
+    '- Coverage: ' + posture.coverage,
+    '- Limitations: ' + posture.evidenceLimitations.map(value => safeMarkdownText(value)).join('; '),
+    '',
+    '## Suggested investigations — up to five', '',
+  );
   if (!suggestions.length) {
     lines.push('No triage signals were found in the inspected records. This is **not** a clean-CI, no-risk or merge-ready verdict.', '');
   }
