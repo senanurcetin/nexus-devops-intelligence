@@ -76,3 +76,10 @@ Yeni test GitHub reposuna da eklendi. Normal paket bağımlılıklarının bulun
 - Katkı rehberi: ../CONTRIBUTING.md
 - Node test altyapısı: https://nodejs.org/api/test.html
 - Codex ile gerçek çalışma: https://developers.openai.com/learn/codex
+
+## 27 Ekim 2026 — birleşme ve bağımsız Codex kaynak incelemesi (güncel durum)
+
+- Yukarıdaki eğitim ve ilk regresyon düzeltmesi **[PR #90](https://github.com/senanurcetin/nexus-devops-intelligence/pull/90) ile main dalına birleştirildi**. İlk baştaki 'draft' ve 'Codex hiç kullanılmadı' ifadeleri tarihsel aşamayı anlatır; güncel durum için bu bölüm esas alınmalıdır.
+- **[Güvenlik PR #91](https://github.com/senanurcetin/nexus-devops-intelligence/pull/91)** ile Next.js 15.5.28 kaynak dalına alındı. İki değişikliğin bir arada bulunduğu kaynak kombinasyonunda Windows'ta **240/240 otomatik test, TypeScript, Next.js build ve npm audit (0 bulgu)** başarılı oldu. Bu doğrulama Vercel Production onayı değildir.
+- **Gerçek Codex CLI (0.164.0) kaynak incelemesi** ayrıca tamamlandı: Orijinal kamuya açık fonksiyonun tam metni prompt ile verilerek altı test sınır durumu önerildi. Bu vakalar ayrı bir test PR'ına aktarıldı. Codex kaynak dosyasını shell ile okumadı, test çalıştırmadı, dosya değiştirmedi veya commit oluşturmadı. Ayrıntılar: [Codex inceleme kanıtı](CODEX_TIMESTAMP_REVIEW_EVIDENCE_20261027.md).
+- Windows ortamında doğrudan Codex shell yürütmesi halen `helper_sandbox_lock_failed` (access denied, error 5) nedeniyle başarısız. Sandbox güvenliği zayıflatılmadı. Öğretici video çekimi, insan cihaz/erişilebilirlik onayı ve hosted release ayrıca tamamlanmalıdır.
