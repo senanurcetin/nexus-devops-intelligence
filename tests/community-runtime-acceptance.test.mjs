@@ -11,6 +11,7 @@ const compose = {
   services: {
     nexus: {
       ports: [{ host_ip: '127.0.0.1', target: 3000, published: '3000' }],
+      read_only: true,
       cap_drop: ['ALL'],
       security_opt: ['no-new-privileges:true'],
       environment: { NODE_ENV: 'production', NEXT_TELEMETRY_DISABLED: '1' },
@@ -26,7 +27,7 @@ const inspection = {
     'NODE_ENV=production', 'NEXT_TELEMETRY_DISABLED=1',
   ] },
   HostConfig: {
-    Privileged: false, NetworkMode: 'nexus_default',
+    Privileged: false, ReadonlyRootfs: true, NetworkMode: 'nexus_default',
     CapDrop: ['ALL'], SecurityOpt: ['no-new-privileges:true'],
     PortBindings: { '3000/tcp': [{ HostIp: '127.0.0.1', HostPort: '3000' }] },
   },
@@ -96,6 +97,7 @@ test('Compose rejects public port, extra services, credentials and privilege esc
     x => { x.services.sidecar = {}; },
     x => { x.services.nexus.volumes = ['/root:/data']; },
     x => { x.services.nexus.privileged = true; },
+    x => { x.services.nexus.read_only = false; },
     x => { x.services.nexus.cap_drop = []; },
     x => { x.services.nexus.environment.GITHUB_TOKEN = 'not-a-real-token'; },
   ];
@@ -126,6 +128,7 @@ test('container runtime refuses unexpected ports, root, unsafe security settings
     x => { x.Config.User = 'root'; },
     x => { x.Config.User = ''; },
     x => { x.HostConfig.Privileged = true; },
+    x => { x.HostConfig.ReadonlyRootfs = false; },
     x => { x.HostConfig.NetworkMode = 'host'; },
     x => { x.HostConfig.CapDrop = []; },
     x => { x.HostConfig.SecurityOpt = []; },
