@@ -209,6 +209,7 @@ async function runJourney(browser, name, width, scenario) {
       assert.equal(calls.length, 0, 'invalid duplicate repo causes zero API calls');
       assert.equal(await page.getByRole('button', {name:'Export JSON'}).isDisabled(), true);
       assert.equal(await page.getByRole('button', {name:'Audit Brief (.md)'}).isDisabled(), true);
+      assert.equal(await page.getByRole('button', {name:'Download source-linked investigation handoff Markdown'}).isDisabled(), true);
       assert.equal(page.url(),base+'/', 'invalid query and URL fragment are scrubbed without a fetch');
     } else if (scenario === 'sanitized-link') {
       await ready(repoA);
@@ -246,7 +247,7 @@ async function runJourney(browser, name, width, scenario) {
       assert.ok(geometry.documentWidth <= geometry.width + 2,
         'text-only enlargement must not widen the page');
       assert.ok(geometry.navInternalScroll, 'navigation must retain its own horizontal scrolling');
-      assert.equal(geometry.controls.length, 4, 'three export controls and one trend control');
+      assert.equal(geometry.controls.length, 5, 'four export controls and one trend control');
       assert.ok(geometry.controls.every(c =>
         c.width > 0 && c.left >= -2 && c.right <= geometry.width + 2),
       'export and trend controls must remain inside viewport at 400%');
@@ -311,7 +312,11 @@ async function runJourney(browser, name, width, scenario) {
       assert.match(partialBrief, /Source unavailable or unverified\. No workflow assessment\./);
       assert.doesNotMatch(partialBrief, /\[Run #91\]/);
       assert.match(partialBrief, /https:\/\/github.com\/owner\/one\/pull\/21/);
-      assert.equal(calls.length, 2, 'partial export must not refetch');
+      const partialTriage = await download('Download source-linked investigation handoff Markdown');
+      assert.match(partialTriage, /Actions: UNAVAILABLE \/ UNVERIFIED/);
+      assert.match(partialTriage, /https:\/\/github.com\/owner\/one\/pull\/21/);
+      assert.doesNotMatch(partialTriage, /https:\/\/github.com\/owner\/one\/actions\/runs\/91/);
+      assert.equal(calls.length, 2, 'partial exports and triage handoff must not refetch');
     } else {
       await ready(repoA);
       assert.equal(calls.length, 2, 'only two initial panel API calls');
@@ -336,7 +341,14 @@ async function runJourney(browser, name, width, scenario) {
       assert.match(brief, /https:\/\/github.com\/owner\/one\/actions\/runs\/91/);
       assert.match(brief, /https:\/\/github.com\/owner\/one\/pull\/21/);
       assert.match(brief, /Not established by this bounded sample/);
-      assert.equal(calls.length, 2, 'exports incur zero extra GETs');
+      const triage = await download('Download source-linked investigation handoff Markdown');
+      assert.match(triage, /NEXUS DevOps — Investigation Handoff/);
+      assert.match(triage, /https:\/\/github.com\/owner\/one\/pull\/21/);
+      assert.match(triage, /https:\/\/github.com\/owner\/one\/actions\/runs\/91/);
+      assert.match(triage, /Next manual verification:/);
+      assert.match(triage, /Visual filters: ignored/);
+      assert.doesNotMatch(triage, /<img|https:\/\/attacker\.invalid/);
+      assert.equal(calls.length, 2, 'exports and triage handoff incur zero extra GETs');
       await page.getByRole('button', {name:'Inspect check & review events'}).first().click();
       await page.getByRole('region', {name:'GitHub evidence for PR #21'})
         .getByText('Lint', {exact:true}).waitFor();
