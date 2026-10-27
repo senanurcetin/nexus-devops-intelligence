@@ -76,6 +76,7 @@ export default function NexusDeveloperPreview() {
   const trendController = useRef<AbortController | null>(null);
   const [actionsReceivedAt, setActionsReceivedAt] = useState<string | null>(null);
   const [pullsReceivedAt, setPullsReceivedAt] = useState<string | null>(null);
+  const [postureRefreshTick, setPostureRefreshTick] = useState(0);
   const loading = actionsLoading || pullsLoading;
   const [formError, setFormError] = useState('');
   const [shareStatus, setShareStatus] = useState('');
@@ -269,6 +270,24 @@ export default function NexusDeveloperPreview() {
       if (pullsSlowTimer.current !== null) clearTimeout(pullsSlowTimer.current);
     };
   }, [load, clearInvalidSelection]);
+
+  // Reclassify source freshness when a 30-minute receipt expires, even if
+  // the dashboard is left open. This is a one-shot local timer: no API GET,
+  // polling, stored data, background job or automatic refresh of GitHub.
+  useEffect(() => {
+    const now = Date.now();
+    const nextExpiry = [actionsReceivedAt, pullsReceivedAt]
+      .filter((value): value is string => value !== null)
+      .map(value => Date.parse(value) + 30 * 60_000 + 1)
+      .filter(value => Number.isFinite(value) && value > now)
+      .sort((a, b) => a - b)[0];
+    if (nextExpiry === undefined) return;
+    const timer = window.setTimeout(
+      () => setPostureRefreshTick(value => value + 1),
+      Math.min(Math.max(1, nextExpiry - now), 2_147_483_647),
+    );
+    return () => window.clearTimeout(timer);
+  }, [actionsReceivedAt, pullsReceivedAt, postureRefreshTick]);
 
   function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
