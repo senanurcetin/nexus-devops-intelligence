@@ -6,7 +6,7 @@
 
 | Ay (önerilen) | Teknik hedef / öğrenme çıktısı | Kaynak | Kanıt / tamamlanma şartı | Durum |
 |---|---|---|---|---|
-| 2026-11 | Test-first regresyon: güvenilmeyen GitHub tarihini fail → pass doğrula | NEXUS DevOps Intelligence | Gerçek Codex oturumu + hedef/full test + PR + kamuya açık Türkçe eğitim | HAZIRLIK (kod/test/eğitim taslağı var; Codex yok) |
+| 2026-11 | Test-first regresyon: güvenilmeyen GitHub tarihini fail → pass doğrula | NEXUS DevOps Intelligence | Gerçek Codex oturumu + hedef/full test + PR + kamuya açık Türkçe eğitim | HAZIRLIK (hedef 2/2, npm 240/240 ve build PASS; audit 1 kritik bulgu; Codex tamamlanmadı) |
 | 2026-12 | Python'da gerçek hata analizi ve deterministik test | xarray / pyjanitor uygun issue | Açık issue, bağımsız Codex oturumu, pytest, maintainer review | PLAN |
 | 2027-01 | GitHub Actions/CI yapılandırmasını maliyetsiz ve güvenli inceleme | NEXUS veya izinli OSS repo | Değişiklik, statik doğrulama, CI maliyet onayı ve gerçek çalışma kayıtları | PLAN |
 | 2027-02 | Veri bilimi reproducibility / sentetik fixture doğruluğu | Seçilecek açık kaynak data repo | Deterministik test, before/after, lisans uyumluluğu | PLAN |
@@ -39,7 +39,7 @@
 ## Mevcut örnek için durum — 27 Ekim 2026
 
 - NEX-CODEX-001: GitHub kaynak düzeltmesi, sentetik hedef test ve Türkçe/İngilizce taslak belgeler ayrı branch'te oluşturuldu.
-- Yerel çıkarılmış kaynak üstünde Node v22.16.0: önce 1/2 PASS, sonra 2/2 PASS; tam npm test/typecheck/build NOT RUN.
-- Codex CLI/uygulaması çalışma kanıtı: **YOK**. Gerçek Codex demo videosu: **YOK**.
+- Node v22.16.0 üzerinde önce 1/2 PASS, sonra 2/2 PASS; Windows Node v24.13.0 üzerinde GitHub kod SHA ba1974f1...: hedef 2/2, tam npm testi 240/240, typecheck ve build PASS.
+- Codex CLI 0.164.0 ile ChatGPT girişli oturum 27 Ekim 2026 tarihinde denendi, ancak hesap kullanım limiti nedeniyle kaynak değişikliği oluşmadı. **Tamamlanmış Codex katkısı ve video kanıtı: YOK**.
 - İçerik linkleri henüz ana dalda değil; önerilen değişiklik PR incelemesinden önce kabul edilmiş sayılmaz.
-- Öncelikli sonraki iş: Codex oturumunda aynı regresyonu bağımsız yeniden üretmek, gerçek oturum çıktısı ve PR testlerini doğrulamak.
+- npm audit: Next.js 15.5.27 bağımlılığı için 1 kritik bulgu; ayrı güvenlik yama branch'i açıldı. Öncelikli işler: Next.js 15.5.28 güvenlik düzeltmesini ayrı PR/test ile değerlendirmek ve kullanım kotası açıldığında Codex ile bağımsız yeniden üretimi tamamlamak.
