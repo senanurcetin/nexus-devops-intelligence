@@ -208,6 +208,7 @@ async function runJourney(browser, name, width, scenario) {
       await page.getByRole('alert').filter({hasText:/Invalid repository in shared link/}).waitFor();
       assert.equal(calls.length, 0, 'invalid duplicate repo causes zero API calls');
       assert.equal(await page.getByRole('button', {name:'Export JSON'}).isDisabled(), true);
+      assert.equal(await page.locator('[data-risk-posture]').getAttribute('data-risk-posture'), 'await_evidence');
       assert.equal(await page.getByRole('button', {name:'Audit Brief (.md)'}).isDisabled(), true);
       assert.equal(await page.getByRole('button', {name:'Download source-linked investigation handoff Markdown'}).isDisabled(), true);
       assert.equal(page.url(),base+'/', 'invalid query and URL fragment are scrubbed without a fetch');
@@ -308,6 +309,9 @@ async function runJourney(browser, name, width, scenario) {
       assert.equal(json.actions, null);
       assert.equal(json.pull_requests.exported_prs, 1);
       assert.equal((await download('Export CSV')).includes('actions_sample_metadata'), false);
+      const partialState = page.locator('[data-risk-posture]');
+      assert.equal(await partialState.getAttribute('data-risk-posture'), 'investigate_observed');
+      assert.match(await partialState.innerText(), /Actions: unverified/);
       const partialBrief = await download('Audit Brief (.md)');
       assert.match(partialBrief, /Source unavailable or unverified\. No workflow assessment\./);
       assert.doesNotMatch(partialBrief, /\[Run #91\]/);
@@ -320,6 +324,10 @@ async function runJourney(browser, name, width, scenario) {
     } else {
       await ready(repoA);
       assert.equal(calls.length, 2, 'only two initial panel API calls');
+      const posture = page.locator('[data-risk-posture]');
+      assert.equal(await posture.getAttribute('data-risk-posture'), 'investigate_observed');
+      assert.match(await posture.innerText(), /1 failed/);
+      assert.match(await posture.innerText(), /1 conflicts/);
       const chartMeasures = await page.evaluate(() => ({
         bars:[...document.querySelectorAll('.nexus-devops-outcome-bar, .nexus-devops-pr-bar')].map(node => node.getBoundingClientRect().height),
         cells:document.querySelectorAll('.nexus-devops-composition-item').length,
