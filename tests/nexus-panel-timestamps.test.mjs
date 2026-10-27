@@ -33,3 +33,18 @@ test('non-ISO, offset and nonexistent GitHub dates are rejected at the browser b
     assert.equal(isPublicPullSample(pull(value), repository), false, `PR: ${value}`);
   }
 });
+
+test('Codex-reviewed UTC format and calendar boundary cases remain deterministic', () => {
+  const cases = [
+    ['0000-01-01T00:00:00Z', true],
+    ['2026-10-13T11:00:00.123456789Z', true],
+    ['2026-10-13T11:00:00.1234567890Z', false],
+    ['2026-10-13T24:00:00Z', false],
+    ['2026-10-13T11:00:60Z', false],
+    ['2026-10-13T11:00:00z', false],
+  ];
+  for (const [value, expected] of cases) {
+    assert.equal(isPublicActionsSample(action(value), repository), expected, `Actions: ${value}`);
+    assert.equal(isPublicPullSample(pull(value), repository), expected, `PR: ${value}`);
+  }
+});
