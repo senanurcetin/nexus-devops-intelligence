@@ -1,6 +1,6 @@
 # Gerçek bir GitHub projesinde regresyon testi: GitHub zaman damgaları
 
-> Durum (27 Ekim 2026): Bu hata düzeltmesi **ChatGPT/GPT-6 destekli** inceleme ve GitHub araçlarıyla hazırlandı. **Codex CLI 0.164.0 ile bağımsız yeniden üretim 27 Ekim 2026 tarihinde denendi; mevcut ChatGPT hesabının kullanım limiti nedeniyle kod okunmadan/değiştirilmeden durdu.** Bu rehber, aynı sorunun Codex ile ayrı ve gerçek bir oturumda yeniden uygulanabilmesi için bir eğitim senaryosudur; Codex başarı hikâyesi ya da yayımlanmış video kanıtı değildir.
+> **27 Ekim 2026 güncel durum:** İlk hata düzeltmesi ChatGPT/GPT-6 destekli olarak [PR #90](https://github.com/senanurcetin/nexus-devops-intelligence/pull/90) ile birleştirildi. Sonrasında gerçek **Codex CLI 0.164.0** oturumlarında önce kaynak metnine dayalı test sınırları önerildi ([#92](https://github.com/senanurcetin/nexus-devops-intelligence/pull/92)), sonra ayrı bir Codex oturumunda sentetik regresyon testi oluşturulup alternatif kaynak düzeltmesi önerildi. Codex Windows sandbox'ı Node alt sürecini çalıştıramadığı için testleri bağımsız Windows çalıştırıcısı **önce FAIL, sonra PASS** olarak doğruladı. [Ayrıntılı gerçek oturum kanıtları](CODEX_INDEPENDENT_TEST_FIRST_EVIDENCE_20261027.md). Video çekildiği veya Codex'in kendi içinde test/commit gerçekleştirdiği iddia edilmez.
 
 ## 1. Problem ve neden önemli?
 
@@ -41,7 +41,7 @@ Yama uygulandıktan sonra aynı çevrimdışı hedef test Node v22.16.0 üzerind
 
 **Windows kaynak testleri (27 Ekim 2026):** İzole, temiz GitHub klonunda `ba1974f1cdbedc203f1730ea5c8b660f61e64bb6` commit'i, Node v24.13.0 ve npm 11.6.2 ile doğrulandı. `npm ci --ignore-scripts --no-audit --no-fund`: PASS; `node --import tsx --test tests/nexus-panel-timestamps.test.mjs`: **2/2 PASS**; `npm test`: **240/240 PASS**; `npm run typecheck`: PASS; `npm run build`: PASS (Next.js 15.5.27). Build kaynak kodu değiştirmedi; otomatik üretilen `next-env.d.ts` farkı yerel klonda geri alındı. Bunlar **CI veya Production kabulü değildir**.
 
-**Bağımlılık güvenliği (27 Ekim 2026):** `npm audit --omit=dev --json` ve `npm audit --json` her ikisi de **exit 1, bir kritik bulgu** verdi: `next@15.5.27` sürümü [GHSA-2464-fhr4-w9xw](https://github.com/advisories/GHSA-2464-fhr4-w9xw) ve [GHSA-p3m5-59mp-jv5r](https://github.com/advisories/GHSA-p3m5-59mp-jv5r) kapsamındadır. Kayıtlarda ilk güvenli yama sürümü `15.5.28` olarak belirtiliyor. Dependency yükseltmesi bu PR'ın kapsamına sessizce eklenmez; ayrı bir güvenlik çalışması ve exact-SHA doğrulaması gereklidir.
+**Tarihsel güvenlik bulgusu:** İlk testte `next@15.5.27` üzerinde `npm audit` bir kritik bulgu verdi ([GHSA-2464-fhr4-w9xw](https://github.com/advisories/GHSA-2464-fhr4-w9xw)). Bu bulgu **ayrı [PR #91](https://github.com/senanurcetin/nexus-devops-intelligence/pull/91)** ile Next.js `15.5.28`e geçilerek giderildi. PR #92'deki güncel test kaynak ağacında **241/241 test PASS**, TypeScript ve Next.js build PASS, `npm audit` **0 bulgu** doğrulandı. Bu sonuçlar Production deployment onayı değildir.
 
 Yeni test GitHub reposuna da eklendi. Normal paket bağımlılıklarının bulunduğu bir ortamda aşağıdaki komutlar ayrıca çalıştırılmalıdır:
 
@@ -51,15 +51,15 @@ Yeni test GitHub reposuna da eklendi. Normal paket bağımlılıklarının bulun
     npm run typecheck
     npm run build
 
-**NOT RUN:** gerçek Codex kaynak düzeltmesi, tarayıcı smoke, OS kabulü ve Production/Preview kontrolleri. **FAIL/BLOK:** npm audit (1 kritik Next.js bağımlılığı). Tüm testler geçse de bu kılavuz deployment veya release onayı değildir.
+**Ayrı kalan doğrulamalar:** Tarayıcı/gerçek cihaz, erişilebilirlik, Docker OS matrisi ve Production/Preview kabulü bu eğitimin parçası olarak çalıştırılmadı. Güvenlik kaynak denetimi [#91](https://github.com/senanurcetin/nexus-devops-intelligence/pull/91) ile temizlendi; mevcut uygulama kaynakları hiçbir şekilde otomatik olarak Production'a çıkarılmış sayılmaz.
 
-## 6. Codex ile uygulamalı yeniden üretim (henüz gerçekleştirilmedi)
+## 6. Gerçek Codex oturumları ve tekrarlanabilir alıştırma
 
-**Gerçek Codex kanıtı oluşturmak için:** öğrenme amaçlı yeni bir dalı başlangıç commit'inden açın; Codex CLI ya da Codex uygulamasını bu repoda gerçekten çalıştırın. Codex'e şu görevi verin:
+27 Ekim'de iki ayrı Codex katkısı gerçekleşti: [#92](https://github.com/senanurcetin/nexus-devops-intelligence/pull/92) için kaynak metninden altı tarih sınırı önerisi ve [ikinci bağımsız Codex CLI oturumu](CODEX_INDEPENDENT_TEST_FIRST_EVIDENCE_20261027.md) için bir sentetik test dosyası ile alternatif yama önerisi. İkinci çalışmada harici Node komutu önce **exit 1**, önerilen düzeltme haricen uygulandıktan sonra **2/2 PASS, exit 0** verdi. Bu, Codex'in kendi terminalinde testleri çalıştırdığı anlamına gelmez. Aynı iş akışını yeni, bağımsız bir kaynak klonunda tekrarlamak için aşağıdaki prompt kullanılabilir:
 
 > NEXUS DevOps Intelligence deposundaki src/lib/nexus-panel-validation.ts zaman damgası denetimini incele. Date.parse('1') ve 2026-02-30 örneklerini önce yalnızca çevrimdışı sentetik testlerle yeniden üret; başlangıç testini çalıştırıp çıktıyı kaydet. Sonra en küçük güvenli ISO 8601 UTC düzeltmesini yap, aynı testleri ve mevcut uygun doğrulamaları çalıştır. Başka branch'lere dokunma, Vercel/GitHub Actions tetikleme, Production'a deploy yapma, gizli bilgi isteme. Uygulanan komutları, başarısızlıkları, gerçek test çıktılarını ve commit SHA'yı açıkça raporla.
 
-**Kanıt kontrol listesi:** gerçek Codex oturum/tarih kaydı, kullanılan prompt, önce FAIL sonra PASS çıktı dosyaları, branch ve commit SHA, bağımsız kullanıcı gözden geçirmesi, gizli bilgi redaksiyonu. Codex CLI ile bağımsız oturum başlatıldı ancak kullanım kotası nedeniyle hiçbir kaynak değişikliği veya Codex test çıktısı oluşturulamadı. Gerçek Codex geliştirme kanıtı hâlâ **YOK**. Bir ajan tarafından hazırlanmış kodu geriye dönük olarak 'Codex yazdı' diye etiketleme.
+**Kanıt ayrımı:** Codex gerçekten yeni bir sentetik test dosyası üretti ve ikinci bir doğrulama algoritması önerdi. İlk uygulama düzeltmesinin [#90](https://github.com/senanurcetin/nexus-devops-intelligence/pull/90) kodu ise **GPT-6 destekli** olarak yazıldı. Codex'in alternatif yaması yalnızca izole çalışma ve karşılaştırma için haricen uygulandı; mevcut `main` doğrulayıcısı geniş Codex testiyle de geçtiğinden gereksiz üretim değişikliği yapılmadı. Uygulanan gerçek komut, başarısızlık, SHA ve sınırlamalar [kanıt dosyasında](CODEX_INDEPENDENT_TEST_FIRST_EVIDENCE_20261027.md) açıklanır.
 
 ## 7. Güvenlik, sınırlamalar ve öğrenilenler
 
@@ -76,10 +76,12 @@ Yeni test GitHub reposuna da eklendi. Normal paket bağımlılıklarının bulun
 - Katkı rehberi: ../CONTRIBUTING.md
 - Node test altyapısı: https://nodejs.org/api/test.html
 - Codex ile gerçek çalışma: https://developers.openai.com/learn/codex
+- Gerçek Codex CLI test-first kanıtı: [bağımsız oturum kaydı](CODEX_INDEPENDENT_TEST_FIRST_EVIDENCE_20261027.md)
+- İlk Codex metin incelemesi: [PR #92 kanıt dosyası](CODEX_TIMESTAMP_REVIEW_EVIDENCE_20261027.md)
 
 ## 27 Ekim 2026 — birleşme ve bağımsız Codex kaynak incelemesi (güncel durum)
 
 - Yukarıdaki eğitim ve ilk regresyon düzeltmesi **[PR #90](https://github.com/senanurcetin/nexus-devops-intelligence/pull/90) ile main dalına birleştirildi**. İlk baştaki 'draft' ve 'Codex hiç kullanılmadı' ifadeleri tarihsel aşamayı anlatır; güncel durum için bu bölüm esas alınmalıdır.
 - **[Güvenlik PR #91](https://github.com/senanurcetin/nexus-devops-intelligence/pull/91)** ile Next.js 15.5.28 kaynak dalına alındı. İki değişikliğin bir arada bulunduğu kaynak kombinasyonunda Windows'ta **240/240 otomatik test, TypeScript, Next.js build ve npm audit (0 bulgu)** başarılı oldu. Bu doğrulama Vercel Production onayı değildir.
 - **Gerçek Codex CLI (0.164.0) kaynak incelemesi** ayrıca tamamlandı: Orijinal kamuya açık fonksiyonun tam metni prompt ile verilerek altı test sınır durumu önerildi. Bu vakalar ayrı bir test PR'ına aktarıldı. Codex kaynak dosyasını shell ile okumadı, test çalıştırmadı, dosya değiştirmedi veya commit oluşturmadı. Ayrıntılar: [Codex inceleme kanıtı](CODEX_TIMESTAMP_REVIEW_EVIDENCE_20261027.md).
-- Windows ortamında doğrudan Codex shell yürütmesi halen `helper_sandbox_lock_failed` (access denied, error 5) nedeniyle başarısız. Sandbox güvenliği zayıflatılmadı. Öğretici video çekimi, insan cihaz/erişilebilirlik onayı ve hosted release ayrıca tamamlanmalıdır.
+- İlk Windows sandbox denemesi `helper_sandbox_lock_failed` (error 5) ile engellendi; ancak **MXC sandbox** ile Codex test dosyası oluşturabildi. Codex içerisindeki `node`/`git` alt süreçleri `0xC0000142` hatası verdi; harici Windows doğrulaması gerçek önce FAIL/sonra PASS çıktısını sağladı. Sandbox güvenliği devre dışı bırakılmadı. Video, insan cihaz/erişilebilirlik onayı ve hosted release ayrı kalır.
