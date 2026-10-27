@@ -9,17 +9,21 @@ import { spawnSync } from 'node:child_process';
  */
 test('Community Compose CLI resolves a loopback-only least-privilege service', t => {
   const version = spawnSync('docker', ['compose', 'version'], {
-    encoding: 'utf8', timeout: 15_000, maxBuffer: 1024 * 1024,
+    // Shared Windows Docker Desktop starts slowly under parallel Node test load.
+    // This is a CLI contract test, not a daemon start-up latency benchmark.
+    encoding: 'utf8', timeout: 60_000, maxBuffer: 1024 * 1024,
   });
   if (version.error?.code === 'ENOENT' ||
       (version.status !== 0 && /unknown command|not recognized|not found/i.test(version.stderr || ''))) {
     t.skip('Docker Compose CLI is not installed in this environment.');
     return;
   }
-  assert.equal(version.status, 0, 'Installed Docker Compose CLI must report its version');
+  assert.equal(version.status, 0,
+    'Installed Docker Compose CLI must report its version (error: ' +
+      (version.error?.code ?? 'none') + ')');
 
   const check = spawnSync('docker', ['compose', 'config', '--format', 'json'], {
-    encoding: 'utf8', timeout: 20_000, maxBuffer: 1024 * 1024,
+    encoding: 'utf8', timeout: 60_000, maxBuffer: 1024 * 1024,
   });
   assert.equal(check.status, 0, 'Compose config should parse without contacting a daemon: ' + check.stderr);
   const doc = JSON.parse(check.stdout);
