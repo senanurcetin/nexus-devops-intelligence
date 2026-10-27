@@ -30,7 +30,7 @@ docker compose logs --tail=80 nexus
 docker compose down
 ```
 
-This is **not** a public endpoint; do not enable router port forwarding, cloud tunnels, LAN access or Docker port mappings to `0.0.0.0`. Container `HOSTNAME=0.0.0.0` listens *inside the isolated container* only; Compose maps it exclusively to host `127.0.0.1`. The runtime uses non-root numeric UID 65532 and drops Linux capabilities. A locally installed app without authentication is **not suitable for public exposure**.
+This is **not** a public endpoint; do not enable router port forwarding, cloud tunnels, LAN access or Docker port mappings to `0.0.0.0`. Container `HOSTNAME=0.0.0.0` listens *inside the isolated container* only; Compose maps it exclusively to host `127.0.0.1`. The runtime uses non-root numeric UID 65532, drops Linux capabilities, and uses a **read-only root filesystem** (no writable host mounts or tmpfs). A successful local read-only smoke test does not establish every application feature, persistence or independent native Ubuntu acceptance. A locally installed app without authentication is **not suitable for public exposure**.
 
 ## Check the actual host binding
 
