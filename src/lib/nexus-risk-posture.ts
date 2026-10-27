@@ -1,4 +1,4 @@
-import type { PublicActionsSummary } from './github-public-actions.ts';
+import { isConfirmedWorkflowFailure, type PublicActionsSummary } from './github-public-actions.ts';
 import type { PublicPullSummary } from './nexus-public-prs.ts';
 import { isPublicActionsSample, isPublicPullSample } from './nexus-panel-validation.ts';
 
@@ -70,7 +70,8 @@ export function assessRepositoryRiskPosture({
     freshness: a ? actionsFreshness : 'unverified' as EvidenceFreshness,
     inspected: a?.inspected_runs ?? 0,
     uninspected: a ? a.total_matching_runs - a.inspected_runs : 0,
-    failed: a?.failed_runs ?? 0,
+    failed: a ? a.runs.filter(run => run.status === 'completed' &&
+      isConfirmedWorkflowFailure(run.conclusion)).length : 0,
     truncated: Boolean(a && a.total_matching_runs > a.inspected_runs),
   };
   const pullRequests = {
