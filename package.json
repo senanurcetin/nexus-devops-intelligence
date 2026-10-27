@@ -27,13 +27,13 @@
     "react-dom": "19.2.1"
   },
   "devDependencies": {
-    "@tailwindcss/postcss": "4.3.3",
     "@types/node": "^20.17.0",
     "@types/react": "^19.2.1",
     "@types/react-dom": "^19.2.1",
     "tailwindcss": "4.3.3",
     "tsx": "^4.20.0",
-    "typescript": "^5.8.3"
+    "typescript": "^5.8.3",
+    "@tailwindcss/postcss": "4.3.3"
   },
   "type": "module",
   "engines": {
