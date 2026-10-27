@@ -208,6 +208,7 @@ async function runJourney(browser, name, width, scenario) {
       await page.getByRole('alert').filter({hasText:/Invalid repository in shared link/}).waitFor();
       assert.equal(calls.length, 0, 'invalid duplicate repo causes zero API calls');
       assert.equal(await page.getByRole('button', {name:'Export JSON'}).isDisabled(), true);
+      assert.equal(await page.getByRole('button', {name:'Audit Brief (.md)'}).isDisabled(), true);
       assert.equal(page.url(),base+'/', 'invalid query and URL fragment are scrubbed without a fetch');
     } else if (scenario === 'sanitized-link') {
       await ready(repoA);
@@ -245,7 +246,7 @@ async function runJourney(browser, name, width, scenario) {
       assert.ok(geometry.documentWidth <= geometry.width + 2,
         'text-only enlargement must not widen the page');
       assert.ok(geometry.navInternalScroll, 'navigation must retain its own horizontal scrolling');
-      assert.equal(geometry.controls.length, 3);
+      assert.equal(geometry.controls.length, 4, 'three export controls and one trend control');
       assert.ok(geometry.controls.every(c =>
         c.width > 0 && c.left >= -2 && c.right <= geometry.width + 2),
       'export and trend controls must remain inside viewport at 400%');
@@ -306,6 +307,10 @@ async function runJourney(browser, name, width, scenario) {
       assert.equal(json.actions, null);
       assert.equal(json.pull_requests.exported_prs, 1);
       assert.equal((await download('Export CSV')).includes('actions_sample_metadata'), false);
+      const partialBrief = await download('Audit Brief (.md)');
+      assert.match(partialBrief, /Source unavailable or unverified\. No workflow assessment\./);
+      assert.doesNotMatch(partialBrief, /\[Run #91\]/);
+      assert.match(partialBrief, /https:\/\/github.com\/owner\/one\/pull\/21/);
       assert.equal(calls.length, 2, 'partial export must not refetch');
     } else {
       await ready(repoA);
@@ -325,6 +330,12 @@ async function runJourney(browser, name, width, scenario) {
       const csv = await download('Export CSV');
       assert.match(csv, /"'=HYPERLINK\(/, 'CSV injection neutralized');
       assert.match(csv, /"'\+cmd\|powershell"/);
+      const brief = await download('Audit Brief (.md)');
+      assert.match(brief, /NEXUS DevOps — Evidence Brief/);
+      assert.match(brief, /Inspected: 2 of 2 matching runs/);
+      assert.match(brief, /https:\/\/github.com\/owner\/one\/actions\/runs\/91/);
+      assert.match(brief, /https:\/\/github.com\/owner\/one\/pull\/21/);
+      assert.match(brief, /Not established by this bounded sample/);
       assert.equal(calls.length, 2, 'exports incur zero extra GETs');
       await page.getByRole('button', {name:'Inspect check & review events'}).first().click();
       await page.getByRole('region', {name:'GitHub evidence for PR #21'})
