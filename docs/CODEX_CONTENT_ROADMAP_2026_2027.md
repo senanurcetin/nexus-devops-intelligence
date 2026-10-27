@@ -1,12 +1,12 @@
 # Altı aylık öneri: Codex odaklı, kanıta dayalı içerik programı
 
-> Plan taslağı — programa kabul/ret sonucu bilinmiyor. Dönem 2026 Kasım – 2027 Nisan olarak varsayıldı; resmî altı aylık dönem başladığında tarihler güncellenecek. Hiçbir içerik yayınlandı veya Codex ile yapıldı olarak işaretlenmedi.
+> Plan taslağı — Codex Ambassador başvurusunun kabul/ret sonucu bilinmiyor. Dönem 2026 Kasım – 2027 Nisan olarak varsayıldı; resmî dönem başladığında tarihler güncellenecek. İlk kamuya açık kod ve GitHub eğitim dosyaları #90–#92 ile birleştirildi. Video veya sosyal medya gönderisi henüz yayımlanmadı. Codex kullanım kanıtı, ilk GPT-6 kaynak düzeltmesinden ayrı tutulur.
 
 ## Aylık teslimatlar
 
 | Ay (önerilen) | Teknik hedef / öğrenme çıktısı | Kaynak | Kanıt / tamamlanma şartı | Durum |
 |---|---|---|---|---|
-| 2026-11 | Test-first regresyon: güvenilmeyen GitHub tarihini fail → pass doğrula | NEXUS DevOps Intelligence | Gerçek Codex oturumu + hedef/full test + PR + kamuya açık Türkçe eğitim | HAZIRLIK (hedef 2/2, npm 240/240 ve build PASS; audit 1 kritik bulgu; Codex tamamlanmadı) |
+| 2026-11 | Test-first regresyon: güvenilmeyen GitHub tarihini fail → pass doğrula | NEXUS DevOps Intelligence | Gerçek Codex oturumu + hedef/full test + PR + kamuya açık Türkçe eğitim | KOD + GITHUB EĞİTİMİ BİRLEŞTİ (#90–#92); 241/241 test, audit 0; gerçek Codex test tasarımı ve harici FAIL→PASS kanıtı mevcut; video henüz yok |
 | 2026-12 | Python'da gerçek hata analizi ve deterministik test | xarray / pyjanitor uygun issue | Açık issue, bağımsız Codex oturumu, pytest, maintainer review | PLAN |
 | 2027-01 | GitHub Actions/CI yapılandırmasını maliyetsiz ve güvenli inceleme | NEXUS veya izinli OSS repo | Değişiklik, statik doğrulama, CI maliyet onayı ve gerçek çalışma kayıtları | PLAN |
 | 2027-02 | Veri bilimi reproducibility / sentetik fixture doğruluğu | Seçilecek açık kaynak data repo | Deterministik test, before/after, lisans uyumluluğu | PLAN |
@@ -38,8 +38,8 @@
 
 ## Mevcut örnek için durum — 27 Ekim 2026
 
-- NEX-CODEX-001: GitHub kaynak düzeltmesi, sentetik hedef test ve Türkçe/İngilizce taslak belgeler ayrı branch'te oluşturuldu.
+- NEX-CODEX-001: [#90](https://github.com/senanurcetin/nexus-devops-intelligence/pull/90) ilk kaynak düzeltmesi ve Türkçe eğitim, [#91](https://github.com/senanurcetin/nexus-devops-intelligence/pull/91) güvenlik yaması, [#92](https://github.com/senanurcetin/nexus-devops-intelligence/pull/92) Codex kaynak incelemesi destekli sınır testi **main'e birleştirildi**.
 - Node v22.16.0 üzerinde önce 1/2 PASS, sonra 2/2 PASS; Windows Node v24.13.0 üzerinde GitHub kod SHA ba1974f1...: hedef 2/2, tam npm testi 240/240, typecheck ve build PASS.
-- Codex CLI 0.164.0 ile ChatGPT girişli oturum 27 Ekim 2026 tarihinde denendi, ancak hesap kullanım limiti nedeniyle kaynak değişikliği oluşmadı. **Tamamlanmış Codex katkısı ve video kanıtı: YOK**.
-- İçerik linkleri henüz ana dalda değil; önerilen değişiklik PR incelemesinden önce kabul edilmiş sayılmaz.
-- npm audit: Next.js 15.5.27 bağımlılığı için 1 kritik bulgu; ayrı güvenlik yama branch'i açıldı. Öncelikli işler: Next.js 15.5.28 güvenlik düzeltmesini ayrı PR/test ile değerlendirmek ve kullanım kotası açıldığında Codex ile bağımsız yeniden üretimi tamamlamak.
+- Codex CLI 0.164.0 ile iki doğrulanabilir çalışma var: kaynak-metin sınır örnekleri (#92) ve gerçek MXC oturumunda sentetik test dosyası + alternatif yama önerisi. İkinci dosya harici Node ile **önce exit 1, yama sonrası 2/2 PASS** doğrulandı. Ancak Codex'in kendi shell testi başlatılamadı; **tam otonom Codex düzeltmesi ve video kanıtı yok**. [Kanıt](CODEX_INDEPENDENT_TEST_FIRST_EVIDENCE_20261027.md).
+- Teknik rehber ve ilk katkı bağlantıları main'de herkese açık. LinkedIn ve video materyalleri yalnızca taslak durumundadır; yayına alındıkları iddia edilmez.
+- Tarihsel Next.js 15.5.27 güvenlik bulgusu #91 ile giderildi. Son birleşmiş kaynak checkpoint'i **241/241 test PASS, typecheck/build PASS, npm audit 0**. Kalan bağımsız kapılar: çekilecek gerçek demo videosu, insan erişilebilirlik/cihaz onayı ve korumalı Production/Preview/Docker kabulü; bunlar GitHub source merge ile kapatılmaz.
