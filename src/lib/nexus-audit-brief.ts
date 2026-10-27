@@ -9,8 +9,10 @@ import { createSampleFilename } from './nexus-public-sample-export.ts';
 const safeText = (value: string, limit = 240): string =>
   value
     .slice(0, limit)
-    .replace(/[\u0000-\u001f\u007f-\u009f\u200b-\u200f\u202a-\u202e\u2060-\u2069\ufeff]/g, ' ')
-    .replace(/[\\`*_{}\[\]()#+.!>|~-]/g, '\\$&')
+    .replace(/[\u0000-\u001f\u007f-\u009f\u061c\u200b-\u200f\u2028\u2029\u202a-\u202e\u2060-\u2069\ufeff]/g, ' ')
+    // Markdown allows raw HTML; escape HTML syntax as well as Markdown punctuation.
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/[\\`*_{}\[\]()#+.!|~-]/g, '\\$&')
     .trim();
 
 function verifySnapshot(snapshot: PublicSampleExport): void {
