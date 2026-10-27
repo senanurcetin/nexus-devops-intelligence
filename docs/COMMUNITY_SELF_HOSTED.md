@@ -2,6 +2,10 @@
 
 **Status (2026-10-27):** Docker Desktop/WSL2 Windows image build and localhost runtime were verified on an isolated candidate. Independent native Ubuntu Docker Engine, protected Preview/Production and human accessibility acceptance remain **NOT RUN**. Still DRAFT/NO-GO, not a release. This is not the hosted Cloud/SaaS product.
 
+## Exact-image OS/CVE evidence
+
+The Windows Docker candidate's pinned Debian 13 base and current NEXUS runtime both have 23 medium and 8 low OS-package vulnerability records. These 31 records match across the base and application image; a clean Node dependency audit does **not** mean a clean OS vulnerability scan. See the [exact-image CVE evidence and offline review tool](COMMUNITY_CVE_EVIDENCE_2026-10-27.md). Human security disposition and native Ubuntu acceptance remain open.
+
 ## Supported scope and prerequisites
 
 - One developer machine, one service, browser on **that same machine only**.
