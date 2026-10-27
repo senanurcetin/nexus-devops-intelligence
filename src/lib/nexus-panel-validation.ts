@@ -22,13 +22,13 @@ const string = (value: unknown, max = 2000): value is string =>
 // GitHub REST timestamps use ISO 8601 UTC. Date.parse alone also accepts
 // non-timestamps like "1" and normalizes impossible calendar dates.
 const timestamp = (value: unknown): value is string => {
-  if (!string(value, 100) ||
-      !/^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(?:\.[0-9]{1,9})?Z$/.test(value)) {
-    return false;
-  }
-  const parsed = Date.parse(value);
-  return Number.isFinite(parsed) &&
-    new Date(parsed).toISOString().slice(0, 19) === value.slice(0, 19);
+  if (!string(value, 100)) return false;
+  const match = /^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})(?:\.(\d{1,9}))?Z$/.exec(value);
+  if (!match || match[0] !== value) return false;
+  // Normalize fractional seconds to milliseconds for the calendar round-trip.
+  const normalized = `${match[1]}.${(match[2] ?? '').padEnd(3, '0').slice(0, 3)}Z`;
+  const parsed = Date.parse(normalized);
+  return Number.isFinite(parsed) && new Date(parsed).toISOString() === normalized;
 };
 
 const attentionStates = new Set<PullAttention>([
