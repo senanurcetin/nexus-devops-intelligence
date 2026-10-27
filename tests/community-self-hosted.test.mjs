@@ -55,3 +55,12 @@ test('Community build context is default-deny and allows only build inputs', () 
   assert.match(read('scripts/verify-community-runtime.mjs'), /verifyCommunityRuntime/);
   assert.match(read('scripts/verify-community-localhost.mjs'), /127\.0\.0\.1/);
 });
+
+test('Community Docker base image is digest pinned consistently across all stages', () => {
+  const docker = read('Dockerfile');
+  const bases = [...docker.matchAll(/^FROM (node:22-bookworm-slim@sha256:[a-f0-9]{64}) AS (deps|builder|runtime)$/gm)];
+  assert.deepEqual(bases.map(([, , stage]) => stage), ['deps', 'builder', 'runtime']);
+  assert.equal(new Set(bases.map(([, source]) => source)).size, 1,
+    'All stages must use the same immutable official Node image index');
+  assert.equal(bases.length, 3);
+});
