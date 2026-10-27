@@ -37,3 +37,7 @@
 ## Sonraki gerçek Codex kodlama gösterimi için
 
 Windows sandbox hatası kullanıcı yetki ayarlarını zayıflatmadan onarılmalı veya desteklenen, bağımsız ve güvenli bir Codex çalışma ortamı kullanılmalıdır. Ardından yeni gerçek issue/PR üzerinde **önce başarısız test → Codex destekli kod değişikliği → başarılı test → inceleme** akışı tamamlanmalıdır. Bu doküman böyle bir süreç gerçekleşti iddiasında bulunmaz.
+
+## Sonradan gerçekleştirilen ikinci, bağımsız Codex CLI oturumu
+
+Bu dosyada belgelenen #92 katkısı **yalnızca kaynak metnine dayalı altı test fikstürü önerisidir**. Aynı gün ayrı bir Codex CLI oturumunda MXC sandbox altında daha geniş bir sentetik test dosyası oluşturulmuş, bir alternatif kaynak yaması önerilmiş ve **harici Windows Node çalıştırıcısında önce FAIL, sonra 2/2 PASS** doğrulanmıştır. Codex içindeki `node` ve kaynak dosyası yazma denemeleri Windows alt süreç/erişim sorunları nedeniyle başarılı olmamıştır. Bu ikinci çalışmanın kapsamı, yerel kaynak kökeni ve gerçek komut kanıtları için [bağımsız test-first kanıt dosyasını](CODEX_INDEPENDENT_TEST_FIRST_EVIDENCE_20261027.md) inceleyin. İkinci oturuma ait arşivdeki alternatif yama `main`e uygulanmadı; mevcut doğrulayıcı ek testleri zaten karşılıyordu.
