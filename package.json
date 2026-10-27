@@ -19,7 +19,8 @@
     "perf:local": "node --import tsx scripts/inspect-local-performance.mjs",
     "capacity:offline": "node scripts/check-free-capacity-offline.mjs",
     "capacity:upstash:read-only": "node scripts/read-upstash-management-capacity.mjs",
-    "verify:release:evidence": "node scripts/verify-release-evidence.mjs"
+    "verify:release:evidence": "node scripts/verify-release-evidence.mjs",
+    "verify:pr:composition": "node scripts/verify-pr-composition.mjs"
   },
   "dependencies": {
     "lucide-react": "^0.475.0",
