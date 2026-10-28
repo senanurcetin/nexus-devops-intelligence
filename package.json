@@ -15,6 +15,8 @@
     "test:routes": "node --import tsx --test tests/next-routes.test.mjs",
     "test:redis:offline": "node --import tsx scripts/verify-local-redis-multiprocess.mjs",
     "smoke:http:offline": "node scripts/smoke-http-offline.mjs",
+    "smoke:community:localhost": "node scripts/verify-community-localhost.mjs",
+    "verify:community:runtime": "node scripts/verify-community-runtime.mjs",
     "test:browser:manual": "node --import tsx scripts/manual-browser-f01-f05.mjs",
     "perf:local": "node --import tsx scripts/inspect-local-performance.mjs",
     "capacity:offline": "node scripts/check-free-capacity-offline.mjs",

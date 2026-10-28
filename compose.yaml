@@ -1,0 +1,30 @@
+# This is a single-user, localhost-only Community service, NOT a public server.
+# Do not change the host 127.0.0.1 binding without authentication and traffic review.
+services:
+  nexus:
+    image: nexus-devops-community:local
+    build:
+      context: .
+      dockerfile: Dockerfile
+    init: true
+    read_only: true
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:3000:3000"
+    environment:
+      NODE_ENV: production
+      NEXT_TELEMETRY_DISABLED: "1"
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    healthcheck:
+      test:
+        - CMD
+        - /nodejs/bin/node
+        - -e
+        - "fetch('http://127.0.0.1:3000/').then(r => process.exit(r.status === 200 ? 0 : 1)).catch(() => process.exit(1))"
+      interval: 30s
+      timeout: 5s
+      start_period: 30s
+      retries: 3

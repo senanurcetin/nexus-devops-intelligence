@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased — 18 October 2026 — Community Docker candidate (draft #80)
+
+**Release state: NO-GO / not tagged.** The repository's `0.1.0` package metadata is not a public Community release; hosted Vercel Preview/Production continue to have separate authorization and older deployment sources. The current draft must not be advertised as a verified Windows/Ubuntu installer.
+
+- Added an opt-in Next.js standalone multi-stage Node 22 Docker candidate, Docker Compose host loopback mapping (`127.0.0.1:3000`), non-root runtime and a default-deny Docker context. This is **source packaging**, not independently accepted image/runtime security.
+- Added a local-only six-request smoke script for the homepage and five malformed public-repository API endpoints; it does not perform real upstream GitHub requests.
+- Added [Docker-only Windows and Linux setup and troubleshooting instructions](docs/COMMUNITY_SELF_HOSTED.md). Host Node/npm is optional; `curl.exe` and `curl` checks are available.
+- Added [source/version/image identity and manual release requirements](docs/COMMUNITY_VERSIONING_AND_INSTALLATION.md), and version-parity plus installation-source test coverage. Integrated the branch with the current main commercial strategy (zero mandatory free pilot users).
+- **NOT RUN on this latest head:** fresh npm dependency install, full test suite, typecheck/build, Docker image and Compose, image digest scan, host binding, Windows/Ubuntu acceptance. See [issue #81](https://github.com/senanurcetin/nexus-devops-intelligence/issues/81). No new GitHub Actions/CI, Preview, Production, tag or paid service was triggered by this work.
+
 ## Unreleased — 13 October 2026
 
 - [PR #21](https://github.com/senanurcetin/nexus-devops-intelligence/pull/21) corrects the PRs needing inspection metric to include unknown merge states without inventing conflicts or counting drafts/clean PRs. Two additional unit tests plus Next.js route assertion; manual **78/78** tests, TypeScript/build, audit (0 findings) and real GitHub HTTP smoke passed. Controlled Chromium 375/1440px displayed the correct card value; axe A/AA 0 automated violations, 26 passes/viewport. [QA record](docs/pr-inspection-count-browser-qa-2026-10-13.md).
