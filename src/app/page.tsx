@@ -14,6 +14,9 @@ import { isPublicActionsSample, isPublicPullSample } from '@/lib/nexus-panel-val
 import { filteredWorkflowRuns, workflowOutcome, workflowOutcomeCount, workflowOutcomes, type WorkflowFilter } from '@/lib/nexus-workflow-visuals';
 import { filteredPublicPulls, pullBucket, pullBucketCount, pullBuckets, type PullFilter } from '@/lib/nexus-pr-visuals';
 import { createPublicSampleExport, createSampleFilename, serializePublicSampleCsv } from '@/lib/nexus-public-sample-export';
+import { createAuditBrief, createAuditBriefFilename } from '@/lib/nexus-audit-brief';
+import { createInvestigationHandoff } from '@/lib/nexus-investigation-handoff';
+import { assessRepositoryRiskPosture } from '@/lib/nexus-risk-posture';
 import { buildRepositoryShareUrl, canonicalRepositoryPageUrl, readRepositoryLink, normalizeRepositoryInput } from '@/lib/nexus-repository-link';
 import { isPublicPrVerification, type PublicPrVerification } from '@/lib/nexus-pr-evidence';
 import { isPublicRunEvidence, type PublicRunEvidence } from '@/lib/nexus-workflow-run-evidence';
@@ -73,6 +76,7 @@ export default function NexusDeveloperPreview() {
   const trendController = useRef<AbortController | null>(null);
   const [actionsReceivedAt, setActionsReceivedAt] = useState<string | null>(null);
   const [pullsReceivedAt, setPullsReceivedAt] = useState<string | null>(null);
+  const [postureRefreshTick, setPostureRefreshTick] = useState(0);
   const loading = actionsLoading || pullsLoading;
   const [formError, setFormError] = useState('');
   const [shareStatus, setShareStatus] = useState('');
@@ -267,6 +271,24 @@ export default function NexusDeveloperPreview() {
     };
   }, [load, clearInvalidSelection]);
 
+  // Reclassify source freshness when a 30-minute receipt expires, even if
+  // the dashboard is left open. This is a one-shot local timer: no API GET,
+  // polling, stored data, background job or automatic refresh of GitHub.
+  useEffect(() => {
+    const now = Date.now();
+    const nextExpiry = [actionsReceivedAt, pullsReceivedAt]
+      .filter((value): value is string => value !== null)
+      .map(value => Date.parse(value) + 30 * 60_000 + 1)
+      .filter(value => Number.isFinite(value) && value > now)
+      .sort((a, b) => a - b)[0];
+    if (nextExpiry === undefined) return;
+    const timer = window.setTimeout(
+      () => setPostureRefreshTick(value => value + 1),
+      Math.min(Math.max(1, nextExpiry - now), 2_147_483_647),
+    );
+    return () => window.clearTimeout(timer);
+  }, [actionsReceivedAt, pullsReceivedAt, postureRefreshTick]);
+
   function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     let nextRepo: string;
@@ -337,6 +359,12 @@ export default function NexusDeveloperPreview() {
   const prList = pulls.data?.pull_requests ?? [];
   const visiblePulls = filteredPublicPulls(pulls.data, pullFilter);
   const recommendations = recommendInvestigations(actions.data, pulls.data);
+  const riskPosture = assessRepositoryRiskPosture({
+    repository: selectedRepo,
+    actions: actions.data, pulls: pulls.data,
+    actionsReceivedAt, prsReceivedAt: pullsReceivedAt,
+    asOf: new Date(),
+  });
   const canExport = !loading && Boolean(actions.data || pulls.data);
 
   function inspectUtcTrend() {
@@ -454,28 +482,35 @@ export default function NexusDeveloperPreview() {
     }
   }
 
-  function downloadSample(format: 'csv' | 'json') {
+  function downloadSample(format: 'csv' | 'json' | 'md' | 'queue') {
     setExportError('');
     if (!canExport) return;
     try {
-      const snapshot = createPublicSampleExport({
+      const input = {
         repository: selectedRepo,
         actions: actions.data,
         prs: pulls.data,
         actionsReceivedAt, prsReceivedAt: pullsReceivedAt,
         workflowFilter, pullFilter,
         exportedAt: new Date().toISOString(),
-      });
+      };
+      const snapshot = createPublicSampleExport(input);
+      const handoff = format === 'queue' ? createInvestigationHandoff(input) : null;
       const serialized = format === 'csv'
         ? '\uFEFF' + serializePublicSampleCsv(snapshot)
-        : JSON.stringify(snapshot, null, 2) + '\n';
+        : format === 'md' ? createAuditBrief(snapshot)
+          : format === 'queue' ? handoff!.markdown : JSON.stringify(snapshot, null, 2) + '\n';
       const file = new Blob([serialized], {
-        type: format === 'csv' ? 'text/csv;charset=utf-8' : 'application/json;charset=utf-8',
+        type: format === 'csv' ? 'text/csv;charset=utf-8'
+          : format === 'md' || format === 'queue'
+            ? 'text/markdown;charset=utf-8' : 'application/json;charset=utf-8',
       });
       const blobUrl = URL.createObjectURL(file);
       const anchor = document.createElement('a');
       anchor.href = blobUrl;
-      anchor.download = createSampleFilename(snapshot.repository, snapshot.exported_at_utc, format);
+      anchor.download = format === 'md' ? createAuditBriefFilename(snapshot)
+        : format === 'queue' ? handoff!.filename
+          : createSampleFilename(snapshot.repository, snapshot.exported_at_utc, format);
       document.body.appendChild(anchor);
       try {
         anchor.click();
@@ -679,6 +714,7 @@ export default function NexusDeveloperPreview() {
             <p className="mt-1 max-w-3xl text-xs leading-5 text-slate-300">
               Downloads only currently visible, filtered records from verified source panels.
               Includes repository, UTC receipt time, sample limits and applied filters.
+              The Markdown audit brief adds bounded source-linked investigation notes, not a release decision.
               No new GitHub or Redis request. This is not a repository-wide report.
             </p>
             {!canExport && <p className="mt-2 text-xs text-slate-400" role="status">
@@ -694,6 +730,10 @@ export default function NexusDeveloperPreview() {
             <button type="button" onClick={() => downloadSample('json')} disabled={!canExport}
               className="nexus-devops-export-button inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-xl px-4 py-3 text-xs font-semibold sm:flex-none">
               <Download aria-hidden="true" className="h-4 w-4" /> Export JSON
+            </button>
+            <button type="button" onClick={() => downloadSample('md')} disabled={!canExport}
+              className="nexus-devops-export-button inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-xl px-4 py-3 text-xs font-semibold sm:flex-none">
+              <Download aria-hidden="true" className="h-4 w-4" /> Audit Brief (.md)
             </button>
           </div>
         </section>
@@ -973,11 +1013,36 @@ export default function NexusDeveloperPreview() {
                 Prioritized from the displayed GitHub sample only; these are not AI diagnoses or permission to merge.
               </p>
             </div>
-            <a href="https://docs.github.com/en/rest/actions/workflow-runs"
-              target="_blank" rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 text-sm font-medium text-[#4ea8ff] hover:text-white">
-              GitHub API docs <ArrowRight className="h-4 w-4" />
-            </a>
+            <div className="flex flex-wrap items-center gap-3">
+              <button type="button" onClick={() => downloadSample('queue')} disabled={!canExport}
+                aria-label="Download source-linked investigation handoff Markdown"
+                className="nexus-devops-export-button inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-4 py-3 text-xs font-semibold">
+                <Download aria-hidden="true" className="h-4 w-4" /> Investigation Handoff (.md)
+              </button>
+              <a href="https://docs.github.com/en/rest/actions/workflow-runs"
+                target="_blank" rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 text-sm font-medium text-[#4ea8ff] hover:text-white">
+                GitHub API docs <ArrowRight className="h-4 w-4" />
+              </a>
+            </div>
+          </div>
+          <div aria-label="Bounded evidence risk assessment"
+            data-risk-posture={riskPosture.state}
+            className="mt-5 rounded-xl border border-slate-700/70 bg-slate-950/60 p-4">
+            <p className="text-xs font-semibold uppercase tracking-wide text-[#a6d3fa]">Source-backed posture · not a risk score</p>
+            <p className="mt-2 text-sm font-semibold text-slate-100">{riskPosture.headline}</p>
+            <div className="mt-3 grid gap-2 text-xs text-slate-300 sm:grid-cols-2">
+              <p>Actions: {riskPosture.workflow.freshness} · {riskPosture.workflow.inspected} inspected · {riskPosture.workflow.failed} failed
+                {riskPosture.workflow.truncated ? ' · additional runs uninspected' : ''}</p>
+              <p>PRs: {riskPosture.pullRequests.freshness} · {riskPosture.pullRequests.inspected} inspected · {riskPosture.pullRequests.conflicts} conflicts
+                {riskPosture.pullRequests.reviewStates + riskPosture.pullRequests.unknown > 0
+                  ? ' · ' + (riskPosture.pullRequests.reviewStates + riskPosture.pullRequests.unknown) + ' need review'
+                  : ''}
+              </p>
+            </div>
+            <p className="mt-2 text-xs leading-5 text-slate-400">
+              {riskPosture.evidenceLimitations.join(' · ')}. An unobserved issue is never proof that CI or a PR is safe.
+            </p>
           </div>
           {recommendations.length > 0 ? (
             <ol className="nexus-devops-queue mt-5 grid gap-3 lg:grid-cols-2">
