@@ -41,6 +41,8 @@
 
 **P3 — Investigation intelligence.** Per-repository triage, deterministic recurrence and change impact only with sufficient data coverage; always mark sampling, missing checks and uncertainty.
 
+**P3 slice 1 (30 Oct 2026, source `src/lib/nexus-workflow-recurrence.ts`):** deterministic repeated-failure signals per workflow name, computed only from the exported sample rows (at most 10 runs) and shown in the Evidence Brief only when a workflow has 2 or more confirmed failures. Cancelled, skipped, neutral and unfinished runs are ignored and never extend or break a streak. Wording makes no flake-rate, root-cause or approval claim. Change impact, per-repository triage across runs and any UI/Jarvis-digest exposure are NOT built. Verified: 11 new tests, Evidence Brief tests unchanged and passing, typecheck PASS; full Windows run 327/331 with the 4 known symlink EPERM failures only.
+
 **P4 — Private Pro and guarded workflow.** Only after rights clearing and threat model, add read-only private GitHub App, encrypted credentials, durable history and human permission gates. Write-capable actions remain off by default.
 
 **P5 — Commercial reliability.** Supported self-hosted installation, release playbook, SLIs and quotas before selling. Hosted enterprise and Cloud launch need separate authorization.

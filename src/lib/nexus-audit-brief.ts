@@ -1,4 +1,5 @@
 import { parsePublicRepository } from './github-public-actions.ts';
+import { analyzeWorkflowRecurrence, describeRecurrenceSignal, RECURRENCE_SCOPE_NOTE } from './nexus-workflow-recurrence.ts';
 import type { PublicSampleExport } from './nexus-public-sample-export.ts';
 import { createSampleFilename } from './nexus-public-sample-export.ts';
 
@@ -99,6 +100,17 @@ export function createAuditBrief(snapshot: PublicSampleExport): string {
         ', conclusion ' + safeText(run.conclusion ?? 'not supplied') +
         ', event ' + safeText(run.event) +
         ', created ' + safeText(run.created_at) + '.');
+    }
+    const recurrences = analyzeWorkflowRecurrence(actions.records);
+    if (recurrences.length) {
+      lines.push('', '#### Repeated failure signals (sample-bound)', '');
+      for (const row of recurrences) {
+        lines.push('- ' + safeText(row.workflow) + ': ' + row.confirmed_failures + ' confirmed failures in ' +
+          row.decisive_runs + ' decisive runs (' + row.ignored_runs + ' ignored: cancelled, skipped, neutral or not completed); ' +
+          describeRecurrenceSignal(row.signal) + '. [Latest failed run](' + row.latest_failure_url + '), ' +
+          safeText(row.latest_failure_created_at) + '.');
+      }
+      lines.push('', '_' + safeText(RECURRENCE_SCOPE_NOTE, 400) + '_');
     }
     lines.push('');
   } else {
