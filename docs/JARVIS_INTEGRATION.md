@@ -71,7 +71,8 @@ local only, landing is ANA CORE's gate; the shared primary tree was not touched)
 - `gateway/devops_digest.py`: opt-in tool `devops.repo_digest`, capability `public.read` (R0), `egress=True`, so a `private` or
   `restricted` lease is refused. `devops_registry(devops_root)` returns the default registry plus this tool. Like the other
   fixture tools it is deliberately **not** part of `default_registry()`, because several tests pin that tool set.
-- `automations/connectors.py`: connector `devops_intelligence`, capability `read_digest` (read, action `research.public`, tier A0), disabled by default.
+- The connector capability matrix (`automations/connectors.py`) was deliberately **not** changed: it is pinned by a committed export and several
+  tests (adding a connector broke 4 of them), so a matrix entry needs ANA CORE to regenerate the export. The gateway tool does not need it.
 - Behaviour comes from the bridge `integration/devops_intelligence_status.py`. Leases are issued per task with
   `lease_raw(..., tools=("devops.repo_digest",))`; no role definition was changed.
 
