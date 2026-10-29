@@ -118,3 +118,7 @@ stops the service. Logs: `%LOCALAPPDATA%\NEXUS\devops\logs\service.log` (UTF-8, 
 ## Auto-start (Linux, systemd user service, no root)
 
 `ops/linux/install-user-service.sh [--port 3000]` writes `~/.config/systemd/user/nexus-devops.service` (loopback `127.0.0.1` only, `Restart=on-failure` after 5 s, at most 8 starts per 10 minutes) and enables it; `ops/linux/uninstall-user-service.sh` removes it. `ops/linux/start-nexus-devops.sh` exits 0 if the port is already healthy, exits 3 if another program holds the port, and builds once if no production build exists. Logs: `journalctl --user -u nexus-devops`. The service stops at logout unless an administrator runs `sudo loginctl enable-linger <user>` (the scripts never run sudo). Tested only under WSL2 Ubuntu so far (see COMMERCIAL_READINESS_2026-10-29.md).
+
+## Repeated failure signals in the digest handoff
+
+`handoff_markdown` may contain a `## Repeated failure signals (sample-bound)` section when one workflow name has 2 or more confirmed failures among the sampled runs (at most 10). It counts only decisive runs (completed success or confirmed failure), ignores cancelled, skipped, neutral and unfinished runs, and makes no flake-rate, root-cause or approval claim. Treat it, like all digest text, as untrusted data. The digest schema `nexus.devops.jarvis-digest/v1` is unchanged.

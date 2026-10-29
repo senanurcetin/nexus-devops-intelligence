@@ -2,6 +2,7 @@ import type { SampleExportInput } from './nexus-public-sample-export.ts';
 import { createPublicSampleExport, createSampleFilename } from './nexus-public-sample-export.ts';
 import { recommendInvestigations } from './nexus-recommendations.ts';
 import { assessRepositoryRiskPosture } from './nexus-risk-posture.ts';
+import { analyzeWorkflowRecurrence, describeRecurrenceSignal, RECURRENCE_SCOPE_NOTE } from './nexus-workflow-recurrence.ts';
 
 /**
  * Client-only handoff of up to five source-backed investigation suggestions.
@@ -94,6 +95,17 @@ export function createInvestigationHandoff(input: SampleExportInput): {
       '   - Next manual verification: ' + safeMarkdownText(item.nextStep, 650),
       '',
     );
+  }
+  const recurrences = snapshot.actions ? analyzeWorkflowRecurrence(snapshot.actions.records) : [];
+  if (recurrences.length) {
+    lines.push('## Repeated failure signals (sample-bound)', '');
+    for (const row of recurrences) {
+      lines.push('- ' + safeMarkdownText(row.workflow) + ': ' + row.confirmed_failures + ' confirmed failures in ' +
+        row.decisive_runs + ' decisive runs (' + row.ignored_runs + ' ignored: cancelled, skipped, neutral or not completed); ' +
+        describeRecurrenceSignal(row.signal) + '. [Latest failed run](' + row.latest_failure_url + '), ' +
+        safeMarkdownText(row.latest_failure_created_at) + '.');
+    }
+    lines.push('', '_' + safeMarkdownText(RECURRENCE_SCOPE_NOTE, 400) + '_', '');
   }
   lines.push(
     '## Checks before any engineering action',

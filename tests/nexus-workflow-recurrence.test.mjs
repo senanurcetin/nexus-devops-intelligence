@@ -141,3 +141,62 @@ test('Evidence Brief: recurrence is computed only from exported rows, so a succe
   const runs = [run(3, 'Build', 'failure', 1), run(2, 'Build', 'failure', 2), run(1, 'Build', 'success', 3)];
   assert.doesNotMatch(briefFor(runs, 'success'), /Repeated failure signals/);
 });
+
+// ---- Investigation Handoff (also the markdown carried by the Jarvis digest) ----
+import { createInvestigationHandoff } from '../src/lib/nexus-investigation-handoff.ts';
+import { summarizePublicActions } from '../src/lib/github-public-actions.ts';
+import { createJarvisMcpHandler } from '../src/lib/nexus-jarvis-mcp.ts';
+
+const handoffFor = (runs, workflowFilter = 'all') => createInvestigationHandoff({
+  repository: repo, actions: sampleActions(runs), prs: null,
+  actionsReceivedAt: '2026-10-15T10:20:00.000Z', prsReceivedAt: null,
+  workflowFilter, pullFilter: 'all', exportedAt: '2026-10-15T10:24:00.000Z',
+}).markdown;
+
+test('Investigation Handoff: repeated-failure section appears only with 2+ confirmed failures and ignores visual filters', () => {
+  assert.doesNotMatch(handoffFor([run(1, 'Build', 'failure', 1)]), /Repeated failure signals/);
+  const runs = [run(3, 'Build', 'failure', 1), run(2, 'Build', 'failure', 2), run(1, 'Build', 'success', 3)];
+  for (const filter of ['all', 'success']) {
+    const text = handoffFor(runs, filter);
+    assert.match(text, /## Repeated failure signals \(sample-bound\)/, 'filter ' + filter);
+    assert.match(text, /Build: 2 confirmed failures in 3 decisive runs/);
+    assert.match(text, /\[Latest failed run\]\(https:\/\/github\.com\/owner\/repository\/actions\/runs\/3\)/);
+    assert.match(text, /## Checks before any engineering action/);
+  }
+});
+
+test('Investigation Handoff: hostile workflow names cannot inject links or HTML', () => {
+  const evil = 'x](https://evil.example)<img src=x onerror=alert(1)>';
+  const line = handoffFor([run(2, evil, 'failure', 1), run(1, evil, 'failure', 2)])
+    .split('\n').find(l => l.includes('confirmed failures in'));
+  assert.ok(line);
+  assert.doesNotMatch(line, /<img|https:\/\/evil\.example/);
+  assert.equal((line.match(/\]\(/g) ?? []).length, 1);
+});
+
+test('Jarvis digest carries the repeated-failure section in handoff_markdown without any schema change', async () => {
+  const jrepo = 'owner/example';
+  const at = m => new Date(Date.UTC(2026, 9, 29, 20, 40) - m * 60_000).toISOString();
+  const jrun = (id, conclusion, m) => ({
+    id, name: 'Deploy', event: 'push', status: 'completed', conclusion, created_at: at(m),
+    html_url: 'https://github.com/' + jrepo + '/actions/runs/' + id,
+  });
+  const body = summarizePublicActions(jrepo, {
+    total_count: 12, workflow_runs: [jrun(13, 'failure', 1), jrun(12, 'failure', 2), jrun(11, 'success', 3)],
+  });
+  const handle = createJarvisMcpHandler({
+    now: () => new Date('2026-10-29T20:50:00.000Z'),
+    fetchImpl: async (u) => new Response(
+      new URL(u).pathname === '/api/public-actions' ? JSON.stringify(body) : '{"error":"x"}',
+      { status: new URL(u).pathname === '/api/public-actions' ? 200 : 404, headers: { 'content-type': 'application/json' } }),
+  });
+  const response = await handle({ jsonrpc: '2.0', id: 1, method: 'tools/call',
+    params: { name: 'devops_repo_digest', arguments: { repository: jrepo } } });
+  const digest = JSON.parse(response.result.content[0].text);
+  assert.equal(digest.schema, 'nexus.devops.jarvis-digest/v1');
+  assert.match(digest.handoff_markdown, /Repeated failure signals \(sample-bound\)/);
+  assert.match(digest.handoff_markdown, /Deploy: 2 confirmed failures in 3 decisive runs/);
+  assert.equal(digest.access.release_authorized, false);
+  assert.equal(digest.access.merge_approval, false);
+  assert.ok(!('workflow_recurrence' in digest), 'no new top-level field: the pinned v1 shape is unchanged');
+});
