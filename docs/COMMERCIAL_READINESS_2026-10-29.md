@@ -24,8 +24,7 @@ installation plus a bounded CI/PR review deliverable**. The Jarvis integration c
 
 ## Zero-spend work that remains for engineering
 
-1. Fresh `npm ci --ignore-scripts`, tests, typecheck, build on the exact commit on a host with symlink privilege (or Linux),
-   to turn the three symlink-dependent tests from NOT RUN into PASS/FAIL.
+1. DONE 30 Oct 2026 on `adf189f` (fresh clone, `npm ci --ignore-scripts --include=dev`): Windows typecheck PASS, build PASS, tests 316 pass / 4 fail - all 4 are `EPERM symlink` (no symlink privilege on this Windows account). Linux (Ubuntu under WSL2, real Linux filesystem, Linux Node): typecheck PASS, tests 320 = 319 pass / 0 fail / 1 skipped. This is NOT the native Ubuntu acceptance of #81. Note: with `NODE_ENV=production` in the shell, `npm ci` skips devDependencies (no tsc/tsx); use `--include=dev`.
 2. Register the DevOps MCP adapter in Jarvis through ANA CORE's landing gate (requested separately).
 3. Write the customer deliverable template (scope, sample limits, what a digest does not prove) once the owner fixes the SKU wording.
-4. Windows auto-start is done (`ops/windows/`, see `JARVIS_INTEGRATION.md`); an Ubuntu equivalent (systemd user unit) is not written.
+4. Windows auto-start is done (`ops/windows/`, see `JARVIS_INTEGRATION.md`). Linux systemd user unit written (`ops/linux/`) and tested under WSL2 Ubuntu on port 3011: busy-port guard exit 3, healthy 200 on 127.0.0.1 only, `kill -9` gives a new PID and health 200, uninstall leaves no unit and no listener. Not tested: native Ubuntu host, reboot/logon, linger.
