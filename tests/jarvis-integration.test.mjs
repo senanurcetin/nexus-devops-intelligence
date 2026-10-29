@@ -269,3 +269,26 @@ test('stdio server answers JSON-RPC over a real loopback HTTP service and reject
   const [code] = await once(bad, 'exit');
   assert.equal(code, 2);
 });
+
+test('MCP negotiates the protocol version and returns structuredContent only for successful results', async () => {
+  const { impl } = fakeFetch({
+    '/api/public-actions': () => json(actionsBody()), '/api/public-prs': () => json(prsBody()),
+  });
+  const handle = createJarvisMcpHandler({ fetchImpl: impl, now: clock });
+  const asked = (v) => handle({ jsonrpc: '2.0', id: 1, method: 'initialize', params: { protocolVersion: v } });
+  assert.equal((await asked('2025-03-26')).result.protocolVersion, '2025-03-26');
+  assert.equal((await asked('2025-06-18')).result.protocolVersion, '2025-06-18');
+  assert.equal((await asked('1999-01-01')).result.protocolVersion, '2025-06-18');
+  const list = await handle({ jsonrpc: '2.0', id: 2, method: 'tools/list' });
+  for (const tool of list.result.tools) {
+    assert.equal(tool.outputSchema.type, 'object');
+    assert.ok(tool.title);
+  }
+  const ok = await call(handle, 'devops_repo_digest', { repository });
+  assert.equal(ok.result.isError, false);
+  assert.deepEqual(ok.result.structuredContent, payload(ok));
+  for (const key of list.result.tools[1].outputSchema.required) assert.ok(key in ok.result.structuredContent, key);
+  const bad = await call(handle, 'devops_repo_digest', { repository: 'nope' });
+  assert.equal(bad.result.isError, true);
+  assert.equal('structuredContent' in bad.result, false);
+});

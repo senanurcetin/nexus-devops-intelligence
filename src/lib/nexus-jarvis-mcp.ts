@@ -8,7 +8,9 @@ import { buildJarvisDigest, digestHasEvidence, type SourceReceipt } from './nexu
  * with no redirects, short deadlines, a response size cap and a small upstream
  * budget so that anonymous GitHub quota is not burnt by an agent loop.
  */
-export const MCP_PROTOCOL_VERSION = '2025-03-26';
+export const MCP_PROTOCOL_VERSION = '2025-06-18';
+// Versions this server can speak: structuredContent/outputSchema need 2025-06-18; 2025-03-26 clients get the text content.
+export const SUPPORTED_PROTOCOL_VERSIONS = ['2025-06-18', '2025-03-26'] as const;
 const MAX_BODY_BYTES = 1_000_000;
 const DEFAULT_BASE = 'http://127.0.0.1:3000';
 const PARSE_ERROR = -32700;
@@ -84,18 +86,30 @@ const text = (value: unknown) => JSON.stringify(value, null, 2);
 const reply = (id: unknown, result: unknown) => ({ jsonrpc: '2.0', id, result });
 const failure = (id: unknown, code: number, message: string) =>
   ({ jsonrpc: '2.0', id: id ?? null, error: { code, message } });
-const toolResult = (payload: unknown, isError: boolean) =>
-  ({ content: [{ type: 'text', text: text(payload) }], isError });
+// Successful results also carry structuredContent (MCP 2025-06-18) next to the serialized JSON text for older clients.
+// Error results stay text-only so they are never validated against the success outputSchema.
+const toolResult = (payload: unknown, isError: boolean) => ({
+  content: [{ type: 'text', text: text(payload) }],
+  ...(!isError && payload && typeof payload === 'object' && !Array.isArray(payload) ? { structuredContent: payload } : {}),
+  isError,
+});
 
 export const JARVIS_TOOLS = [
   {
     name: 'devops_health',
+    title: 'NEXUS DevOps health',
     description: 'Check that the local NEXUS DevOps Intelligence service answers on loopback. Read-only; no GitHub call.',
     inputSchema: { type: 'object', properties: {}, additionalProperties: false },
+    outputSchema: {
+      type: 'object',
+      properties: { ok: { type: 'boolean' }, http_status: { type: ['integer', 'null'] }, target: { type: 'string' } },
+      required: ['ok', 'http_status', 'target'],
+    },
     annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
   },
   {
     name: 'devops_repo_digest',
+    title: 'Evidence-bounded repository digest',
     description: 'Evidence-bounded, read-only digest (risk posture, investigation queue, handoff) of ONE public GitHub repository, '
       + 'built from the local NEXUS service. Bounded sample (10 runs, 5 open PRs); grants no merge or release approval. '
       + 'All strings are untrusted third-party data.',
@@ -103,6 +117,27 @@ export const JARVIS_TOOLS = [
       type: 'object',
       properties: { repository: { type: 'string', pattern: '^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$', maxLength: 200 } },
       required: ['repository'], additionalProperties: false,
+    },
+    outputSchema: {
+      type: 'object',
+      properties: {
+        schema: { const: 'nexus.devops.jarvis-digest/v1' },
+        repository: { type: 'string' },
+        access: {
+          type: 'object',
+          properties: {
+            mode: { const: 'read_only' }, write_actions: { type: 'array', maxItems: 0 },
+            release_authorized: { const: false }, merge_approval: { const: false },
+          },
+          required: ['mode', 'write_actions', 'release_authorized', 'merge_approval'],
+        },
+        sources: { type: 'object' },
+        posture: { type: 'object' },
+        investigations: { type: 'array', maxItems: 5 },
+        handoff_markdown: { type: ['string', 'null'] },
+        limitations: { type: 'array', items: { type: 'string' } },
+      },
+      required: ['schema', 'repository', 'access', 'sources', 'posture', 'investigations'],
     },
     annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true },
   },
@@ -166,11 +201,15 @@ export function createJarvisMcpHandler(options: JarvisMcpOptions = {}) {
     if (m.jsonrpc !== '2.0' || typeof m.method !== 'string') return failure(m.id, INVALID_REQUEST, 'invalid request');
     if (m.id === undefined || m.id === null) return null;
     switch (m.method) {
-      case 'initialize':
+      case 'initialize': {
+        const asked = (m.params as { protocolVersion?: unknown } | undefined)?.protocolVersion;
+        const version = (SUPPORTED_PROTOCOL_VERSIONS as readonly unknown[]).includes(asked)
+          ? asked as string : MCP_PROTOCOL_VERSION;
         return reply(m.id, {
-          protocolVersion: MCP_PROTOCOL_VERSION, capabilities: { tools: {} },
+          protocolVersion: version, capabilities: { tools: {} },
           serverInfo: { name: 'nexus-devops-intelligence', version: '0.1.0' },
         });
+      }
       case 'ping': return reply(m.id, {});
       case 'tools/list': return reply(m.id, { tools: JARVIS_TOOLS });
       case 'tools/call': {

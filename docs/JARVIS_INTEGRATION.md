@@ -1,6 +1,6 @@
 # NEXUS DevOps Intelligence - Jarvis integration (read-only, local)
 
-**Status (29 Oct 2026): local development branch `feature/jarvis-integration-v1`. Not pushed, not released, no CI, no deployment.**
+**Status (30 Oct 2026): local development branch `feature/jarvis-integration-v1`. Not pushed, not released, no CI, no deployment.**
 The architecture plan previously marked Jarvis integration as deferred; this document records the first bounded step.
 DevOps stays an independent service: Jarvis talks to it through a read-only MCP adapter, never the other way round.
 
@@ -63,33 +63,53 @@ canonical `github.com/<repo>/` source URLs, at most five investigations). Anythi
 Node or GitHub is never returned. CLI: `python -m nexus_jarvis.integration.devops_intelligence_status owner/name
 --devops-root C:\NEXUS-AI\nexus-devops-intelligence`. Like the Outreach bridge it is deliberately **not** a gateway tool.
 
-## Registering it in Jarvis (NOT done here)
+## Registering it in Jarvis
 
-The Jarvis gateway uses signed lease manifests and a connector capability matrix (`automations/connectors.py`). Registering
-this adapter means a change in `jarvis-next` core (a new internal read connector, a gateway tool mapping and a lease
-`allowed_tools` entry for the DevOps role). That landing belongs to ANA CORE's gate and is requested in
-`LIVE/REQUESTS_TO_ANA_CORE.md`; no Jarvis core file was edited. Suggested shape, to be confirmed against the gateway code:
+Done as a separate branch of the Jarvis repository, `feat/devops-registry-20261030` (worktree `C:\NEXUS-AI\wt\devops-reg-20261030`,
+local only, landing is ANA CORE's gate; the shared primary tree was not touched):
 
-- connector `devops_intelligence`, kind `internal`, capabilities `health_probe` and `repo_digest`, both read-only, no action tier;
-- lease for role `INF-04` (DevOps), `data_class: public`, tools limited to the two above, `max_tool_calls` small;
-- MCP server entry launching `npm run jarvis:mcp` with `cwd` = this repository (exact config keys must be taken from the
-  OpenJarvis version Jarvis pins; they were not verified here).
+- `gateway/devops_digest.py`: opt-in tool `devops.repo_digest`, capability `public.read` (R0), `egress=True`, so a `private` or
+  `restricted` lease is refused. `devops_registry(devops_root)` returns the default registry plus this tool. Like the other
+  fixture tools it is deliberately **not** part of `default_registry()`, because several tests pin that tool set.
+- `automations/connectors.py`: connector `devops_intelligence`, capability `read_digest` (read, action `research.public`, tier A0), disabled by default.
+- Behaviour comes from the bridge `integration/devops_intelligence_status.py`. Leases are issued per task with
+  `lease_raw(..., tools=("devops.repo_digest",))`; no role definition was changed.
+
+To use it in a Jarvis process: build the gateway with `registry=devops_registry(Path(r"C:\NEXUS-AI\nexus-devops-intelligence"))`.
+
+## Auto-start (Windows, per user, no admin)
+
+`ops/windows/` holds four scripts. `Install-NexusDevopsAutostart.ps1 -StartNow` registers the scheduled task `NEXUS-DevOps-Local`:
+current user, `Limited` run level, hidden, triggers = logon plus a 10-minute repetition safety net, `MultipleInstances=IgnoreNew`.
+`Start-NexusDevops.ps1` binds `127.0.0.1` only (no parameter changes that), builds once if needed, refuses to start when the port is held
+by something else, exits at once when the service is already healthy, and supervises `next start` itself (restart after 5 s, at most
+8 starts per 10 minutes). The supervision lives in the script because Task Scheduler's "restart on failure" did **not** restart the task
+when the action merely exited non-zero (observed here: the task went back to `Ready` with result `0xFFFFFFFF`). `Test-NexusDevops.ps1`
+is a read-only status check (`-Repository owner/name` also runs one digest). `Uninstall-NexusDevopsAutostart.ps1` removes the task and
+stops the service. Logs: `%LOCALAPPDATA%\NEXUS\devops\logs\service.log` (UTF-8, rotated at 5 MB). Not tested: an actual reboot/logon.
+
+## MCP details (checked against the MCP specification, 2025-06-18 and later)
+
+- Successful tool results carry `structuredContent` plus the same JSON as text (spec: SHOULD, for older clients); error results stay
+  text-only. Tools declare `outputSchema`, `title` and read-only annotations (clients must treat annotations as untrusted hints; the
+  real enforcement is the loopback-only client and the Jarvis lease policy).
+- `initialize` negotiates `2025-06-18` or `2025-03-26` and answers with the highest supported version otherwise.
 
 ## Verification recorded for this change
 
 - `npm run typecheck`: pass (Windows, Node 24.13).
-- `tests/jarvis-integration.test.mjs`: 10/10 pass (loopback validation, tool surface, evidence classification, argument
-  refusal, error/rate-limit/oversize handling, cache and budget, sanitisation, and a real stdio server over a real loopback
-  HTTP service).
+- `tests/jarvis-integration.test.mjs`: 11/11 pass (loopback validation, tool surface, evidence classification, argument
+  refusal, error/rate-limit/oversize handling, cache and budget, sanitisation, protocol negotiation and structured content, and a
+  real stdio server over a real loopback HTTP service).
 - `npm run build`: pass. Live run against the locally started service on 29 Oct 2026 with real public GitHub data:
   `senanurcetin/nexus-devops-intelligence` (0 runs, 0 open PRs: `no_confirmed_signal`) and `vercel/next.js`
   (10 runs, 5 PRs inspected; both sources `verified`).
-- Full suite on this Windows host excluding `release-evidence-policy.test.mjs`: 302 tests, 300 pass, 2 fail before this change.
+- Full suite on this Windows host excluding `release-evidence-policy.test.mjs`: 302 tests, 300 pass, 2 fail before the Jarvis work (312/310/2 after the first commit).
   The failures (and a crash of the excluded file) are `EPERM` on `fs.symlink` (no symlink privilege on this host), not
   product defects; they are NOT RUN-equivalent here and need Developer Mode/admin or Linux.
 
 ## Not done / limits
 
-- Jarvis-side registration and any Jarvis-driven schedule (see above).
-- Auto-start after reboot: the local service and the MCP server run only while their processes run.
+- Landing of the Jarvis branch, and any Jarvis-driven schedule (not requested yet).
+- A real reboot test of the logon task, and any change to the 3000 port if another program needs it.
 - Private repositories, write actions, AI diagnosis and anything commercial are out of scope; see the commercial readiness note.

@@ -28,4 +28,4 @@ installation plus a bounded CI/PR review deliverable**. The Jarvis integration c
    to turn the three symlink-dependent tests from NOT RUN into PASS/FAIL.
 2. Register the DevOps MCP adapter in Jarvis through ANA CORE's landing gate (requested separately).
 3. Write the customer deliverable template (scope, sample limits, what a digest does not prove) once the owner fixes the SKU wording.
-4. A Windows/Ubuntu auto-start definition for the local service, installed by the owner (a system change).
+4. Windows auto-start is done (`ops/windows/`, see `JARVIS_INTEGRATION.md`); an Ubuntu equivalent (systemd user unit) is not written.
