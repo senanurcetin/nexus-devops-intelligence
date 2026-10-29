@@ -1,6 +1,6 @@
 # First contribution and maintainer onboarding — NEXUS Community
 
-**Status:** documentation for the source repository; **not** an assertion of a published Docker Community release. The first localhost-only installer exists only in [draft #80](https://github.com/senanurcetin/nexus-devops-intelligence/pull/80); structured issue and PR forms are now live on `main` after [merged #82](https://github.com/senanurcetin/nexus-devops-intelligence/pull/82). The Docker installer still needs separate runtime acceptance. Start with [CONTRIBUTING](../CONTRIBUTING.md) and [release decision](NEXUS_COMMUNITY_RELEASE_DECISION_2026-10-18.md).
+**Status:** documentation for the source repository; **not** an assertion of a published Docker Community release. The first localhost-only installer is in `main` since [merged #80](https://github.com/senanurcetin/nexus-devops-intelligence/pull/80) (28 Oct 2026); structured issue and PR forms are now live on `main` after [merged #82](https://github.com/senanurcetin/nexus-devops-intelligence/pull/82). The Docker installer still needs separate runtime acceptance. Start with [CONTRIBUTING](../CONTRIBUTING.md) and [release decision](NEXUS_COMMUNITY_RELEASE_DECISION_2026-10-18.md).
 
 ## 1. What the product actually does
 
@@ -64,7 +64,7 @@ For security issues follow [SECURITY.md](../SECURITY.md) privately, not a public
 | Five API handler entry points | `src/app/api/public-*/route.ts` | 400 before external calls; 429, 503/no-store attribution |
 | Local/Redis admission | `src/lib/nexus-public-gate.ts`, `nexus-shared-rate-limit.ts` | No unsafe live stress or fake cross-instance proof |
 | Human/browser source QA | `tests/*.test.mjs`, `scripts/manual-browser-f01-f05.mjs` | Exact SHA + actual executed engine; never browser simulation called production verification |
-| Proposed Docker acceptance | [draft #80](https://github.com/senanurcetin/nexus-devops-intelligence/pull/80) + [#81](https://github.com/senanurcetin/nexus-devops-intelligence/issues/81) | Loopback/nonroot/image/host/2-OS checks, source-only not sufficient |
+| Proposed Docker acceptance | [merged #80](https://github.com/senanurcetin/nexus-devops-intelligence/pull/80) + [#81](https://github.com/senanurcetin/nexus-devops-intelligence/issues/81) | Loopback/nonroot/image/host/2-OS checks, source-only not sufficient |
 
 ## 7. How to earn real first users without invented metrics
 
