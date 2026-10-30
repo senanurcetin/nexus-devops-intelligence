@@ -69,7 +69,11 @@ function verifiedDigestFor(repository: string, digest: JarvisDigest | null): dig
       digest.repository.toLowerCase() !== repository.toLowerCase() ||
       digest.access?.mode !== 'read_only' || !Array.isArray(digest.access.write_actions) ||
       digest.access.write_actions.length !== 0 || digest.access.release_authorized !== false ||
-      digest.access.merge_approval !== false || !digest.sources?.actions ||
+      digest.access.merge_approval !== false ||
+      digest.posture?.releaseAuthorized !== false ||
+      typeof digest.posture.repository !== 'string' ||
+      digest.posture.repository.toLowerCase() !== repository.toLowerCase() ||
+      !digest.sources?.actions ||
       !digest.sources?.pull_requests || !isPostureState(digest.posture?.state) ||
       !Array.isArray(digest.investigations) || digest.investigations.length > 5 ||
       !digest.investigations.every(item => item && ['high', 'medium', 'info'].includes(item.severity))) {
