@@ -168,3 +168,11 @@ test('rejects forged HTTP-200 verification without a canonical UTC source receip
     assert.equal(result.entries[0].first_url, null);
   }
 });
+
+test('partially valid source receipts never appear as fully verified coverage', () => {
+  const forged = digest('o/good', 'review_observed');
+  forged.sources.pull_requests.received_at_utc = '2026-10-30T12:00:00Z';
+  const result = triageWatchlist([{ repository: 'o/good', digest: forged }], now);
+  assert.equal(result.readable, 1, 'the valid actions receipt still permits a partial reading');
+  assert.match(result.entries[0].note, /Only one of the two sources was verified/);
+});
