@@ -1,4 +1,4 @@
-import { parsePublicRepository } from './github-public-actions.ts';
+import { isHeadSha, parsePublicRepository } from './github-public-actions.ts';
 
 export type PullAttention = 'draft' | 'conflict' | 'blocked' | 'behind' | 'unstable' | 'clear' | 'unknown';
 
@@ -10,6 +10,8 @@ export type PublicPullRequest = {
   html_url: string;
   attention: PullAttention;
   explanation: string;
+  /** Head commit of the PR when GitHub supplied a well-formed id; used only to match sampled workflow runs. */
+  head_sha?: string;
 };
 
 export type PublicPullSummary = {
@@ -32,6 +34,7 @@ type GithubPullListItem = {
   html_url: string;
   updated_at: string;
   user?: { login?: string } | null;
+  head?: { sha?: unknown } | null;
 };
 
 type GithubPullDetails = {
@@ -91,7 +94,8 @@ export function summarizePublicPullRequests(
     if (!Number.isSafeInteger(pr.number) || (pr.number ?? 0) < 1 ||
         typeof pr.title !== 'string' || typeof pr.draft !== 'boolean' ||
         typeof pr.updated_at !== 'string' || !Number.isFinite(Date.parse(pr.updated_at)) ||
-        typeof pr.html_url !== 'string') {
+        typeof pr.html_url !== 'string' ||
+        (pr.head?.sha !== undefined && pr.head?.sha !== null && !isHeadSha(pr.head.sha))) {
       throw new Error('Invalid GitHub pull request.');
     }
     const number = pr.number as number;
@@ -113,6 +117,7 @@ export function summarizePublicPullRequests(
       html_url,
       attention,
       explanation,
+      ...(isHeadSha(pr.head?.sha) ? { head_sha: pr.head.sha } : {}),
     };
   });
   // Unknown mergeability still needs a human check. The recommendations

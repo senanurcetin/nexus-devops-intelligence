@@ -22,7 +22,11 @@
     "capacity:offline": "node scripts/check-free-capacity-offline.mjs",
     "capacity:upstash:read-only": "node scripts/read-upstash-management-capacity.mjs",
     "verify:release:evidence": "node scripts/verify-release-evidence.mjs",
-    "verify:pr:composition": "node scripts/verify-pr-composition.mjs"
+    "verify:pr:composition": "node scripts/verify-pr-composition.mjs",
+    "jarvis:mcp": "node --import tsx scripts/jarvis-mcp-server.mjs",
+    "jarvis:digest": "node --import tsx scripts/jarvis-digest.mjs",
+    "jarvis:watchlist": "node --import tsx scripts/jarvis-watchlist.mjs",
+    "jarvis:verify": "node scripts/verify-jarvis-mcp.mjs"
   },
   "dependencies": {
     "lucide-react": "^0.475.0",
