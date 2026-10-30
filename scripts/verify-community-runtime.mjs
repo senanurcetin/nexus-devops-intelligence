@@ -30,6 +30,30 @@ export function verifyComposeConfig(doc) {
   assert.ok(doc && typeof doc === 'object', 'Invalid Compose configuration');
   assert.deepEqual(Object.keys(doc.services || {}).sort(), ['nexus'], 'Unexpected Compose services');
   const service = doc.services.nexus;
+  // Compose config is validated before Docker inspect. Do not accept an
+  // overridden image, Dockerfile or build context, or injection of environment
+  // files/commands, even when a running container happens to look healthy.
+  assert.equal(service.image, 'nexus-devops-community:local',
+    'Unexpected Community image reference');
+  assert.equal(typeof service.build?.context, 'string',
+    'Missing pinned local Docker build context');
+  assert.equal(resolve(service.build.context), process.cwd(),
+    'Docker build context must be this repository');
+  assert.equal(service.build.dockerfile, 'Dockerfile',
+    'Unexpected Dockerfile override');
+  for (const field of ['args', 'secrets', 'ssh', 'additional_contexts',
+    'dockerfile_inline', 'network', 'privileged']) {
+    assert.ok(!service.build[field] ||
+      (Array.isArray(service.build[field]) && service.build[field].length === 0),
+      'Unexpected Docker build override: ' + field);
+  }
+  for (const field of ['env_file', 'secrets', 'configs']) {
+    assert.ok(!service[field] ||
+      (Array.isArray(service[field]) && service[field].length === 0),
+      'Unexpected Compose service override: ' + field);
+  }
+  assert.ok(service.command == null && service.entrypoint == null && service.user == null,
+    'Command, entrypoint or user overrides are not allowed');
   assert.deepEqual(service.ports?.length, 1, 'Exactly one host port is required');
   const port = service.ports[0];
   assert.equal(port.host_ip, '127.0.0.1', 'Compose host port must bind only to IPv4 loopback');
