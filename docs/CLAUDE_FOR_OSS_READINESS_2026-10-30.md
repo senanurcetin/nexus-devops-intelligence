@@ -1,6 +1,6 @@
 # Claude for Open Source — evidence-first readiness (2026-10-30)
 
-**Status: application research, not an eligibility or acceptance claim.** Project: [NEXUS DevOps Intelligence](https://github.com/senanurcetin/nexus-devops-intelligence). Program: [Anthropic's official terms](https://www.anthropic.com/claude-for-oss-terms) and [application](https://claude.com/open-source-max). The benefit is **six months of Claude Max 20x**, not free API credits.
+**Status: application research, not an eligibility or acceptance claim.** Project: [NEXUS DevOps Intelligence](https://github.com/senanurcetin/nexus-devops-intelligence). Program: [Anthropic's official terms](https://www.anthropic.com/claude-for-oss-terms) and [application](https://claude.com/open-source-max). **Benefit wording discrepancy (observed 2026-10-30):** the official application page advertises six months of **Claude Max 20x**, while the linked Anthropic Terms and Conditions currently describe six months of **Claude Ultra**. Confirm the actual awarded plan and billing terms during application/activation. This is a subscription benefit, **not API credits**. See the [evidence-based application draft](CLAUDE_FOR_OSS_APPLICATION_DRAFT_2026-10-30.md).
 
 ## Current verified repository facts
 
