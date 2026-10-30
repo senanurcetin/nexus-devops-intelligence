@@ -25,7 +25,7 @@ function repoFromApiUrl(url) {
   return match ? `${match[1]}/${match[2]}` : null;
 }
 
-async function searchPages(login, state, cutoff, fetchImpl) {
+async function searchPages(login, state, cutoff, fetchImpl, exactWindow = null) {
   const qualifier = state === 'merged' ? `is:merged merged:>=${cutoff}` : 'is:open';
   const query = `author:${login} is:pr ${qualifier} -user:${login}`;
   const observed = new Map();
@@ -58,11 +58,22 @@ async function searchPages(login, state, cutoff, fetchImpl) {
           match[1].toLowerCase() === login.toLowerCase() ||
           item?.user?.login?.toLowerCase() !== login.toLowerCase() ||
           !item?.pull_request ||
-          (state === 'merged' && item?.pull_request?.merged_at === null)) {
+          (state === 'merged' && (
+            typeof item.pull_request.merged_at !== 'string' ||
+            !Number.isFinite(Date.parse(item.pull_request.merged_at)) ||
+            Date.parse(item.pull_request.merged_at) < exactWindow.start ||
+            Date.parse(item.pull_request.merged_at) > exactWindow.end
+          ))) {
         complete = false;
         continue;
       }
-      observed.set(url, { repository: repo, number: Number(match[3]), url, title: typeof item.title === 'string' ? item.title : '' });
+      observed.set(url, {
+        repository: repo,
+        number: Number(match[3]),
+        url,
+        title: typeof item.title === 'string' ? item.title : '',
+        ...(state === 'merged' ? { merged_at: item.pull_request.merged_at } : {}),
+      });
     }
     if (seenRows >= totalCount) break;
     if (result.items.length !== PAGE_SIZE) { complete = false; break; }
@@ -82,12 +93,17 @@ export async function auditUpstreamPRs(login, { fetchImpl = fetch, now = new Dat
   validateLogin(login);
   if (!(now instanceof Date) || !Number.isFinite(now.getTime())) throw new Error('Invalid snapshot date');
   const cutoff = yearAgo(now);
-  const merged = await searchPages(login, 'merged', cutoff, fetchImpl);
+  const exactStart = new Date(now);
+  exactStart.setUTCFullYear(exactStart.getUTCFullYear() - 1);
+  const merged = await searchPages(login, 'merged', cutoff, fetchImpl, {
+    start: exactStart.getTime(), end: now.getTime(),
+  });
   const open = await searchPages(login, 'open', cutoff, fetchImpl);
   return {
     github_user: login,
     snapshot_utc: now.toISOString(),
     merged_since_utc_date: cutoff,
+    merged_since_utc_timestamp: exactStart.toISOString(),
     merged_in_other_owners_repositories: merged,
     open_in_other_owners_repositories: open,
     caution: 'GitHub search is a discovery snapshot, not Anthropic approval. Open PRs never count. Verify merge dates, authorship, repository ownership, substantive contribution and program terms before submission.',
