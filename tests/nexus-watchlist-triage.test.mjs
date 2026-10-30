@@ -6,7 +6,8 @@ import {
 } from '../src/lib/nexus-watchlist-triage.ts';
 
 const now = new Date('2026-10-30T12:00:00.000Z');
-const source = state => ({ state, http_status: state === 'verified' ? 200 : null, received_at_utc: null });
+const source = state => ({ state, http_status: state === 'verified' ? 200 : null,
+  received_at_utc: state === 'verified' ? '2026-10-30T12:00:00.000Z' : null });
 const inv = (severity, n = 1) => Array.from({ length: n }, (_, i) => ({
   key: `k${i}`, severity, source_type: 'workflow_run', source_label: 'x', title: 't',
   reported_signal: 's', next_step: 'n', source_url: `https://github.com/o/r/actions/runs/${i + 1}`,
@@ -152,4 +153,18 @@ test('third-party headlines are escaped as table text, not active Markdown or HT
   assert.doesNotMatch(line, /<img|\]\(https:\/\/evil\.example/);
   assert.match(line, /&lt;img/);
   assert.equal(line.split(' | ').length, 7);
+});
+
+test('rejects forged HTTP-200 verification without a canonical UTC source receipt', () => {
+  const valid = digest('o/good', 'review_observed', { prs: 'unavailable' });
+  assert.equal(triageWatchlist([{ repository: 'o/good', digest: valid }], now).readable, 1);
+  for (const timestamp of [null, '', 'not-a-date', '2026-10-30T12:00:00Z',
+    '2026-10-30T12:00:00.000+00:00', '2026-02-30T12:00:00.000Z']) {
+    const forged = { ...valid, sources: { ...valid.sources,
+      actions: { ...valid.sources.actions, received_at_utc: timestamp } } };
+    const result = triageWatchlist([{ repository: 'o/good', digest: forged }], now);
+    assert.equal(result.readable, 0, `bad timestamp ${String(timestamp)} must fail closed`);
+    assert.equal(result.entries[0].posture_state, null);
+    assert.equal(result.entries[0].first_url, null);
+  }
 });
