@@ -45,6 +45,7 @@ test('Compose rejects disabled/spoofed healthcheck and disabled init', () => {
     service => { delete service.init; },
     service => { service.healthcheck = { test: ['CMD', 'true'] }; },
     service => { service.healthcheck = { disable: true }; },
+    service => { service.healthcheck.disable = true; },
     service => { delete service.healthcheck; },
   ]) {
     const doc = clone(compose);
