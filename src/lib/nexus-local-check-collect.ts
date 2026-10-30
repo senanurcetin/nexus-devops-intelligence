@@ -1,4 +1,4 @@
-import { lstatSync, readdirSync, readFileSync, statSync } from 'node:fs';
+import { closeSync, constants, fstatSync, lstatSync, openSync, readdirSync, readFileSync, readSync } from 'node:fs';
 import { basename, join, parse, resolve } from 'node:path';
 import type { LocalFacts } from './nexus-local-check.ts';
 
@@ -27,9 +27,38 @@ export function assertScannableRoot(input: string): string {
   const root = resolve(input);
   if (parse(root).root === root) throw new Error('refusing to scan a filesystem root');
   let st;
-  try { st = statSync(root); } catch { throw new Error('path does not exist'); }
+  try { st = lstatSync(root); } catch { throw new Error('path does not exist'); }
+  if (st.isSymbolicLink()) throw new Error('refusing to scan a symbolic-link project root');
   if (!st.isDirectory()) throw new Error('path is not a directory');
   return root;
+}
+
+/**
+ * Git metadata is also untrusted project content. Limit bytes read, reject
+ * symlinks, and use O_NOFOLLOW where supported to close the lstat/open race.
+ * Never run git commands or inspect an external file through .git metadata.
+ */
+function readGitText(gitPath: string, filename: string, maxBytes: number): string | null {
+  const path = join(gitPath, filename);
+  let metadata;
+  try { metadata = lstatSync(path); } catch { return null; }
+  if (!metadata.isFile() || metadata.isSymbolicLink() || metadata.size > maxBytes) return null;
+  let fd: number | undefined;
+  try {
+    fd = openSync(path, constants.O_RDONLY | (constants.O_NOFOLLOW ?? 0));
+    const opened = fstatSync(fd);
+    if (!opened.isFile() || opened.size > maxBytes) return null;
+    const buffer = Buffer.alloc(maxBytes + 1);
+    let total = 0;
+    while (total < buffer.length) {
+      const bytesRead = readSync(fd, buffer, total, buffer.length - total, null);
+      if (bytesRead === 0) break;
+      total += bytesRead;
+    }
+    if (total > maxBytes || total !== opened.size) return null;
+    return buffer.toString('utf8', 0, total);
+  } catch { return null; }
+  finally { if (fd !== undefined) closeSync(fd); }
 }
 
 function readGit(root: string): LocalFacts['git'] {
@@ -38,15 +67,15 @@ function readGit(root: string): LocalFacts['git'] {
   try { st = lstatSync(gitPath); } catch { return { present: false, headRef: null, detached: false, remoteUrls: [] }; }
   if (!st.isDirectory()) return { present: true, headRef: null, detached: false, remoteUrls: [] };
   let headRef: string | null = null; let detached = false; const remoteUrls: string[] = [];
-  try {
-    const head = readFileSync(join(gitPath, 'HEAD'), 'utf8').trim();
+  const head = readGitText(gitPath, 'HEAD', 4 * 1024)?.trim();
+  if (head) {
     const m = /^ref:\s*refs\/heads\/(.+)$/.exec(head);
     if (m) headRef = m[1]; else if (/^[0-9a-f]{40,64}$/.test(head)) detached = true;
-  } catch { /* unreadable HEAD is simply unknown */ }
-  try {
-    const cfg = readFileSync(join(gitPath, 'config'), 'utf8');
+  }
+  const cfg = readGitText(gitPath, 'config', MAX_FILE_BYTES);
+  if (cfg !== null) {
     for (const m of cfg.matchAll(/^\s*url\s*=\s*(.+?)\s*$/gm)) remoteUrls.push(m[1]);
-  } catch { /* no config */ }
+  }
   return { present: true, headRef, detached, remoteUrls: remoteUrls.slice(0, 10) };
 }
 
