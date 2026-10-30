@@ -6,7 +6,7 @@
 
 - [Application](https://claude.com/contact-sales/claude-for-oss)
 - [Terms and Conditions](https://www.anthropic.com/claude-for-oss-terms)
-- The application page currently describes **six months of Claude Max 20x**, while the linked terms currently identify **Claude Ultra**. This inconsistent product naming must be confirmed with Anthropic before describing the precise award or post-benefit billing; **this is a subscription, not API credits**.
+- **2026-10-31 UTC current official page and terms:** both describe **six months of Claude Ultra**; an earlier 2026-10-30 snapshot reported **Max 20x vs Ultra** wording, now superseded. This is a **subscription, not API credits**. The published terms allow possible overage charges, a paid subscription may resume after the benefit, and approval is discretionary. Confirm the final offer and billing details when actually applying or activating.
 - Application fields include GitHub handle, repository URL, factual reach/impact and proposed subscription use. Terms request a **maximum 500-word** qualification statement, applicant email and GitHub sign-in.
 - Anthropic may disregard trivial, duplicative, automated or manipulated contribution metrics. Numerical thresholds alone do not guarantee approval.
 
