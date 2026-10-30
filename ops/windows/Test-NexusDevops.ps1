@@ -16,7 +16,9 @@ if (-not $t) { $ok = $false } else {
   $trig = ($t.Triggers | ForEach-Object { $_.CimClass.CimClassName -replace '^MSFT_Task', '' -replace 'Trigger$', '' }) -join '+'
   "triggers: $trig; restart on failure: $($t.Settings.RestartCount)x every $($t.Settings.RestartInterval); instances: $($t.Settings.MultipleInstances)"
 }
-$l = Get-NetTCPConnection -LocalPort $Port -State Listen -ErrorAction SilentlyContinue | Select-Object -First 1
+# On some Windows builds Get-NetTCPConnection reports an empty State for a listening socket (the socket still answers), so a
+# listener is also recognised by its unconnected remote endpoint instead of relying on -State Listen alone.
+$l = Get-NetTCPConnection -LocalPort $Port -ErrorAction SilentlyContinue | Where-Object { $_.State -eq 'Listen' -or ($_.RemotePort -eq 0 -and $_.RemoteAddress -in @('0.0.0.0', '::')) } | Select-Object -First 1
 "listener: " + $(if ($l) { "$($l.LocalAddress):$($l.LocalPort) pid $($l.OwningProcess)" } else { 'none' })
 if (-not $l) { $ok = $false }
 elseif ($l.LocalAddress -notin @('127.0.0.1', '::1')) { 'listener: NOT loopback-only'; $ok = $false }

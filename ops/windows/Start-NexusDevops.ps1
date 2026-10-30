@@ -34,7 +34,9 @@ function Test-Health {
 }
 
 if (Test-Health) { Write-Log "already healthy on 127.0.0.1:$Port; not starting a second copy"; exit 0 }
-$listener = Get-NetTCPConnection -LocalPort $Port -State Listen -ErrorAction SilentlyContinue
+# On some Windows builds Get-NetTCPConnection reports an empty State for a listening socket (the socket still answers), so a
+# listener is also recognised by its unconnected remote endpoint instead of relying on -State Listen alone.
+$listener = Get-NetTCPConnection -LocalPort $Port -ErrorAction SilentlyContinue | Where-Object { $_.State -eq 'Listen' -or ($_.RemotePort -eq 0 -and $_.RemoteAddress -in @('0.0.0.0', '::')) }
 if ($listener) { Write-Log "port $Port is used by pid $($listener.OwningProcess) and is not a healthy NEXUS service; refusing to start"; exit 3 }
 
 Set-Location $RepoRoot
