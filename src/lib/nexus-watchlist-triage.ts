@@ -57,6 +57,15 @@ export type WatchlistInput = { repository: string; digest: JarvisDigest | null }
 const isPostureState = (value: unknown): value is RiskPostureState =>
   typeof value === 'string' && Object.prototype.hasOwnProperty.call(POSTURE_RANK, value);
 
+/** Require a real, canonical UTC receipt time, not a bare 'verified' label. */
+function verifiedSourceReceipt(source: JarvisDigest['sources']['actions'] | undefined): boolean {
+  const timestamp = source?.received_at_utc;
+  return source?.state === 'verified' && source.http_status === 200 &&
+    typeof timestamp === 'string' &&
+    /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/.test(timestamp) &&
+    Number.isFinite(Date.parse(timestamp)) && new Date(timestamp).toISOString() === timestamp;
+}
+
 /**
  * JSON returned by the local MCP adapter is still an untrusted wire value.
  * A valid status from an unrelated repository (or a mutated "write-enabled"
@@ -79,8 +88,7 @@ function verifiedDigestFor(repository: string, digest: JarvisDigest | null): dig
       !digest.investigations.every(item => item && ['high', 'medium', 'info'].includes(item.severity))) {
     return false;
   }
-  return (digest.sources?.actions?.state === 'verified' && digest.sources.actions.http_status === 200) ||
-    (digest.sources?.pull_requests?.state === 'verified' && digest.sources.pull_requests.http_status === 200);
+  return verifiedSourceReceipt(digest.sources.actions) || verifiedSourceReceipt(digest.sources.pull_requests);
 }
 
 /**
