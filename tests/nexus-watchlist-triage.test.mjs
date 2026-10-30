@@ -176,3 +176,34 @@ test('partially valid source receipts never appear as fully verified coverage', 
   assert.equal(result.readable, 1, 'the valid actions receipt still permits a partial reading');
   assert.match(result.entries[0].note, /Only one of the two sources was verified/);
 });
+
+test('unverified PR investigations cannot affect severity counts or the first evidence link', () => {
+  const partial = digest('o/good', 'investigate_observed', { high: 1, medium: 1 });
+  partial.sources.pull_requests.received_at_utc = '2026-10-30T12:00:00Z';
+  partial.investigations[0].source_type = 'pull_request';
+  partial.investigations[0].source_url = 'https://github.com/o/good/pull/27';
+  partial.investigations[1].source_url = 'https://github.com/o/good/actions/runs/8';
+
+  const result = triageWatchlist([{ repository: 'o/good', digest: partial }], now);
+  const entry = result.entries[0];
+  assert.equal(entry.readable, true, 'valid Actions data remains available');
+  assert.deepEqual([entry.high, entry.medium, entry.info], [0, 1, 0]);
+  assert.equal(entry.first_url, 'https://github.com/o/good/actions/runs/8');
+  assert.match(entry.note, /Only one of the two sources/);
+  assert.doesNotMatch(watchlistMarkdown(result), /github\.com\/o\/good\/pull\/27/);
+});
+
+test('unverified Actions investigations cannot affect severity counts or the first evidence link', () => {
+  const partial = digest('o/good', 'review_observed', { high: 1, medium: 1 });
+  partial.sources.actions.received_at_utc = null;
+  partial.investigations[0].source_url = 'https://github.com/o/good/actions/runs/9';
+  partial.investigations[1].source_type = 'pull_request';
+  partial.investigations[1].source_url = 'https://github.com/o/good/pull/11';
+
+  const result = triageWatchlist([{ repository: 'o/good', digest: partial }], now);
+  const entry = result.entries[0];
+  assert.equal(entry.readable, true, 'valid PR data remains available');
+  assert.deepEqual([entry.high, entry.medium, entry.info], [0, 1, 0]);
+  assert.equal(entry.first_url, 'https://github.com/o/good/pull/11');
+  assert.match(entry.note, /Only one of the two sources/);
+});
