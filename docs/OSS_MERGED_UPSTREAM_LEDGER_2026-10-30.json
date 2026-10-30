@@ -1,0 +1,98 @@
+{
+  "schema_version": 1,
+  "github_login": "senanurcetin",
+  "snapshot_utc": "2026-10-30T19:32:00Z",
+  "evidence_scope": "GitHub PR detail snapshots individually verified on 2026-10-30; no live recheck by this offline file",
+  "pull_requests": [
+    {
+      "url": "https://github.com/pyjanitor-devs/pyjanitor/pull/1822",
+      "author": "senanurcetin",
+      "merged": true,
+      "merged_at": "2026-10-28T02:10:22Z"
+    },
+    {
+      "url": "https://github.com/pydata/xarray/pull/11806",
+      "author": "senanurcetin",
+      "merged": true,
+      "merged_at": "2026-10-27T09:54:42Z"
+    },
+    {
+      "url": "https://github.com/pyjanitor-devs/pyjanitor/pull/1820",
+      "author": "senanurcetin",
+      "merged": true,
+      "merged_at": "2026-10-26T19:54:58Z"
+    },
+    {
+      "url": "https://github.com/pyjanitor-devs/pyjanitor/pull/1786",
+      "author": "senanurcetin",
+      "merged": true,
+      "merged_at": "2026-10-26T07:53:16Z"
+    },
+    {
+      "url": "https://github.com/vega/altair/pull/4180",
+      "author": "senanurcetin",
+      "merged": true,
+      "merged_at": "2026-10-20T17:26:53Z"
+    },
+    {
+      "url": "https://github.com/vega/altair/pull/4178",
+      "author": "senanurcetin",
+      "merged": true,
+      "merged_at": "2026-10-20T16:54:56Z"
+    },
+    {
+      "url": "https://github.com/plotly/plotly.py/pull/5823",
+      "author": "senanurcetin",
+      "merged": true,
+      "merged_at": "2026-10-20T15:14:53Z"
+    },
+    {
+      "url": "https://github.com/pydata/xarray/pull/11713",
+      "author": "senanurcetin",
+      "merged": true,
+      "merged_at": "2026-10-20T07:36:04Z"
+    },
+    {
+      "url": "https://github.com/duckdb/duckdb-web/pull/7494",
+      "author": "senanurcetin",
+      "merged": true,
+      "merged_at": "2026-10-18T12:10:50Z"
+    },
+    {
+      "url": "https://github.com/duckdb/duckdb-web/pull/7495",
+      "author": "senanurcetin",
+      "merged": true,
+      "merged_at": "2026-10-18T12:09:51Z"
+    },
+    {
+      "url": "https://github.com/duckdb/duckdb-web/pull/7496",
+      "author": "senanurcetin",
+      "merged": true,
+      "merged_at": "2026-10-18T12:06:23Z"
+    },
+    {
+      "url": "https://github.com/scipy/scipy/pull/26391",
+      "author": "senanurcetin",
+      "merged": true,
+      "merged_at": "2026-10-18T07:32:21Z"
+    },
+    {
+      "url": "https://github.com/pydata/xarray/pull/11715",
+      "author": "senanurcetin",
+      "merged": true,
+      "merged_at": "2026-10-17T06:11:36Z"
+    },
+    {
+      "url": "https://github.com/vega/altair/pull/4179",
+      "author": "senanurcetin",
+      "merged": true,
+      "merged_at": "2026-10-14T09:09:42Z"
+    },
+    {
+      "url": "https://github.com/pydata/xarray/pull/11714",
+      "author": "senanurcetin",
+      "merged": true,
+      "merged_at": "2026-10-13T14:13:37Z"
+    }
+  ]
+}
