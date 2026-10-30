@@ -74,14 +74,27 @@ gizleme; bağımsız Codex katkısını ayrıca ayır.
 
 ## İnceleme ve yayın kontrolü
 
-Bu repo, test ve öğretici **bir PR içinde inceleme için** sunulmalıdır. PR'ın açılması veya source-only testlerin geçmesi production/Docker/Ubuntu, ücretli hizmet, erişilebilirlik veya canlı dağıtım kapılarını kapatmaz. Resmî [Codex Ambassadors](https://developers.openai.com/community/codex-ambassadors) Content yolunda topluluğa faydalı, tekrarlanabilir içerik beklenir; bu dosya teknik altyapıdır, yayınlanmış video veya Codex tarafından tamamlanmış çalışma olarak tanıtılmamalıdır.
+Bu düzeltme ve testler [PR #100](https://github.com/senanurcetin/nexus-devops-intelligence/pull/100) üzerinden incelendi ve **ana dala birleştirildi**. PR'ın açılması veya source-only testlerin geçmesi production/Docker/Ubuntu, ücretli hizmet, erişilebilirlik veya canlı dağıtım kapılarını kapatmaz. Resmî [Codex Ambassadors](https://developers.openai.com/community/codex-ambassadors) Content yolunda topluluğa faydalı, tekrarlanabilir içerik beklenir; bu dosya teknik altyapıdır, yayınlanmış video veya Codex tarafından tamamlanmış çalışma olarak tanıtılmamalıdır.
 
 | Kanıt | Bu değişiklikte durum |
 | --- | --- |
-| Açık kaynak değişiklik ve regresyon testleri | Geliştirme dalında mevcut |
-| GitHub PR ve review | [PR #100](https://github.com/senanurcetin/nexus-devops-intelligence/pull/100); güncel review/merge durumunu GitHub'dan kontrol edin |
+| Açık kaynak değişiklik ve regresyon testleri | PR #100 ile `main` dalına birleştirildi |
+| GitHub PR ve review | [PR #100](https://github.com/senanurcetin/nexus-devops-intelligence/pull/100) — **MERGED**, squash SHA `74dac35591bb29f91afbcc8f89ee59aee95e6d28` |
 | GitHub ana SHA / dal kaynaklı izole V8 yeniden üretim | **Önceki davranış 3/3 doğrulandı; düzeltilmiş davranış 20/20 PASS** (tam Node testi değil) |
 | Bağımsız yerel Node test, typecheck, build | **11/11 + 373/373 Node PASS; typecheck PASS; Next build PASS** — Windows, Node 24.13.0, SHA `666ba42c`; `npm ci` **TIMEOUT / NOT PASS** |
 | Gerçek Codex CLI kodlama/test oturumu | **NOT RUN** |
 | Video/sosyal medya/topluluk geri bildirimi | **NOT PUBLISHED / doğrulanmadı** |
-| Hosted CI, Production, Docker OS kabulü | **NOT RUN / yetkilendirilmedi** |
+| GitHub-hosted CI, Production, Docker OS kabulü | [CI #41116629184](https://github.com/senanurcetin/nexus-devops-intelligence/actions/runs/41116629184) **PASS**; Production ve native Ubuntu/Docker kabulü **NOT RUN** |
+
+## Nihai kaynak ve CI doğrulaması — 30 Ekim 2026
+
+Bu bölüm yukarıdaki **tarihsel Windows test sonuçlarını** geçersiz kılmaz, ancak PR'ın nihai durumunu esas alır. Windows'taki iki bağımsız `npm ci` denemesi zaman aşımına uğramıştı; bir ara commit'te eşzamanlı 374 testten 372'si geçmiş, iki browser alt süreç testi yerel yük altında başarısız olmuştu. Bu sonuçlar son commit üzerinde bütün kalite kapılarının başarısız olduğu anlamına gelmez.
+
+- **Birleştirilmiş PR:** [#100](https://github.com/senanurcetin/nexus-devops-intelligence/pull/100).
+- **Tam son PR HEAD:** `6621e702ab6fc758334ddc033fa58d39199955a1`. **Squash merge:** `74dac35591bb29f91afbcc8f89ee59aee95e6d28`.
+- **Doğrulanmış bağımsız GitHub Actions:** [run 41116629184](https://github.com/senanurcetin/nexus-devops-intelligence/actions/runs/41116629184), `pull_request` olayı, Node.js 24; **completed / success**.
+- **Kurulum:** `npm ci --no-audit --no-fund` **PASS**; logda 49 paket kurulduğu görülüyor.
+- **Tam test paketi:** `npm test` **389/389 PASS, 0 FAIL**.
+- **TypeScript:** `npm run typecheck` **PASS**.
+- **Next.js üretim derlemesi:** `npm run build` **PASS**.
+- **Sınır:** Bu çalışma temiz kurulumu ve uygulama kaynaklarını CI'da doğrular; Docker'ın Ubuntu üzerinde çalışmasını, canlı GitHub erişimini, Redis yük testini, ücretli/production yayını, gerçek Codex CLI oturumunu *bu PR'da*, tanıtım videosunu veya Codex Ambassador kabulünü **kanıtlamaz**. Kodun GPT-6 destekli üretildiği bilgisi korunmalıdır.
