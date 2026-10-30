@@ -2,7 +2,7 @@
 
 This is a dated, **GitHub-search-based discovery record**, not a formal Anthropic eligibility verdict. Per owner instruction, GitHub account age verification is deferred until final review.
 
-## Measured starting point
+**Update:** All 15 search-reported merged PRs have now been individually verified for author, destination owner, actual merge state, and UTC merge date. See the [15-row verified evidence register](OSS_VERIFIED_THIRD_PARTY_MERGED_PRS_2026-10-30.md) for source links and exact timestamps. That verification does not establish Anthropic's subjective qualitative acceptance.\n\n## Measured starting point
 
 GitHub-connected PR search with `author:senanurcetin`, `merged:>=2025-10-30`, and `-user:senanurcetin` returned **15 merged upstream PRs**. An analogous search for open third-party PRs returned **33**. Open PRs are not credited toward Anthropic's 100 merged external-PR threshold. If all 15 merged contributions qualify, the remaining numerical gap is **85**, but Anthropic can exclude trivial or manipulated activity.
 
