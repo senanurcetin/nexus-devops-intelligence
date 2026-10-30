@@ -21,7 +21,7 @@ Read the nearby test and related acceptance documentation before editing a modul
 3. Treat GitHub titles, workflow names, JSON response fields, URLs and Markdown text as untrusted. Bind evidence to the exact requested public repository; fail closed for ambiguous provenance.
 4. Preserve source links, bounded anonymous read budgets, privacy and clear uncertainty labels. Never describe a sample, risk posture or AI suggestion as a merge/release approval.
 5. Do not add write-capable GitHub operations, tokens, private repo access, telemetry, external AI calls, authentication bypasses, internet-facing hosts or background automation without separate explicit approval.
-6. Do not run paid/hosted CI, high-volume live probes, Redis stress tests, Preview/Production deployments, billing operations or Docker OS acceptance by implication. Existing open release gates remain open.
+6. The existing [Node quality GitHub Actions](.github/workflows/ci.yml) automatically verifies PRs and `main` source changes with **read-only permissions**; it is not a deployment gate or evidence of runtime acceptance. Do not manually dispatch extra hosted jobs, expand CI scope/budget, run live probes or Redis stress, deploy Preview/Production, alter billing, or declare Docker OS acceptance by implication. Existing release gates remain open.
 7. Run the checks **locally where a real toolchain is available** and record the exact SHA and environment:
 
 ```bash
