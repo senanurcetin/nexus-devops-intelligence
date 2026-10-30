@@ -124,7 +124,7 @@ function toEntry({ repository, digest }: WatchlistInput): WatchlistEntry {
     high: count('high'), medium: count('medium'), info: count('info'),
     coverage: sanitizeDigestText(digest.posture.coverage, 20),
     first_url: verifiedSourceUrl(repository, digest.investigations[0]),
-    note: digest.sources.actions.state !== 'verified' || digest.sources.pull_requests.state !== 'verified'
+    note: !verifiedSourceReceipt(digest.sources.actions) || !verifiedSourceReceipt(digest.sources.pull_requests)
       ? 'Only one of the two sources was verified for this repository.' : null,
   };
 }
