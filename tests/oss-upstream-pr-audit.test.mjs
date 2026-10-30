@@ -69,7 +69,7 @@ test('rate-limited responses fail the audit instead of returning zero', async ()
   await assert.rejects(auditUpstreamPRs('tester', { now, fetchImpl: fixture([], [], { status: 403 }).fetchImpl }), /HTTP 403/);
 });
 
-test('counts the exact UTC one-year boundary but rejects earlier same-day merges', async () => {
+test('exact UTC boundary excludes earlier same-day merges without making complete results unknown', async () => {
   const before = pr('upstream', 1);
   before.pull_request.merged_at = '2025-10-30T09:59:59.999Z';
   const onBoundary = pr('upstream', 2);
@@ -77,8 +77,9 @@ test('counts the exact UTC one-year boundary but rejects earlier same-day merges
   const { fetchImpl } = fixture([before, onBoundary]);
   const result = await auditUpstreamPRs('tester', { now, fetchImpl });
   assert.equal(result.merged_since_utc_timestamp, '2025-10-30T10:00:00.000Z');
-  assert.equal(result.merged_in_other_owners_repositories.complete, false);
-  assert.equal(result.merged_in_other_owners_repositories.confirmed_count, null);
+  assert.equal(result.merged_in_other_owners_repositories.complete, true);
+  assert.equal(result.merged_in_other_owners_repositories.confirmed_count, 1);
+  assert.equal(result.merged_in_other_owners_repositories.excluded_before_exact_window, 1);
   assert.deepEqual(result.merged_in_other_owners_repositories.prs.map(x => x.number), [2]);
   assert.equal(result.merged_in_other_owners_repositories.prs[0].merged_at, onBoundary.pull_request.merged_at);
 });
@@ -94,4 +95,61 @@ test('unknown, malformed or future merged timestamps never count as verified', a
     assert.equal(result.merged_in_other_owners_repositories.confirmed_count, null);
     assert.equal(result.merged_in_other_owners_repositories.complete, false);
   }
+});
+
+
+test('early search hits from an earlier calendar day do not masquerade as expected boundary exclusions', async () => {
+  const earlierDay = pr('upstream', 1);
+  earlierDay.pull_request.merged_at = '2025-10-29T23:59:59Z';
+  const onBoundary = pr('upstream', 2);
+  onBoundary.pull_request.merged_at = '2025-10-30T10:00:00Z';
+  const result = await auditUpstreamPRs('tester', { now, fetchImpl: fixture([earlierDay, onBoundary]).fetchImpl });
+  assert.equal(result.merged_in_other_owners_repositories.confirmed_count, null);
+  assert.equal(result.merged_in_other_owners_repositories.complete, false);
+  assert.equal(result.merged_in_other_owners_repositories.excluded_before_exact_window, 0);
+});
+
+test('non-UTC, overflowed and non-canonical timestamps are unverifiable', async () => {
+  for (const bad of ['2026-02-30T12:00:00Z', '2026-10-20', '2026-10-20T12:00:00+00:00', '2026-10-20T12:00:00.00Z']) {
+    const hit = pr('upstream', 1);
+    hit.pull_request.merged_at = bad;
+    const result = await auditUpstreamPRs('tester', { now, fetchImpl: fixture([hit]).fetchImpl });
+    assert.equal(result.merged_in_other_owners_repositories.confirmed_count, null);
+    assert.equal(result.merged_in_other_owners_repositories.observed_valid_external_prs, 0);
+  }
+});
+
+test('same-day exclusion remains safe when there are no eligible merges', async () => {
+  const before = pr('upstream', 1);
+  before.pull_request.merged_at = '2025-10-30T00:00:00Z';
+  const result = await auditUpstreamPRs('tester', { now, fetchImpl: fixture([before]).fetchImpl });
+  assert.equal(result.merged_in_other_owners_repositories.confirmed_count, 0);
+  assert.equal(result.merged_in_other_owners_repositories.excluded_before_exact_window, 1);
+  assert.equal(result.merged_in_other_owners_repositories.complete, true);
+});
+
+test('duplicate search hits cannot be certified even beside a valid cutoff exclusion', async () => {
+  const before = pr('upstream', 1);
+  before.pull_request.merged_at = '2025-10-30T00:00:00Z';
+  const hit = pr('upstream', 2);
+  const result = await auditUpstreamPRs('tester', { now, fetchImpl: fixture([before, hit, hit]).fetchImpl });
+  assert.equal(result.merged_in_other_owners_repositories.confirmed_count, null);
+  assert.equal(result.merged_in_other_owners_repositories.complete, false);
+});
+
+test('duplicate PR identifiers with mixed-case owner URLs fail closed', async () => {
+  const item = pr('upstream', 2);
+  const otherCase = pr('UPSTREAM', 2);
+  const result = await auditUpstreamPRs('tester', { now, fetchImpl: fixture([item, otherCase]).fetchImpl });
+  assert.equal(result.merged_in_other_owners_repositories.confirmed_count, null);
+  assert.equal(result.merged_in_other_owners_repositories.complete, false);
+});
+
+test('duplicate same-day cutoff exclusions cannot masquerade as complete results', async () => {
+  const before = pr('upstream', 1);
+  before.pull_request.merged_at = '2025-10-30T00:00:00Z';
+  const result = await auditUpstreamPRs('tester', { now, fetchImpl: fixture([before, before]).fetchImpl });
+  assert.equal(result.merged_in_other_owners_repositories.confirmed_count, null);
+  assert.equal(result.merged_in_other_owners_repositories.complete, false);
+  assert.equal(result.merged_in_other_owners_repositories.excluded_before_exact_window, 1);
 });
