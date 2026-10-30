@@ -65,6 +65,8 @@ export function verifyComposeConfig(doc) {
   assert.equal(service.init, true, 'Compose init process must remain enabled');
   assert.deepEqual(service.healthcheck?.test, EXPECTED_HEALTHCHECK,
     'Unexpected or disabled Compose healthcheck command');
+  assert.notEqual(service.healthcheck?.disable, true,
+    'Compose healthcheck must not be disabled');
   assert.deepEqual(service.ports?.length, 1, 'Exactly one host port is required');
   const port = service.ports[0];
   assert.equal(port.host_ip, '127.0.0.1', 'Compose host port must bind only to IPv4 loopback');
