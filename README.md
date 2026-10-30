@@ -27,8 +27,7 @@ and pull request merge state. **This is not part of Ops-Copilot.**
 > [current Preview/human acceptance issue #49](https://github.com/senanurcetin/nexus-devops-intelligence/issues/49),
 > [shared Redis issue #7](https://github.com/senanurcetin/nexus-devops-intelligence/issues/7),
 > and [manual release/rollback](docs/NEXUS_MANUAL_RELEASE_RUNBOOK_2026-10-14.md).
-> **No CI, paid protection, 21-request live shared Free Redis probe or Production
-> deployment is authorized by these documents.**
+> **30 Oct 2026 source-quality update:** [Node quality GitHub Actions](.github/workflows/ci.yml) now runs locked dependency installation, offline Node tests, TypeScript checks and a Next.js build on PRs and `main` pushes. [Final PR #100 CI](https://github.com/senanurcetin/nexus-devops-intelligence/actions/runs/41116629184) passed **389/389 tests**, `npm ci`, typecheck and build. This **does not** authorize paid protection, live shared Redis stress, Ubuntu Docker acceptance or Production deployment.
 
 **Historical engineering milestones below** describe earlier commits and test sessions;
 they are not a statement that those older commits are today's Production release.
@@ -169,10 +168,14 @@ npm run typecheck
 npm run build
 ```
 
-**CI-free workflow:** Tests, typecheck and production build are run manually in a
-short-lived cloud sandbox, without GitHub Actions or CircleCI. The current
-`npm test` command uses the locked `tsx` development dependency and requires
-`npm ci` first. There is no requirement to install anything on the user's PC.
+**Source-quality workflow (30 Oct 2026):** PRs and `main` pushes run the existing
+[read-only Node quality workflow](.github/workflows/ci.yml), with `npm ci`,
+`npm test`, `npm run typecheck` and `npm run build` on Node 24. The
+[verified PR #100 run](https://github.com/senanurcetin/nexus-devops-intelligence/actions/runs/41116629184)
+completed successfully with 389/389 tests. This is **not** live runtime,
+Docker/Ubuntu, accessibility, Preview/Production or release acceptance.
+Developers may also reproduce these commands locally with the locked `tsx`
+dependency. Reading the public repository needs no installation.
 
 ## F03 shared-link query privacy (15 October)
 
