@@ -31,6 +31,17 @@ function yearsAgo(now, n) {
   return date;
 }
 
+// GitHub API timestamps must be real canonical UTC instants, not values that
+// Date.parse silently normalizes (for example '1' or 30 February).
+function canonicalUtcMillis(value) {
+  if (typeof value !== 'string' ||
+      !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{3})?Z$/.test(value)) return null;
+  const millis = Date.parse(value);
+  if (!Number.isFinite(millis)) return null;
+  const canonical = value.includes('.') ? value : value.replace(/Z$/, '.000Z');
+  return new Date(millis).toISOString() === canonical ? millis : null;
+}
+
 export async function collectCommunityEvidence(input, { fetchImpl = fetch, now = new Date() } = {}) {
   const [owner, name] = parseRepository(input);
   if (!(now instanceof Date) || !Number.isFinite(now.getTime())) throw new Error('Invalid snapshot date');
@@ -41,15 +52,21 @@ export async function collectCommunityEvidence(input, { fetchImpl = fetch, now =
   }
 
   const ownerProfile = await readPublicJson(`/users/${encodeURIComponent(owner)}`, fetchImpl);
-  const accountCreatedAt = ownerProfile?.type === 'User' && !Number.isNaN(Date.parse(ownerProfile.created_at))
-    ? ownerProfile.created_at : null;
+  const createdMillis = canonicalUtcMillis(ownerProfile?.created_at);
+  const accountCreatedAt = ownerProfile?.type === 'User' && createdMillis !== null &&
+    createdMillis <= now.getTime() ? ownerProfile.created_at : null;
   const twoYearCutoff = yearsAgo(now, 2);
-  const mergedSince = yearsAgo(now, 1).toISOString().slice(0, 10);
+  const oneYearCutoff = yearsAgo(now, 1);
+  const mergedSince = oneYearCutoff.toISOString().slice(0, 10);
   const query = `repo:${owner}/${name} is:pr is:merged merged:>=${mergedSince}`;
   const authors = new Set();
+  const examinedPrIds = new Set();
+  const expectedRepositoryApiUrl = `${API}/repos/${owner}/${name}`.toLowerCase();
+  const windowDayStart = Date.parse(`${mergedSince}T00:00:00.000Z`);
   let totalMatches = null;
   let complete = true;
   let reviewedMatches = 0;
+  let excludedBeforeExactWindow = 0;
   let pagesRead = 0;
 
   for (let page = 1; page <= MAX_PAGES; page++) {
@@ -63,8 +80,39 @@ export async function collectCommunityEvidence(input, { fetchImpl = fetch, now =
     pagesRead++;
     reviewedMatches += result.items.length;
     for (const item of result.items) {
+      const match = typeof item?.html_url === 'string'
+        ? /^https:\/\/github\.com\/([a-zA-Z\d-]+)\/([a-zA-Z\d_.-]+)\/pull\/([1-9]\d*)$/.exec(item.html_url)
+        : null;
+      const number = match ? Number(match[3]) : null;
+      const mergedMillis = canonicalUtcMillis(item?.pull_request?.merged_at);
+      const authorType = item?.user?.type;
       const login = item?.user?.login;
-      if (typeof login === 'string' && item?.user?.type === 'User' && login.toLowerCase() !== owner.toLowerCase()) {
+      // Search responses are untrusted discovery data. A result for a different
+      // repository, invalid merge time or duplicate PR cannot prove adoption.
+      if (!match || `${match[1]}/${match[2]}`.toLowerCase() !==
+            `${owner}/${name}`.toLowerCase() ||
+          (typeof item?.repository_url !== 'string' ||
+           item.repository_url.toLowerCase() !== expectedRepositoryApiUrl) ||
+          !Number.isSafeInteger(number) || number !== item?.number ||
+          mergedMillis === null || mergedMillis > now.getTime() ||
+          !['User', 'Bot'].includes(authorType) ||
+          typeof login !== 'string' ||
+          (authorType === 'User' && !/^[a-zA-Z\d](?:[a-zA-Z\d-]{0,37}[a-zA-Z\d])?$/.test(login))) {
+        complete = false;
+        continue;
+      }
+      const key = number;
+      if (examinedPrIds.has(key)) {
+        complete = false;
+        continue;
+      }
+      examinedPrIds.add(key);
+      if (mergedMillis < oneYearCutoff.getTime()) {
+        if (mergedMillis >= windowDayStart) excludedBeforeExactWindow++;
+        else complete = false;
+        continue;
+      }
+      if (authorType === 'User' && login.toLowerCase() !== owner.toLowerCase()) {
         authors.add(login.toLowerCase());
       }
     }
@@ -87,10 +135,12 @@ export async function collectCommunityEvidence(input, { fetchImpl = fetch, now =
       total_matches_reported: totalMatches,
       matches_examined: reviewedMatches,
       pages_read: pagesRead,
+      excluded_before_exact_window: excludedBeforeExactWindow,
       complete,
       distinct_non_owner_human_authors_observed: authors.size,
+      confirmed_distinct_non_owner_human_authors: complete ? authors.size : null,
       non_owner_author_logins: [...authors].sort(),
-      caveat: 'Non-owner authors are only a proxy for external contributors. Review collaborator status, merged dates and GitHub Insights manually.',
+      caveat: 'Only canonical, non-duplicate, in-window merged PR hits for the requested repo contribute to the observed proxy. When complete=false the confirmed count is null. Non-owner authors may still be collaborators; review status manually.',
     },
     unverified: ['Package download counts', 'Dependent repositories/packages', 'OpenSSF criticality', 'Activity across all public repositories in the last 90 days', 'Formal Claude for OSS qualification'],
   };
