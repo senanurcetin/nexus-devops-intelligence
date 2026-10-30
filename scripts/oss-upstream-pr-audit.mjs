@@ -25,6 +25,18 @@ function repoFromApiUrl(url) {
   return match ? `${match[1]}/${match[2]}` : null;
 }
 
+/** GitHub REST uses UTC RFC3339 seconds (optionally three-digit milliseconds).
+ * Reject impossible calendar days, timezone reinterpretation and Date.parse rollovers.
+ */
+function parseCanonicalMergedAt(value) {
+  if (typeof value !== 'string' ||
+      !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{3})?Z$/.test(value)) return null;
+  const epoch = Date.parse(value);
+  if (!Number.isFinite(epoch)) return null;
+  const iso = new Date(epoch).toISOString();
+  return value === iso || value === iso.replace(/\.000Z$/, 'Z') ? epoch : null;
+}
+
 async function searchPages(login, state, cutoff, fetchImpl, exactWindow = null) {
   const qualifier = state === 'merged' ? `is:merged merged:>=${cutoff}` : 'is:open';
   const query = `author:${login} is:pr ${qualifier} -user:${login}`;
@@ -54,15 +66,15 @@ async function searchPages(login, state, cutoff, fetchImpl, exactWindow = null) 
       const repo = repoFromApiUrl(item?.repository_url);
       const url = item?.html_url;
       const match = typeof url === 'string' ? /^https:\/\/github\.com\/([^/]+)\/([^/]+)\/pull\/(\d+)$/.exec(url) : null;
+      const mergedEpoch = state === 'merged' ? parseCanonicalMergedAt(item?.pull_request?.merged_at) : null;
       if (!repo || !match || repo.toLowerCase() !== `${match[1]}/${match[2]}`.toLowerCase() ||
           match[1].toLowerCase() === login.toLowerCase() ||
           item?.user?.login?.toLowerCase() !== login.toLowerCase() ||
           !item?.pull_request ||
           (state === 'merged' && (
-            typeof item.pull_request.merged_at !== 'string' ||
-            !Number.isFinite(Date.parse(item.pull_request.merged_at)) ||
-            Date.parse(item.pull_request.merged_at) < exactWindow.start ||
-            Date.parse(item.pull_request.merged_at) > exactWindow.end
+            mergedEpoch === null ||
+            mergedEpoch < exactWindow.start ||
+            mergedEpoch > exactWindow.end
           ))) {
         complete = false;
         continue;
