@@ -25,12 +25,25 @@ function repoFromApiUrl(url) {
   return match ? `${match[1]}/${match[2]}` : null;
 }
 
+function utcMergeMillis(value) {
+  // Search/issues normally contains pull_request.merged_at. Treat malformed,
+  // non-UTC and overflowed dates as unverifiable instead of normalizing them.
+  if (typeof value !== 'string' ||
+      !/^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(?:\.\d{3})?Z$/.test(value)) return null;
+  const millis = Date.parse(value);
+  if (!Number.isFinite(millis) ||
+      new Date(millis).toISOString() !== value.replace(/Z$/, value.includes('.') ? 'Z' : '.000Z')) return null;
+  return millis;
+}
+
 async function searchPages(login, state, cutoff, fetchImpl, exactWindow = null) {
   const qualifier = state === 'merged' ? `is:merged merged:>=${cutoff}` : 'is:open';
   const query = `author:${login} is:pr ${qualifier} -user:${login}`;
   const observed = new Map();
+  const checkedIds = new Set();
   let totalCount = null;
   let seenRows = 0;
+  let excludedBeforeExactWindow = 0;
   let complete = true;
   let pagesRead = 0;
 
@@ -57,15 +70,33 @@ async function searchPages(login, state, cutoff, fetchImpl, exactWindow = null) 
       if (!repo || !match || repo.toLowerCase() !== `${match[1]}/${match[2]}`.toLowerCase() ||
           match[1].toLowerCase() === login.toLowerCase() ||
           item?.user?.login?.toLowerCase() !== login.toLowerCase() ||
-          !item?.pull_request ||
-          (state === 'merged' && (
-            typeof item.pull_request.merged_at !== 'string' ||
-            !Number.isFinite(Date.parse(item.pull_request.merged_at)) ||
-            Date.parse(item.pull_request.merged_at) < exactWindow.start ||
-            Date.parse(item.pull_request.merged_at) > exactWindow.end
-          ))) {
+          !item?.pull_request || !Number.isSafeInteger(Number(match[3])) || Number(match[3]) < 1) {
         complete = false;
         continue;
+      }
+      const id = `${repo.toLowerCase()}#${Number(match[3])}`;
+      if (checkedIds.has(id)) {
+        complete = false;
+        continue;
+      }
+      checkedIds.add(id);
+      if (state === 'merged') {
+        const merged = utcMergeMillis(item.pull_request.merged_at);
+        if (merged === null || merged > exactWindow.end) {
+          complete = false;
+          continue;
+        }
+        if (merged < exactWindow.start) {
+          // GitHub searches by UTC *calendar day*, not the exact timestamp.
+          // A same-day earlier merge is an expected, safely excluded hit.
+          // A hit before the queried day indicates inconsistent search data.
+          if (merged >= Date.parse(`${cutoff}T00:00:00.000Z`)) {
+            excludedBeforeExactWindow++;
+          } else {
+            complete = false;
+          }
+          continue;
+        }
       }
       observed.set(url, {
         repository: repo,
@@ -78,10 +109,14 @@ async function searchPages(login, state, cutoff, fetchImpl, exactWindow = null) 
     if (seenRows >= totalCount) break;
     if (result.items.length !== PAGE_SIZE) { complete = false; break; }
   }
-  if (totalCount > MAX_PAGES * PAGE_SIZE || seenRows !== totalCount || observed.size !== seenRows) complete = false;
+  // Every returned hit must be an eligible PR or an expected same-day exclusion.
+  // Duplicate, unverifiable and incomplete rows still invalidate confirmation.
+  if (totalCount > MAX_PAGES * PAGE_SIZE || seenRows !== totalCount ||
+      observed.size + excludedBeforeExactWindow !== seenRows) complete = false;
   return {
     github_reported_matches: totalCount,
     observed_valid_external_prs: observed.size,
+    excluded_before_exact_window: excludedBeforeExactWindow,
     confirmed_count: complete ? observed.size : null,
     complete,
     pages_read: pagesRead,
