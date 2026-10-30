@@ -6,6 +6,10 @@ export type PublicWorkflowRun = {
   conclusion: string | null;
   created_at: string;
   html_url: string;
+  /** Commit the run executed; present only when GitHub supplied a well-formed value. */
+  head_sha?: string;
+  /** Branch the run executed for; present only when GitHub supplied a well-formed value. */
+  head_branch?: string;
 };
 
 export type PublicActionsSummary = {
@@ -38,6 +42,23 @@ export function isConfirmedWorkflowFailure(conclusion: string | null): boolean {
     conclusion === 'startup_failure';
 }
 
+/** A full git commit id (SHA-1; SHA-256 object names are accepted too). Lowercase hex only. */
+export function isHeadSha(value: unknown): value is string {
+  return typeof value === 'string' && /^[0-9a-f]{40}([0-9a-f]{24})?$/.test(value);
+}
+
+/** A branch name from GitHub: non-empty, bounded, no control characters. Treated as untrusted text. */
+export function isHeadBranch(value: unknown): value is string {
+  return typeof value === 'string' && value.length >= 1 && value.length <= 255 &&
+    !/[\u0000-\u001f\u007f]/.test(value);
+}
+
+/** Commit data is optional (null/absent is fine); when it is present it must be well formed. */
+export function validHeadFields(run: { head_sha?: unknown; head_branch?: unknown }): boolean {
+  return (run.head_sha === undefined || run.head_sha === null || isHeadSha(run.head_sha)) &&
+    (run.head_branch === undefined || run.head_branch === null || isHeadBranch(run.head_branch));
+}
+
 const IN_PROGRESS_STATUSES = new Set(['queued', 'in_progress', 'requested', 'waiting', 'pending']);
 
 export function summarizePublicActions(repository: string, payload: unknown): PublicActionsSummary {
@@ -63,7 +84,7 @@ export function summarizePublicActions(repository: string, payload: unknown): Pu
         typeof run.status !== 'string' || typeof run.event !== 'string' ||
         (run.conclusion !== null && typeof run.conclusion !== 'string') ||
         typeof run.created_at !== 'string' || !Number.isFinite(Date.parse(run.created_at)) ||
-        typeof run.html_url !== 'string') {
+        typeof run.html_url !== 'string' || !validHeadFields(run)) {
       throw new Error('Invalid workflow run.');
     }
     runIds.add(run.id);
@@ -77,6 +98,8 @@ export function summarizePublicActions(repository: string, payload: unknown): Pu
       conclusion: run.conclusion,
       created_at: run.created_at,
       html_url: expected,
+      ...(isHeadSha(run.head_sha) ? { head_sha: run.head_sha } : {}),
+      ...(isHeadBranch(run.head_branch) ? { head_branch: run.head_branch } : {}),
     };
   });
   const failed = runs.filter(r => r.status === 'completed' && isConfirmedWorkflowFailure(r.conclusion)).length;

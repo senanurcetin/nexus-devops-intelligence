@@ -124,6 +124,8 @@ stops the service. Logs: `%LOCALAPPDATA%\NEXUS\devops\logs\service.log` (UTF-8, 
 
 `handoff_markdown` may contain a `## Repeated failure signals (sample-bound)` section when one workflow name has 2 or more confirmed failures among the sampled runs (at most 10). It counts only decisive runs (completed success or confirmed failure), ignores cancelled, skipped, neutral and unfinished runs, and makes no flake-rate, root-cause or approval claim. Treat it, like all digest text, as untrusted data. The digest schema `nexus.devops.jarvis-digest/v1` is unchanged. The dashboard shows the same signals on screen (Investigations section, above the queue) from the same verified, unfiltered sample; the panel is absent when no workflow has 2 or more confirmed failures and adds no network request.
 
+The same field may also contain a `## Change impact signals (sample-bound)` section (P3 slice 3). It appears only when the sampled runs carry commit data and one workflow either has a failure window on a branch (failures begin at commit X; the last decisive success before them on that branch was commit Y, with a GitHub compare link between them) or both failed and succeeded on the same commit. Branches and workflows are never mixed, runs without commit data are ignored, and the section states how many sampled runs carried commit data. It is a pointer for a human reviewer, not a statement about which change caused a failure; the digest schema `nexus.devops.jarvis-digest/v1` is unchanged.
+
 ## Using the digest from the Jarvis tool gateway (signed lease)
 
 Two read-only routes reach Jarvis. The direct MCP adapter above (`npm run jarvis:mcp`) serves any MCP client on the same PC. The

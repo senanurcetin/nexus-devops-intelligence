@@ -1,4 +1,4 @@
-import type { PublicActionsSummary } from './github-public-actions.ts';
+import { validHeadFields, type PublicActionsSummary } from './github-public-actions.ts';
 import type { PublicPullSummary, PullAttention } from './nexus-public-prs.ts';
 
 /**
@@ -61,7 +61,8 @@ export function isPublicActionsSample(
         !string(run.name) || !string(run.event) || !string(run.status) ||
         !(run.conclusion === null || string(run.conclusion)) ||
         !timestamp(run.created_at) ||
-        run.html_url !== `https://github.com/${repository}/actions/runs/${run.id}`) {
+        run.html_url !== `https://github.com/${repository}/actions/runs/${run.id}` ||
+        !validHeadFields(run)) {
       return false;
     }
     ids.add(run.id);

@@ -83,6 +83,8 @@ export function createPublicSampleExport(input: SampleExportInput): PublicSample
     records: filteredWorkflowRuns(input.actions, input.workflowFilter).map(run => ({
       id: run.id, name: run.name, event: run.event, status: run.status,
       conclusion: run.conclusion, created_at: run.created_at, html_url: run.html_url,
+      ...(run.head_sha ? { head_sha: run.head_sha } : {}),
+      ...(run.head_branch ? { head_branch: run.head_branch } : {}),
     })),
   } : null;
 

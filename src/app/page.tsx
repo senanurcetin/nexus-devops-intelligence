@@ -17,6 +17,7 @@ import { createPublicSampleExport, createSampleFilename, serializePublicSampleCs
 import { createAuditBrief, createAuditBriefFilename } from '@/lib/nexus-audit-brief';
 import { createInvestigationHandoff } from '@/lib/nexus-investigation-handoff';
 import { analyzeWorkflowRecurrence, describeRecurrenceSignal, RECURRENCE_SCOPE_NOTE, type WorkflowRecurrence } from '@/lib/nexus-workflow-recurrence';
+import { analyzeChangeImpact, CHANGE_IMPACT_SCOPE_NOTE, describeChangeImpact, type ChangeImpactResult } from '@/lib/nexus-change-impact';
 import { assessRepositoryRiskPosture } from '@/lib/nexus-risk-posture';
 import { buildRepositoryShareUrl, canonicalRepositoryPageUrl, readRepositoryLink, normalizeRepositoryInput } from '@/lib/nexus-repository-link';
 import { isPublicPrVerification, type PublicPrVerification } from '@/lib/nexus-pr-evidence';
@@ -370,6 +371,9 @@ export default function NexusDeveloperPreview() {
   // Deterministic, sample-bound repeated-failure signals; same verified rows as the Investigation Handoff (no visual filter).
   let workflowRecurrence: WorkflowRecurrence[] = [];
   try { workflowRecurrence = analyzeWorkflowRecurrence(runs); } catch { workflowRecurrence = []; }
+  // P3 slice 3: commit edges of failure windows from the same verified, unfiltered rows (only runs that carry commit data).
+  let changeImpact: ChangeImpactResult | null = null;
+  try { changeImpact = actions.data ? analyzeChangeImpact(actions.data.repository, runs) : null; } catch { changeImpact = null; }
 
   function inspectUtcTrend() {
     // Seven-day history is never requested by initial load/filter/CSV or URL hydration.
@@ -1072,6 +1076,48 @@ export default function NexusDeveloperPreview() {
                 ))}
               </ul>
               <p className="mt-3 text-xs leading-5 text-slate-400">{RECURRENCE_SCOPE_NOTE}</p>
+            </div>
+          )}
+          {changeImpact && changeImpact.signals.length > 0 && (
+            <div aria-label="Change impact signals, sampled runs only"
+              data-change-impact-count={changeImpact.signals.length}
+              className="nexus-devops-change-impact mt-4 rounded-xl border border-slate-700/70 bg-slate-950/60 p-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-[#a6d3fa]">Change impact signals - sample only</p>
+              <ul className="mt-3 grid gap-3 lg:grid-cols-2">
+                {changeImpact.signals.map(item => (
+                  <li key={item.kind + ':' + item.workflow + ':' + item.failing_sha + ':' + (item.head_branch ?? '')}
+                    data-signal={item.kind}
+                    className="rounded-lg border border-slate-800 bg-slate-950/70 p-3">
+                    <p className="text-sm font-semibold text-slate-100">{item.workflow}</p>
+                    <p className="mt-1 text-xs leading-5 text-slate-300">{describeChangeImpact(item)}</p>
+                    {item.head_branch && (
+                      <p className="mt-1 break-all text-xs text-slate-400">Branch: {item.head_branch}</p>
+                    )}
+                    <div className="mt-2 flex flex-wrap gap-x-4">
+                      <a href={item.failing_run_url} target="_blank" rel="noopener noreferrer"
+                        aria-label={'Review failing ' + item.workflow + ' run on GitHub'}
+                        className="nexus-devops-queue-action inline-flex min-h-10 items-center gap-1 text-xs font-medium text-[#4ea8ff] hover:text-[#cee8ff]">
+                        Failing run <ArrowUpRight aria-hidden="true" className="h-4 w-4" />
+                      </a>
+                      <a href={item.passing_run_url} target="_blank" rel="noopener noreferrer"
+                        aria-label={'Review passing ' + item.workflow + ' run on GitHub'}
+                        className="nexus-devops-queue-action inline-flex min-h-10 items-center gap-1 text-xs font-medium text-[#4ea8ff] hover:text-[#cee8ff]">
+                        Passing run <ArrowUpRight aria-hidden="true" className="h-4 w-4" />
+                      </a>
+                      {item.compare_url && (
+                        <a href={item.compare_url} target="_blank" rel="noopener noreferrer"
+                          aria-label={'Compare the commits around the ' + item.workflow + ' failures on GitHub'}
+                          className="nexus-devops-queue-action inline-flex min-h-10 items-center gap-1 text-xs font-medium text-[#4ea8ff] hover:text-[#cee8ff]">
+                          Compare commits <ArrowUpRight aria-hidden="true" className="h-4 w-4" />
+                        </a>
+                      )}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+              <p className="mt-3 text-xs leading-5 text-slate-400">
+                {CHANGE_IMPACT_SCOPE_NOTE} {changeImpact.runs_with_commit_data} of {changeImpact.sampled_runs} sampled runs carried commit data.
+              </p>
             </div>
           )}
           {recommendations.length > 0 ? (
