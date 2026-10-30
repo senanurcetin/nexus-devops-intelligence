@@ -107,6 +107,7 @@ test('fails closed on missing or writable digest envelopes and malformed sources
     { ...original, access: { ...original.access, release_authorized: true } },
     { ...original, access: { ...original.access, write_actions: ['merge'] } },
     { ...original, sources: null },
+    { ...original, sources: { actions: original.sources.actions } },
     { ...original, investigations: 'not-an-array' },
   ];
   for (const corrupted of variants) {
