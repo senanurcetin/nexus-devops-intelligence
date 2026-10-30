@@ -6,11 +6,13 @@ import {
   verifyCommunityRuntime,
 } from '../scripts/verify-community-runtime.mjs';
 
+const approvedHealthcheck = ['CMD', '/nodejs/bin/node', '-e', "fetch('http://127.0.0.1:3000/').then(r => process.exit(r.status === 200 ? 0 : 1)).catch(() => process.exit(1))"];
 const id = 'c'.repeat(64);
 const compose = {
   services: {
     nexus: {
       image: 'nexus-devops-community:local',
+      init: true, healthcheck: { test: approvedHealthcheck },
       build: { context: process.cwd(), dockerfile: 'Dockerfile' },
       ports: [{ host_ip: '127.0.0.1', target: 3000, published: '3000' }],
       read_only: true,
@@ -22,14 +24,16 @@ const compose = {
 };
 const inspection = {
   State: { Running: true, Health: { Status: 'healthy' } },
-  Config: { User: 'node', Env: [
+  Config: { Image: 'nexus-devops-community:local', Cmd: ['server.js'],
+    Healthcheck: { Test: approvedHealthcheck },
+    User: 'node', Env: [
     'PATH=/usr/local/sbin:/usr/local/bin',
     'NODE_VERSION=22.18.0', 'YARN_VERSION=1.22.22',
     'HOSTNAME=0.0.0.0', 'PORT=3000',
     'NODE_ENV=production', 'NEXT_TELEMETRY_DISABLED=1',
   ] },
   HostConfig: {
-    Privileged: false, ReadonlyRootfs: true, NetworkMode: 'nexus_default',
+    Privileged: false, ReadonlyRootfs: true, Init: true, NetworkMode: 'nexus_default',
     CapDrop: ['ALL'], SecurityOpt: ['no-new-privileges:true'],
     PortBindings: { '3000/tcp': [{ HostIp: '127.0.0.1', HostPort: '3000' }] },
   },
