@@ -92,6 +92,7 @@ test('caps search at ten pages and marks anything above 1,000 incomplete', async
 test('unrelated, malformed and unmerged search hits cannot inflate verified authors', async () => {
   const attacks = [
     { repository_url: 'https://api.github.com/repos/unrelated/project' },
+    { repository_url: 42 },
     { html_url: 'https://github.com/demo/other/pull/17' },
     { html_url: 'https://github.com/demo/tool/pull/17?extra=1' },
     { number: 999 },
