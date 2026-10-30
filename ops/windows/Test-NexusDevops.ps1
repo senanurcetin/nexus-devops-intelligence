@@ -1,19 +1,43 @@
 <#
 .SYNOPSIS
-  Read-only status check: task state, port listener, health, and (optional) one digest through the Jarvis CLI.
+  Read-only status check: task state, task triggers, port listener, health, running-build freshness, and (optional) one digest through the Jarvis CLI.
+.DESCRIPTION
+  Exit code 0 when the task is registered, the listener is loopback-only and health is 200; 1 otherwise.
+  A STALE build is reported but does not fail the check: it means the served `.next` build is older than the
+  checked-out commit, so recent source changes are not yet visible in the running service.
 #>
 [CmdletBinding()]
 param([int]$Port = 3000, [string]$Repository = '')
+$ok = $true
+$repoRoot = Resolve-Path (Join-Path $PSScriptRoot '..\..')
 $t = Get-ScheduledTask -TaskName 'NEXUS-DevOps-Local' -ErrorAction SilentlyContinue
 "task: " + $(if ($t) { "$($t.State)" } else { 'not registered' })
+if (-not $t) { $ok = $false } else {
+  $trig = ($t.Triggers | ForEach-Object { $_.CimClass.CimClassName -replace '^MSFT_Task', '' -replace 'Trigger$', '' }) -join '+'
+  "triggers: $trig; restart on failure: $($t.Settings.RestartCount)x every $($t.Settings.RestartInterval); instances: $($t.Settings.MultipleInstances)"
+}
 $l = Get-NetTCPConnection -LocalPort $Port -State Listen -ErrorAction SilentlyContinue | Select-Object -First 1
 "listener: " + $(if ($l) { "$($l.LocalAddress):$($l.LocalPort) pid $($l.OwningProcess)" } else { 'none' })
-try { $r = Invoke-WebRequest -Uri "http://127.0.0.1:$Port/" -UseBasicParsing -TimeoutSec 5; "health: $($r.StatusCode)" } catch { 'health: unreachable' }
+if (-not $l) { $ok = $false }
+elseif ($l.LocalAddress -notin @('127.0.0.1', '::1')) { 'listener: NOT loopback-only'; $ok = $false }
+try { $r = Invoke-WebRequest -Uri "http://127.0.0.1:$Port/" -UseBasicParsing -TimeoutSec 5; "health: $($r.StatusCode)"; if ($r.StatusCode -ne 200) { $ok = $false } } catch { 'health: unreachable'; $ok = $false }
+$buildId = Join-Path $repoRoot '.next\BUILD_ID'
+if (Test-Path $buildId) {
+  $built = (Get-Item $buildId).LastWriteTimeUtc
+  $headUnix = (& git -C $repoRoot log -1 --format=%ct 2>$null)
+  if ($headUnix) {
+    $head = [DateTimeOffset]::FromUnixTimeSeconds([int64]$headUnix).UtcDateTime
+    $state = if ($built -ge $head) { 'current' } else { 'STALE (rebuild and restart to serve the checked-out commit)' }
+    "build: $state; built $($built.ToString('u')), HEAD committed $($head.ToString('u'))"
+  } else { 'build: present (git not available to compare)' }
+} else { 'build: none (the start script builds once on first run)' }
 if ($Repository) {
-  Push-Location (Resolve-Path (Join-Path $PSScriptRoot '..\..'))
+  Push-Location $repoRoot
   $env:NEXUS_DEVOPS_BASE_URL = "http://127.0.0.1:$Port"
   $o = node --import tsx scripts/jarvis-digest.mjs $Repository
   "digest exit: $LASTEXITCODE"
   try { $d = $o | ConvertFrom-Json; "posture: $($d.posture.state); sources: $($d.sources.actions.state)/$($d.sources.pull_requests.state)" } catch { 'digest: unreadable' }
   Pop-Location
 }
+"result: " + $(if ($ok) { 'OK' } else { 'ATTENTION' })
+exit $(if ($ok) { 0 } else { 1 })
