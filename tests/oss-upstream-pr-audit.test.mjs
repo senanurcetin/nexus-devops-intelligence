@@ -68,3 +68,30 @@ test('mismatched hit totals remain incomplete without false counts', async () =>
 test('rate-limited responses fail the audit instead of returning zero', async () => {
   await assert.rejects(auditUpstreamPRs('tester', { now, fetchImpl: fixture([], [], { status: 403 }).fetchImpl }), /HTTP 403/);
 });
+
+test('counts the exact UTC one-year boundary but rejects earlier same-day merges', async () => {
+  const before = pr('upstream', 1);
+  before.pull_request.merged_at = '2025-10-30T09:59:59.999Z';
+  const onBoundary = pr('upstream', 2);
+  onBoundary.pull_request.merged_at = '2025-10-30T10:00:00.000Z';
+  const { fetchImpl } = fixture([before, onBoundary]);
+  const result = await auditUpstreamPRs('tester', { now, fetchImpl });
+  assert.equal(result.merged_since_utc_timestamp, '2025-10-30T10:00:00.000Z');
+  assert.equal(result.merged_in_other_owners_repositories.complete, false);
+  assert.equal(result.merged_in_other_owners_repositories.confirmed_count, null);
+  assert.deepEqual(result.merged_in_other_owners_repositories.prs.map(x => x.number), [2]);
+  assert.equal(result.merged_in_other_owners_repositories.prs[0].merged_at, onBoundary.pull_request.merged_at);
+});
+
+test('unknown, malformed or future merged timestamps never count as verified', async () => {
+  for (const mergedAt of [undefined, 'not-a-date', '2026-10-30T10:00:00.001Z']) {
+    const item = pr('upstream', 4);
+    item.pull_request.merged_at = mergedAt;
+    const result = await auditUpstreamPRs('tester', {
+      now, fetchImpl: fixture([item]).fetchImpl,
+    });
+    assert.equal(result.merged_in_other_owners_repositories.observed_valid_external_prs, 0);
+    assert.equal(result.merged_in_other_owners_repositories.confirmed_count, null);
+    assert.equal(result.merged_in_other_owners_repositories.complete, false);
+  }
+});
