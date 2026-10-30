@@ -91,7 +91,8 @@ export async function collectCommunityEvidence(input, { fetchImpl = fetch, now =
       // repository, invalid merge time or duplicate PR cannot prove adoption.
       if (!match || `${match[1]}/${match[2]}`.toLowerCase() !==
             `${owner}/${name}`.toLowerCase() ||
-          item?.repository_url?.toLowerCase() !== expectedRepositoryApiUrl ||
+          (typeof item?.repository_url !== 'string' ||
+           item.repository_url.toLowerCase() !== expectedRepositoryApiUrl) ||
           !Number.isSafeInteger(number) || number !== item?.number ||
           mergedMillis === null || mergedMillis > now.getTime() ||
           !['User', 'Bot'].includes(authorType) ||
