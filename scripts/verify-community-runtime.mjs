@@ -11,6 +11,14 @@ import { resolve } from 'node:path';
 import { verifyCommunityLocalhost } from './verify-community-localhost.mjs';
 
 const COMPOSE_FILE = 'compose.yaml';
+const EXPECTED_IMAGE = 'nexus-devops-community:local';
+// Matches the executable and healthcheck in the reviewed Dockerfile / compose.yaml.
+// Checking only State.Health=healthy is unsafe: an overridden check can return
+// success without ever probing the NEXUS application.
+const EXPECTED_HEALTHCHECK = [
+  'CMD', '/nodejs/bin/node', '-e',
+  "fetch('http://127.0.0.1:3000/').then(r => process.exit(r.status === 200 ? 0 : 1)).catch(() => process.exit(1))",
+];
 const EXPECTED_ENV = new Set([
   'PATH', 'NODE_VERSION', 'YARN_VERSION', 'SSL_CERT_FILE', 'NODE_ENV',
   'NEXT_TELEMETRY_DISABLED', 'HOSTNAME', 'PORT',
@@ -33,7 +41,7 @@ export function verifyComposeConfig(doc) {
   // Compose config is validated before Docker inspect. Do not accept an
   // overridden image, Dockerfile or build context, or injection of environment
   // files/commands, even when a running container happens to look healthy.
-  assert.equal(service.image, 'nexus-devops-community:local',
+  assert.equal(service.image, EXPECTED_IMAGE,
     'Unexpected Community image reference');
   assert.equal(typeof service.build?.context, 'string',
     'Missing pinned local Docker build context');
@@ -54,6 +62,9 @@ export function verifyComposeConfig(doc) {
   }
   assert.ok(service.command == null && service.entrypoint == null && service.user == null,
     'Command, entrypoint or user overrides are not allowed');
+  assert.equal(service.init, true, 'Compose init process must remain enabled');
+  assert.deepEqual(service.healthcheck?.test, EXPECTED_HEALTHCHECK,
+    'Unexpected or disabled Compose healthcheck command');
   assert.deepEqual(service.ports?.length, 1, 'Exactly one host port is required');
   const port = service.ports[0];
   assert.equal(port.host_ip, '127.0.0.1', 'Compose host port must bind only to IPv4 loopback');
@@ -84,11 +95,20 @@ export function verifyComposeConfig(doc) {
 export function verifyRuntimeInspection(container) {
   assert.equal(container.State?.Running, true, 'NEXUS container is not running');
   assert.equal(container.State?.Health?.Status, 'healthy', 'NEXUS container is not healthy');
+  // Compose config describes a prospective service; inspect what is actually
+  // running, which can be a stale/different image, command, or healthcheck.
+  assert.equal(container.Config?.Image, EXPECTED_IMAGE,
+    'Running container image differs from the approved Community tag');
+  assert.deepEqual(container.Config?.Cmd, ['server.js'],
+    'Running container command differs from the reviewed Dockerfile');
+  assert.deepEqual(container.Config?.Healthcheck?.Test, EXPECTED_HEALTHCHECK,
+    'Running container healthcheck differs from the reviewed Compose probe');
   assert.ok(['node', '1000', '1000:1000', '65532', '65532:65532'].includes(container.Config?.User),
     'NEXUS must run as non-root node user');
   const host = container.HostConfig || {};
   assert.equal(host.Privileged, false, 'Privileged container is forbidden');
   assert.equal(host.ReadonlyRootfs, true, 'Container root filesystem must be read-only');
+  assert.equal(host.Init, true, 'Running container must retain the Compose init process');
   // A shared container network namespace bypasses the meaning of a dedicated
   // Compose network even when host port bindings appear localhost-only.
   assert.ok(typeof host.NetworkMode === 'string' &&
