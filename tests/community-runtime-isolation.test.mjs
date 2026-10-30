@@ -34,6 +34,10 @@ test('valid approved Compose and runtime remain accepted', () => {
   runtime.HostConfig.CgroupnsMode = 'private';
   assert.equal(verifyComposeConfig(config), true);
   assert.equal(verifyRuntimeInspection(runtime), true);
+  // Compose project-specific bridge networks remain valid; empty sysctl map is harmless.
+  runtime.HostConfig.NetworkMode = 'project-name_default';
+  runtime.HostConfig.Sysctls = {};
+  assert.equal(verifyRuntimeInspection(runtime), true);
 });
 
 test('Compose rejects capability re-grants and extra security options', () => {
@@ -70,6 +74,11 @@ test('Docker inspect rejects capabilities, insecure profiles, host namespaces an
   const changes = [
     ['CapAdd', ['SYS_ADMIN']], ['CapAdd', ['NET_ADMIN']],
     ['SecurityOpt', ['no-new-privileges:true', 'seccomp=unconfined']],
+    ['NetworkMode', 'host'], ['NetworkMode', 'container:another-container'],
+    ['NetworkMode', 'service:other'], ['NetworkMode', 'none'],
+    ['NetworkMode', 'bridge/unsafe'], ['NetworkMode', ''], ['NetworkMode', null],
+    ['Sysctls', { 'net.ipv4.ip_forward': '1' }],
+    ['Sysctls', ['net.ipv4.ip_forward=1']],
     ['PidMode', 'host'], ['IpcMode', 'host'], ['UTSMode', 'host'],
     ['CgroupnsMode', 'host'], ['UsernsMode', 'host'],
     ['Devices', [{ PathOnHost: '/dev/kvm' }]],
