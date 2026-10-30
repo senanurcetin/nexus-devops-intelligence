@@ -19,6 +19,8 @@ It adds no data source, no write path, no AI diagnosis and no authority to merge
 Both tools carry `readOnlyHint: true`, `destructiveHint: false`. A one-shot CLI for schedulers/n8n exists too:
 `npm run jarvis:digest -- owner/name` (exit 0 evidence, 2 bad arguments/config, 3 no verified source).
 
+For several of your own public repositories at once: `npm run jarvis:watchlist -- owner/a owner/b` (or `-- --file repos.txt`, one `owner/name` per line, `#` comments; add `--json` for machine output; at most 10; exit 0 if at least one repository had a verified source, 2 bad arguments, 3 none readable). It prints a reading order built from the per-repository digests, with the ordering rule and sample limits in the output; it is not a risk score and `no_confirmed_signal` does not mean safe.
+
 ## Digest contract (`nexus.devops.jarvis-digest/v1`)
 
 `schema`, `generated_at_utc`, `repository`, `data_source`, `access` (always `read_only`, `write_actions: []`,
