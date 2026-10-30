@@ -1,6 +1,6 @@
 # NEXUS DevOps Intelligence
 
-> **Developer education:** [Codex CLI test-first evidence, Turkish tutorials and reproducible learning portfolio](docs/CODEX_AMBASSADOR_PUBLIC_PORTFOLIO_20261030.md). This is independent open-source work, **not an OpenAI endorsement or Ambassador acceptance**.
+> **Developer education:** [Codex CLI test-first evidence and the public learning portfolio](docs/CODEX_AMBASSADOR_PUBLIC_PORTFOLIO_20261030.md) · [10-minute hands-on Turkish timestamp workshop](docs/CODEX_TIMESTAMP_10_MIN_WORKSHOP_TR.md). This is independent open-source work, **not an OpenAI endorsement or Ambassador acceptance**.
 
 > **15 Oct 2026 — COMMERCIAL PREPARATION / NO REQUIRED PILOT USERS:** NEXUS will be prepared for direct commercial sales without a mandatory free-beta recruitment phase. The first proposed paid SKU is a verified, customer-hosted installation + bounded CI/PR review deliverable; NEXUS Pro software licensing requires **genuinely new rights-cleared premium functionality** in a separately approved private codebase. The existing public MIT Community license remains intact. Internal source-linked usage and exact-SHA security/OS QA remain required, while outside pilot users are optional (zero acceptable). **No paid product, checkout, Pro license or Cloud SaaS is live or ready to sell yet.** See the [commercial sales plan](docs/NEXUS_COMMERCIAL_NO_PILOT_GO_TO_MARKET_2026-10-15.md) and [zero-spend roadmap](docs/NEXUS_ZERO_BUDGET_COMMUNITY_PRODUCT_ROADMAP_2026-10-15.md). Docker PR #80 is merged into `main` (28 Oct 2026) but the Windows/Ubuntu acceptance issue #81 and the hosted release gates remain open; Vercel Hobby must not host a commercial SaaS.
 
@@ -27,8 +27,7 @@ and pull request merge state. **This is not part of Ops-Copilot.**
 > [current Preview/human acceptance issue #49](https://github.com/senanurcetin/nexus-devops-intelligence/issues/49),
 > [shared Redis issue #7](https://github.com/senanurcetin/nexus-devops-intelligence/issues/7),
 > and [manual release/rollback](docs/NEXUS_MANUAL_RELEASE_RUNBOOK_2026-10-14.md).
-> **No CI, paid protection, 21-request live shared Free Redis probe or Production
-> deployment is authorized by these documents.**
+> **30 Oct 2026 source-quality update:** [Node quality GitHub Actions](.github/workflows/ci.yml) now runs locked dependency installation, offline Node tests, TypeScript checks and a Next.js build on PRs and `main` pushes. [Final PR #100 CI](https://github.com/senanurcetin/nexus-devops-intelligence/actions/runs/41116629184) passed **389/389 tests**, `npm ci`, typecheck and build. This **does not** authorize paid protection, live shared Redis stress, Ubuntu Docker acceptance or Production deployment.
 
 **Historical engineering milestones below** describe earlier commits and test sessions;
 they are not a statement that those older commits are today's Production release.
@@ -169,10 +168,14 @@ npm run typecheck
 npm run build
 ```
 
-**CI-free workflow:** Tests, typecheck and production build are run manually in a
-short-lived cloud sandbox, without GitHub Actions or CircleCI. The current
-`npm test` command uses the locked `tsx` development dependency and requires
-`npm ci` first. There is no requirement to install anything on the user's PC.
+**Source-quality workflow (30 Oct 2026):** PRs and `main` pushes run the existing
+[read-only Node quality workflow](.github/workflows/ci.yml), with `npm ci`,
+`npm test`, `npm run typecheck` and `npm run build` on Node 24. The
+[verified PR #100 run](https://github.com/senanurcetin/nexus-devops-intelligence/actions/runs/41116629184)
+completed successfully with 389/389 tests. This is **not** live runtime,
+Docker/Ubuntu, accessibility, Preview/Production or release acceptance.
+Developers may also reproduce these commands locally with the locked `tsx`
+dependency. Reading the public repository needs no installation.
 
 ## F03 shared-link query privacy (15 October)
 

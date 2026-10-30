@@ -21,6 +21,8 @@ The distinction between original correction, later Codex suggestions and separat
 
 **Working title (TR):** *Codex ile test-first hata ayıklama: geçersiz GitHub tarihlerini yakalayan 6 test*.
 
+**Runnable workshop:** [10-minute Turkish timestamp exercise](CODEX_TIMESTAMP_10_MIN_WORKSHOP_TR.md), based on the three current source tests and separately evidenced historical Codex sessions. This written tutorial is public; a video or live Codex demo is **not** claimed.
+
 **Learning outcome:** in under ten minutes, a developer can see how to define malicious and malformed timestamp fixtures, inspect a failure, implement a strict UTC rule, and rerun the same tests without leaking credentials or contacting a private repository.
 
 1. Show the actual `Date.parse` boundary case and why it matters to GitHub Actions and PR evidence.
