@@ -1,6 +1,6 @@
 # Claude for Open Source — evidence-first readiness (2026-10-30)
 
-**Status: application research, not an eligibility or acceptance claim.** Project: [NEXUS DevOps Intelligence](https://github.com/senanurcetin/nexus-devops-intelligence). Program: [Anthropic's official terms](https://www.anthropic.com/claude-for-oss-terms) and [application](https://claude.com/open-source-max). **Benefit wording discrepancy (observed 2026-10-30):** the official application page advertises six months of **Claude Max 20x**, while the linked Anthropic Terms and Conditions currently describe six months of **Claude Ultra**. Confirm the actual awarded plan and billing terms during application/activation. This is a subscription benefit, **not API credits**. See the [evidence-based application draft](CLAUDE_FOR_OSS_APPLICATION_DRAFT_2026-10-30.md).
+**Status: application research, not an eligibility or acceptance claim.** Project: [NEXUS DevOps Intelligence](https://github.com/senanurcetin/nexus-devops-intelligence). Program: [Anthropic's official terms](https://www.anthropic.com/claude-for-oss-terms) and [application](https://claude.com/contact-sales/claude-for-oss). **Benefit verification update (2026-10-31 UTC):** the current public program page and linked terms both describe **six months of Claude Ultra**, resolving the previously recorded **2026-10-30 Max 20x / Ultra wording discrepancy**. This is a subscription benefit, **not API credits**. The terms allow possible usage overages; confirm the actual awarded plan and billing terms during application/activation. The program may change or close, and acceptance is not guaranteed. See the [evidence-based application draft](CLAUDE_FOR_OSS_APPLICATION_DRAFT_2026-10-30.md).
 
 ## Current verified repository facts
 
@@ -42,7 +42,7 @@ The read-only CLI makes only **anonymous, bounded HTTPS GETs** to `api.github.co
 
 1. Verify account age using the GitHub profile data. If it is younger than two years, do not claim baseline eligibility; continue developing genuine OSS work and revisit when it meets the requirement.
 2. Gather independently verifiable third-party adoption/contribution signals (with links, dates and counts). Prioritize substantive features, issue support, safe releases and real external users rather than cosmetic activity.
-3. Submit the **accurate** evidence and planned use of Claude on the [official application](https://claude.com/open-source-max) only if making a good-faith application; there is also a discretionary track for infrastructure the ecosystem meaningfully depends on. Anthropic's approval is not guaranteed.
+3. Submit the **accurate** evidence and planned use of Claude on the [official application](https://claude.com/contact-sales/claude-for-oss) only if making a good-faith application; there is also a discretionary track for infrastructure the ecosystem meaningfully depends on. Anthropic's approval is not guaranteed.
 4. Avoid duplicate applications, fabricated usage or wording that confuses a new MIT project with established ecosystem infrastructure.
 
 **Operational boundaries:** No GitHub-hosted CI workflows, deployment, paid services, automated PR creation in third-party repos, tokens, or changes to current production configuration are required for this evidence workflow. This document is a dated snapshot, not a release approval.
