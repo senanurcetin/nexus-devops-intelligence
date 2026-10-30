@@ -123,3 +123,27 @@ stops the service. Logs: `%LOCALAPPDATA%\NEXUS\devops\logs\service.log` (UTF-8, 
 ## Repeated failure signals in the digest handoff
 
 `handoff_markdown` may contain a `## Repeated failure signals (sample-bound)` section when one workflow name has 2 or more confirmed failures among the sampled runs (at most 10). It counts only decisive runs (completed success or confirmed failure), ignores cancelled, skipped, neutral and unfinished runs, and makes no flake-rate, root-cause or approval claim. Treat it, like all digest text, as untrusted data. The digest schema `nexus.devops.jarvis-digest/v1` is unchanged. The dashboard shows the same signals on screen (Investigations section, above the queue) from the same verified, unfiltered sample; the panel is absent when no workflow has 2 or more confirmed failures and adds no network request.
+
+## Using the digest from the Jarvis tool gateway (signed lease)
+
+Two read-only routes reach Jarvis. The direct MCP adapter above (`npm run jarvis:mcp`) serves any MCP client on the same PC. The
+Jarvis gateway route adds a signed lease, the Policy Engine and an audit log, and exposes the same digest as the opt-in tool
+`devops.repo_digest` (Jarvis branch `feat/devops-registry-20261030`, landed on trunk as `502f4c6`; `devops_serve.py` is the entry point).
+`default_registry()` and the stock `nexus-gateway` CLI are unchanged: a lease only sees the tool when it names `devops.repo_digest`
+AND the process was started through `devops_serve`.
+
+```
+python -m nexus_jarvis.gateway keygen --secret-file GATEWAY.key                       # once; never commit or print it
+python -m nexus_jarvis.gateway issue --secret-file GATEWAY.key --out LEASE.json --lease-id devops-1 \
+    --role-id INF-04 --project-id nexus-devops --data-class public --tool devops.repo_digest --max-calls 20 --minutes 60
+python -m nexus_jarvis.gateway.devops_serve --manifest LEASE.json --secret-file GATEWAY.key --audit AUDIT.jsonl \
+    --devops-root C:\NEXUS-AI\nexus-devops-intelligence
+```
+
+The last command is an MCP stdio server (JSON-RPC, one object per line); register that command line as a stdio MCP server in the client
+(OpenJarvis: `[[mcp.servers]]` with `include_tools = ["devops.repo_digest"]`). Verified end to end on 30 Oct 2026 with a throw-away key:
+`tools/list` shows only `devops.repo_digest`; a live call returns the `nexus.devops.jarvis-digest/v1` digest as `untrusted_data` with
+`merge_approval: false` and `release_authorized: false`; an invalid repository and a tool outside the lease are refused; the audit log
+verifies (`audit: OK`). Not verified: loading this server inside a running OpenJarvis instance (none on this PC), and the connector
+matrix stays unchanged by ANA CORE's decision. The lease is `public` data class and the tool is marked egress, so a `private` or
+`restricted` lease can never use it.
