@@ -13,6 +13,9 @@ const inv = (severity, n = 1) => Array.from({ length: n }, (_, i) => ({
 }));
 const digest = (repository, state, { high = 0, medium = 0, info = 0, actions = 'verified', prs = 'verified', headline = 'h' } = {}) => ({
   repository,
+  schema: 'nexus.devops.jarvis-digest/v1',
+  data_source: 'public-github-rest-via-local-nexus-devops',
+  access: { mode: 'read_only', write_actions: [], release_authorized: false, merge_approval: false },
   sources: { actions: source(actions), pull_requests: source(prs) },
   posture: { state, headline, coverage: 'both' },
   investigations: [...inv('high', high), ...inv('medium', medium), ...inv('info', info)],
@@ -85,4 +88,65 @@ test('CLI rejects bad arguments without any network call', () => {
   assert.equal(run(['not-a-repo']).status, 2);
   assert.equal(run(Array.from({ length: 11 }, (_, i) => `o/r${i}`)).status, 2);
   assert.equal(run(['--file']).status, 2);
+});
+
+test('rejects a digest for a different repository rather than relabeling its signals', () => {
+  const t = triageWatchlist([{ repository: 'o/expected',
+    digest: digest('o/other', 'investigate_observed', { high: 1 }) }], now);
+  assert.equal(t.readable, 0);
+  assert.equal(t.entries[0].repository, 'o/expected');
+  assert.equal(t.entries[0].posture_state, null);
+  assert.equal(t.entries[0].first_url, null);
+});
+
+test('fails closed on missing or writable digest envelopes and malformed sources', () => {
+  const original = digest('o/good', 'investigate_observed', { high: 1 });
+  const variants = [
+    { ...original, schema: 'other/v1' },
+    { ...original, data_source: 'arbitrary' },
+    { ...original, access: { ...original.access, release_authorized: true } },
+    { ...original, access: { ...original.access, write_actions: ['merge'] } },
+    { ...original, sources: null },
+    { ...original, investigations: 'not-an-array' },
+  ];
+  for (const corrupted of variants) {
+    const t = triageWatchlist([{ repository: 'o/good', digest: corrupted }], now);
+    assert.equal(t.readable, 0, 'corrupt evidence never receives a trusted reading-order row');
+    assert.equal(t.entries[0].first_url, null);
+  }
+});
+
+test('only canonical source links for the requested repository and source type survive', () => {
+  const good = digest('o/good', 'investigate_observed', { high: 1 });
+  const item = good.investigations[0];
+  item.source_url = 'https://github.com/o/good/actions/runs/7';
+  assert.equal(triageWatchlist([{ repository: 'o/good', digest: good }], now)
+    .entries[0].first_url, item.source_url);
+  for (const unsafe of [
+    'https://github.com/o/other/actions/runs/7',
+    'https://github.com/o/good/actions/runs/7?secret=1',
+    'https://github.com/o/good/actions/runs/7/../8',
+    'https://github.com/o/good/actions/runs/999999999999999999999',
+    'javascript:alert(1)',
+    'https://github.com/o/good/actions/runs/7|<img src=x>',
+  ]) {
+    item.source_url = unsafe;
+    const result = triageWatchlist([{ repository: 'o/good', digest: good }], now);
+    assert.equal(result.entries[0].first_url, null, unsafe);
+    assert.doesNotMatch(watchlistMarkdown(result), /javascript:|secret=1|<img/i);
+  }
+  item.source_url = 'https://github.com/o/good/pull/8';
+  assert.equal(triageWatchlist([{ repository: 'o/good', digest: good }], now).entries[0].first_url, null,
+    'workflow run must not masquerade as a PR source');
+});
+
+test('third-party headlines are escaped as table text, not active Markdown or HTML', () => {
+  const hostile = digest('o/good', 'investigate_observed',
+    { high: 1, headline: '<img src=x onerror=alert(1)> [click](https://evil.example) | `inject`' });
+  const md = watchlistMarkdown(triageWatchlist([{ repository: 'o/good', digest: hostile }], now));
+  const line = md.split('\n').find(l => l.startsWith('| 1 |'));
+  assert.ok(line);
+  assert.doesNotMatch(line, /<img|\]\(https:\/\/evil\.example/);
+  assert.match(line, /&lt;img/);
+  assert.equal(line.split(' | ').length, 7);
 });
