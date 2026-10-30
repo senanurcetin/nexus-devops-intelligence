@@ -24,11 +24,14 @@ try { $r = Invoke-WebRequest -Uri "http://127.0.0.1:$Port/" -UseBasicParsing -Ti
 $buildId = Join-Path $repoRoot '.next\BUILD_ID'
 if (Test-Path $buildId) {
   $built = (Get-Item $buildId).LastWriteTimeUtc
-  $headUnix = (& git -C $repoRoot log -1 --format=%ct 2>$null)
+  # Only commits that can change the served app count (docs, tests, scripts, ops files and package.json scripts do not make a build stale).
+  $appPaths = @('src', 'public', 'package-lock.json', 'next.config.ts', 'next.config.js', 'next.config.mjs', 'postcss.config.mjs', 'tsconfig.json') |
+    Where-Object { Test-Path (Join-Path $repoRoot $_) }
+  $headUnix = (& git -C $repoRoot log -1 --format=%ct -- @appPaths 2>$null)
   if ($headUnix) {
     $head = [DateTimeOffset]::FromUnixTimeSeconds([int64]$headUnix).UtcDateTime
     $state = if ($built -ge $head) { 'current' } else { 'STALE (rebuild and restart to serve the checked-out commit)' }
-    "build: $state; built $($built.ToString('u')), HEAD committed $($head.ToString('u'))"
+    "build: $state; built $($built.ToString('u')), last app change committed $($head.ToString('u'))"
   } else { 'build: present (git not available to compare)' }
 } else { 'build: none (the start script builds once on first run)' }
 if ($Repository) {
