@@ -61,8 +61,20 @@ export function verifyComposeConfig(doc) {
   assert.equal(Number(port.published), 3000);
   assert.equal(service.read_only, true, 'Container root filesystem must be read-only');
   assert.deepEqual(service.cap_drop, ['ALL']);
-  assert.ok(service.security_opt?.includes('no-new-privileges:true'));
-  assert.ok(!service.privileged && service.network_mode !== 'host');
+  // cap_drop: ALL does not prevent cap_add from re-granting privileges.
+  assert.ok(service.cap_add == null ||
+    (Array.isArray(service.cap_add) && service.cap_add.length === 0),
+    'Added Linux capabilities are forbidden');
+  assert.deepEqual(service.security_opt, ['no-new-privileges:true'],
+    'Additional or disabled security profiles are forbidden');
+  assert.ok(!service.privileged && service.network_mode == null,
+    'Privileged or overridden Compose networking is forbidden');
+  for (const field of ['pid', 'ipc', 'uts', 'cgroup', 'userns_mode',
+    'device_cgroup_rules', 'group_add', 'sysctls']) {
+    assert.ok(service[field] == null ||
+      (Array.isArray(service[field]) && service[field].length === 0),
+      'Unexpected Compose isolation override: ' + field);
+  }
   assert.ok(!service.volumes?.length && !service.devices?.length);
   assert.deepEqual(Object.keys(service.environment || {}).sort(),
     ['NEXT_TELEMETRY_DISABLED', 'NODE_ENV']);
@@ -79,7 +91,18 @@ export function verifyRuntimeInspection(container) {
   assert.equal(host.ReadonlyRootfs, true, 'Container root filesystem must be read-only');
   assert.notEqual(host.NetworkMode, 'host', 'Host networking is forbidden');
   assert.deepEqual(host.CapDrop, ['ALL']);
-  assert.ok(host.SecurityOpt?.includes('no-new-privileges:true'));
+  assert.ok(host.CapAdd == null ||
+    (Array.isArray(host.CapAdd) && host.CapAdd.length === 0),
+    'Runtime added Linux capabilities are forbidden');
+  assert.deepEqual(host.SecurityOpt, ['no-new-privileges:true'],
+    'Runtime security profiles differ from approved isolation');
+  for (const field of ['PidMode', 'IpcMode', 'UTSMode', 'CgroupnsMode', 'UsernsMode']) {
+    assert.ok(host[field] == null || host[field] === '' || host[field] === 'private',
+      'Unsafe runtime namespace mode: ' + field);
+  }
+  assert.ok(!host.Devices?.length && !host.DeviceRequests?.length &&
+    !host.GroupAdd?.length && !host.DeviceCgroupRules?.length,
+    'Unexpected runtime devices or supplementary groups');
   assert.ok(!host.Binds?.length && !host.Mounts?.length && !container.Mounts?.length,
     'Unexpected host mounts');
   assert.deepEqual(Object.keys(host.PortBindings || {}), ['3000/tcp'],
