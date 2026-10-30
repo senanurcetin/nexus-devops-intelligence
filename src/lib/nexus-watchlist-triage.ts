@@ -1,4 +1,4 @@
-import { sanitizeDigestText, type JarvisDigest } from './nexus-jarvis-digest.ts';
+import { JARVIS_DIGEST_SCHEMA, sanitizeDigestText, type JarvisDigest } from './nexus-jarvis-digest.ts';
 import type { RiskPostureState } from './nexus-risk-posture.ts';
 
 /**
@@ -57,10 +57,44 @@ export type WatchlistInput = { repository: string; digest: JarvisDigest | null }
 const isPostureState = (value: unknown): value is RiskPostureState =>
   typeof value === 'string' && Object.prototype.hasOwnProperty.call(POSTURE_RANK, value);
 
+/**
+ * JSON returned by the local MCP adapter is still an untrusted wire value.
+ * A valid status from an unrelated repository (or a mutated "write-enabled"
+ * envelope) must not be relabeled as evidence for the requested repository.
+ */
+function verifiedDigestFor(repository: string, digest: JarvisDigest | null): digest is JarvisDigest {
+  if (!digest || digest.schema !== JARVIS_DIGEST_SCHEMA ||
+      digest.data_source !== 'public-github-rest-via-local-nexus-devops' ||
+      typeof digest.repository !== 'string' ||
+      digest.repository.toLowerCase() !== repository.toLowerCase() ||
+      digest.access?.mode !== 'read_only' || !Array.isArray(digest.access.write_actions) ||
+      digest.access.write_actions.length !== 0 || digest.access.release_authorized !== false ||
+      digest.access.merge_approval !== false || !isPostureState(digest.posture?.state) ||
+      !Array.isArray(digest.investigations) || digest.investigations.length > 5 ||
+      !digest.investigations.every(item => item && ['high', 'medium', 'info'].includes(item.severity))) {
+    return false;
+  }
+  return (digest.sources?.actions?.state === 'verified' && digest.sources.actions.http_status === 200) ||
+    (digest.sources?.pull_requests?.state === 'verified' && digest.sources.pull_requests.http_status === 200);
+}
+
+/**
+ * Source links appear in Markdown without a text wrapper. Accept only the
+ * exact public GitHub run/PR URL shape for the requested repository and
+ * investigation kind, then construct the output URL from trusted components.
+ */
+function verifiedSourceUrl(repository: string, source: JarvisDigest['investigations'][number] | undefined): string | null {
+  if (!source || typeof source.source_url !== 'string') return null;
+  const match = /^https:\/\/github\.com\/([A-Za-z0-9_.-]+)\/([A-Za-z0-9_.-]+)\/(actions\/runs|pull)\/([1-9][0-9]*)$/.exec(source.source_url);
+  if (!match || `${match[1]}/${match[2]}`.toLowerCase() !== repository.toLowerCase() ||
+      !Number.isSafeInteger(Number(match[4])) ||
+      (source.source_type === 'workflow_run' ? match[3] !== 'actions/runs'
+        : source.source_type === 'pull_request' ? match[3] !== 'pull' : true)) return null;
+  return `https://github.com/${repository}/${match[3]}/${Number(match[4])}`;
+}
+
 function toEntry({ repository, digest }: WatchlistInput): WatchlistEntry {
-  const sourcesRead = digest &&
-    (digest.sources.actions.state === 'verified' || digest.sources.pull_requests.state === 'verified');
-  if (!digest || !sourcesRead || !isPostureState(digest.posture?.state)) {
+  if (!verifiedDigestFor(repository, digest)) {
     return {
       repository, readable: false, posture_state: null, headline: 'digest unavailable',
       high: 0, medium: 0, info: 0, coverage: 'none', first_url: null,
@@ -70,13 +104,13 @@ function toEntry({ repository, digest }: WatchlistInput): WatchlistEntry {
   const count = (severity: 'high' | 'medium' | 'info') =>
     digest.investigations.filter(item => item.severity === severity).length;
   return {
-    repository: digest.repository,
+    repository,
     readable: true,
     posture_state: digest.posture.state,
     headline: sanitizeDigestText(digest.posture.headline, 160),
     high: count('high'), medium: count('medium'), info: count('info'),
     coverage: sanitizeDigestText(digest.posture.coverage, 20),
-    first_url: digest.investigations[0]?.source_url ?? null,
+    first_url: verifiedSourceUrl(repository, digest.investigations[0]),
     note: digest.sources.actions.state !== 'verified' || digest.sources.pull_requests.state !== 'verified'
       ? 'Only one of the two sources was verified for this repository.' : null,
   };
@@ -113,7 +147,10 @@ export function triageWatchlist(inputs: WatchlistInput[], now: Date): WatchlistT
   };
 }
 
-const cell = (value: string) => value.replace(/\|/g, '/').replace(/[\r\n]+/g, ' ');
+// Escape untrusted Markdown/HTML as table text. Source URLs are validated separately.
+const cell = (value: string) => sanitizeDigestText(value, 600)
+  .replace(/\|/g, '/').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+  .replace(/[\\`*_{}\[\]()#+.!~-]/g, '\\const cell = (value: string) => value.replace(/\|/g, '/').replace(/[\r\n]+/g, ' ');');
 
 /** Markdown for the owner; every repository-derived string is already sanitised text. */
 export function watchlistMarkdown(triage: WatchlistTriage): string {
