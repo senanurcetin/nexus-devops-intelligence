@@ -37,6 +37,7 @@ npm run build
 node node_modules\next\dist\bin\next start -H 127.0.0.1 -p 3000    # the local service (keep it loopback-only)
 $env:NEXUS_DEVOPS_BASE_URL = 'http://127.0.0.1:3000'               # optional; this is the default
 npm run jarvis:mcp                                                  # MCP stdio server for Jarvis
+npm run jarvis:verify                                               # repeatable end-to-end check of the adapter against the running local service (no GitHub request; add `-- --repository owner/name` for one digest)
 ```
 
 `NEXUS_DEVOPS_BASE_URL` must be a literal-loopback `http` origin (`127.0.0.1` or `[::1]`, no credentials, path or query);

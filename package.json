@@ -24,7 +24,8 @@
     "verify:release:evidence": "node scripts/verify-release-evidence.mjs",
     "verify:pr:composition": "node scripts/verify-pr-composition.mjs",
     "jarvis:mcp": "node --import tsx scripts/jarvis-mcp-server.mjs",
-    "jarvis:digest": "node --import tsx scripts/jarvis-digest.mjs"
+    "jarvis:digest": "node --import tsx scripts/jarvis-digest.mjs",
+    "jarvis:verify": "node scripts/verify-jarvis-mcp.mjs"
   },
   "dependencies": {
     "lucide-react": "^0.475.0",
