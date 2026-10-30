@@ -43,6 +43,9 @@ Set-Location $RepoRoot
 $ErrorActionPreference = 'Continue'   # native stderr lines must not become terminating errors in PS 5.1
 $env:NEXT_TELEMETRY_DISABLED = '1'
 $env:NODE_ENV = 'production'
+# The scheduled task can start this script at BelowNormal priority; the node child inherits it and, on a loaded machine,
+# `next start` then needed ~9 minutes to become ready. Run at Normal (never higher) so a restart is not starved.
+try { (Get-Process -Id $PID).PriorityClass = [System.Diagnostics.ProcessPriorityClass]::Normal } catch { Write-Log "could not set Normal priority: $($_.Exception.Message)" }
 if (-not (Test-Path (Join-Path $RepoRoot '.next\BUILD_ID'))) {
   Write-Log 'no production build found; running npm run build once'
   & $NodePath (Join-Path $RepoRoot 'node_modules\next\dist\bin\next') build 2>&1 | Add-ToLog

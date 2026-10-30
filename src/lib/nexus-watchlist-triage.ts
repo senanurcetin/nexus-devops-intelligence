@@ -10,6 +10,7 @@ import type { RiskPostureState } from './nexus-risk-posture.ts';
  * NOT reported as safe, and the order is not approval to merge or release.
  */
 export const WATCHLIST_MAX_REPOSITORIES = 10;
+export const WATCHLIST_SCHEMA = 'nexus.devops.watchlist/v1' as const;
 
 export const WATCHLIST_ORDER_RULE =
   'Reading order, not a risk score: (1) posture state: investigate_observed, review_observed, ' +
@@ -45,6 +46,7 @@ export type WatchlistEntry = {
 };
 
 export type WatchlistTriage = {
+  schema: typeof WATCHLIST_SCHEMA;
   generated_at_utc: string;
   order_rule: string;
   scope_note: string;
@@ -159,6 +161,7 @@ export function triageWatchlist(inputs: WatchlistInput[], now: Date): WatchlistT
       : a.repository.toLowerCase() > b.repository.toLowerCase() ? 1 : 0;
   });
   return {
+    schema: WATCHLIST_SCHEMA,
     generated_at_utc: now.toISOString(),
     order_rule: WATCHLIST_ORDER_RULE,
     scope_note: WATCHLIST_SCOPE_NOTE,
