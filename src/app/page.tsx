@@ -16,6 +16,7 @@ import { filteredPublicPulls, pullBucket, pullBucketCount, pullBuckets, type Pul
 import { createPublicSampleExport, createSampleFilename, serializePublicSampleCsv } from '@/lib/nexus-public-sample-export';
 import { createAuditBrief, createAuditBriefFilename } from '@/lib/nexus-audit-brief';
 import { createInvestigationHandoff } from '@/lib/nexus-investigation-handoff';
+import { analyzeWorkflowRecurrence, describeRecurrenceSignal, RECURRENCE_SCOPE_NOTE, type WorkflowRecurrence } from '@/lib/nexus-workflow-recurrence';
 import { assessRepositoryRiskPosture } from '@/lib/nexus-risk-posture';
 import { buildRepositoryShareUrl, canonicalRepositoryPageUrl, readRepositoryLink, normalizeRepositoryInput } from '@/lib/nexus-repository-link';
 import { isPublicPrVerification, type PublicPrVerification } from '@/lib/nexus-pr-evidence';
@@ -366,6 +367,9 @@ export default function NexusDeveloperPreview() {
     asOf: new Date(),
   });
   const canExport = !loading && Boolean(actions.data || pulls.data);
+  // Deterministic, sample-bound repeated-failure signals; same verified rows as the Investigation Handoff (no visual filter).
+  let workflowRecurrence: WorkflowRecurrence[] = [];
+  try { workflowRecurrence = analyzeWorkflowRecurrence(runs); } catch { workflowRecurrence = []; }
 
   function inspectUtcTrend() {
     // Seven-day history is never requested by initial load/filter/CSV or URL hydration.
@@ -1044,6 +1048,32 @@ export default function NexusDeveloperPreview() {
               {riskPosture.evidenceLimitations.join(' · ')}. An unobserved issue is never proof that CI or a PR is safe.
             </p>
           </div>
+          {workflowRecurrence.length > 0 && (
+            <div aria-label="Repeated workflow failure signals, sampled runs only"
+              data-recurrence-count={workflowRecurrence.length}
+              className="nexus-devops-recurrence mt-4 rounded-xl border border-slate-700/70 bg-slate-950/60 p-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-[#a6d3fa]">Repeated failure signals - sample only</p>
+              <ul className="mt-3 grid gap-3 lg:grid-cols-2">
+                {workflowRecurrence.map(item => (
+                  <li key={item.workflow} data-signal={item.signal}
+                    className="rounded-lg border border-slate-800 bg-slate-950/70 p-3">
+                    <p className="text-sm font-semibold text-slate-100">{item.workflow}</p>
+                    <p className="mt-1 text-xs leading-5 text-slate-300">{describeRecurrenceSignal(item.signal)}</p>
+                    <p className="mt-1 text-xs tabular-nums text-slate-400">
+                      {item.confirmed_failures} confirmed failures in {item.sampled_runs} sampled runs
+                      {item.ignored_runs > 0 ? ' - ' + item.ignored_runs + ' not decisive' : ''}
+                    </p>
+                    <a href={item.latest_failure_url} target="_blank" rel="noopener noreferrer"
+                      aria-label={'Review latest failed ' + item.workflow + ' run on GitHub'}
+                      className="nexus-devops-queue-action mt-2 inline-flex min-h-10 items-center gap-1 text-xs font-medium text-[#4ea8ff] hover:text-[#cee8ff]">
+                      Review latest failed run <ArrowUpRight aria-hidden="true" className="h-4 w-4" />
+                    </a>
+                  </li>
+                ))}
+              </ul>
+              <p className="mt-3 text-xs leading-5 text-slate-400">{RECURRENCE_SCOPE_NOTE}</p>
+            </div>
+          )}
           {recommendations.length > 0 ? (
             <ol className="nexus-devops-queue mt-5 grid gap-3 lg:grid-cols-2">
               {recommendations.map(item => (

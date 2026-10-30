@@ -200,3 +200,18 @@ test('Jarvis digest carries the repeated-failure section in handoff_markdown wit
   assert.equal(digest.access.merge_approval, false);
   assert.ok(!('workflow_recurrence' in digest), 'no new top-level field: the pinned v1 shape is unchanged');
 });
+
+test('P3 dashboard panel: renders the same verified, unfiltered sample with no network, write or raw-HTML path', async () => {
+  const { readFileSync } = await import('node:fs');
+  const page = readFileSync(new URL('../src/app/page.tsx', import.meta.url), 'utf8');
+  assert.match(page, /analyzeWorkflowRecurrence\(runs\)/);
+  assert.doesNotMatch(page, /analyzeWorkflowRecurrence\(visibleRuns\)/);
+  const start = page.indexOf('{workflowRecurrence.length > 0 && (');
+  const end = page.indexOf('{recommendations.length > 0 ? (', start);
+  assert.ok(start > 0 && end > start, 'panel must sit before the recommendation queue and render only when a signal exists');
+  const region = page.slice(start, end);
+  assert.match(region, /aria-label="Repeated workflow failure signals, sampled runs only"/);
+  assert.match(region, /RECURRENCE_SCOPE_NOTE/);
+  assert.match(region, /rel="noopener noreferrer"/);
+  assert.doesNotMatch(region, /fetch\(|method:\s*['"](POST|PUT|PATCH|DELETE)['"]|dangerouslySetInnerHTML|onClick/);
+});

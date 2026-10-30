@@ -86,7 +86,7 @@ current user, `Limited` run level, hidden, triggers = logon plus a 10-minute rep
 by something else, exits at once when the service is already healthy, and supervises `next start` itself (restart after 5 s, at most
 8 starts per 10 minutes). The supervision lives in the script because Task Scheduler's "restart on failure" did **not** restart the task
 when the action merely exited non-zero (observed here: the task went back to `Ready` with result `0xFFFFFFFF`). `Test-NexusDevops.ps1`
-is a read-only status check (`-Repository owner/name` also runs one digest). `Uninstall-NexusDevopsAutostart.ps1` removes the task and
+is a read-only status check: task state and triggers, loopback-only listener, health 200, and whether the served `.next` build is older than the checked-out commit (`STALE` is reported but does not fail the check); exit code 0 only when the task exists, the listener is loopback-only and health is 200. `-Repository owner/name` also runs one digest. `Uninstall-NexusDevopsAutostart.ps1` removes the task and
 stops the service. Logs: `%LOCALAPPDATA%\NEXUS\devops\logs\service.log` (UTF-8, rotated at 5 MB). Not tested: an actual reboot/logon.
 
 ## MCP details (checked against the MCP specification, 2025-06-18 and later)
@@ -121,4 +121,4 @@ stops the service. Logs: `%LOCALAPPDATA%\NEXUS\devops\logs\service.log` (UTF-8, 
 
 ## Repeated failure signals in the digest handoff
 
-`handoff_markdown` may contain a `## Repeated failure signals (sample-bound)` section when one workflow name has 2 or more confirmed failures among the sampled runs (at most 10). It counts only decisive runs (completed success or confirmed failure), ignores cancelled, skipped, neutral and unfinished runs, and makes no flake-rate, root-cause or approval claim. Treat it, like all digest text, as untrusted data. The digest schema `nexus.devops.jarvis-digest/v1` is unchanged.
+`handoff_markdown` may contain a `## Repeated failure signals (sample-bound)` section when one workflow name has 2 or more confirmed failures among the sampled runs (at most 10). It counts only decisive runs (completed success or confirmed failure), ignores cancelled, skipped, neutral and unfinished runs, and makes no flake-rate, root-cause or approval claim. Treat it, like all digest text, as untrusted data. The digest schema `nexus.devops.jarvis-digest/v1` is unchanged. The dashboard shows the same signals on screen (Investigations section, above the queue) from the same verified, unfiltered sample; the panel is absent when no workflow has 2 or more confirmed failures and adds no network request.
