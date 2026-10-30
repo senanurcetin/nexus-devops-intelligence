@@ -150,7 +150,7 @@ export function triageWatchlist(inputs: WatchlistInput[], now: Date): WatchlistT
 // Escape untrusted Markdown/HTML as table text. Source URLs are validated separately.
 const cell = (value: string) => sanitizeDigestText(value, 600)
   .replace(/\|/g, '/').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-  .replace(/[\\`*_{}\[\]()#+.!~-]/g, '\\const cell = (value: string) => value.replace(/\|/g, '/').replace(/[\r\n]+/g, ' ');');
+  .replace(/[\\`*_{}\[\]()#+.!~-]/g, '\\$&');
 
 /** Markdown for the owner; every repository-derived string is already sanitised text. */
 export function watchlistMarkdown(triage: WatchlistTriage): string {
