@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, writeFileSync, rmSync, symlinkSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, parse } from 'node:path';
 import { analyzeLocalProject, localCheckMarkdown, LOCAL_CHECK_SCOPE_NOTE } from '../src/lib/nexus-local-check.ts';
@@ -180,6 +180,31 @@ test('collector: skips vendor folders, parses .git HEAD and remotes, refuses a d
   assert.throws(() => assertScannableRoot(parse(process.cwd()).root), /filesystem root/);
   assert.throws(() => assertScannableRoot(join(tmpdir(), 'definitely-missing-nexus-dir')), /does not exist/);
   assert.ok(MAX_FILES > 0);
+});
+
+test('collector: a directory link is not followed and nothing behind it is read or reported', t => {
+  const outside = mkdtempSync(join(tmpdir(), 'nexus-lc-out-'));
+  const dir = mkdtempSync(join(tmpdir(), 'nexus-lc-link-'));
+  try {
+    writeFileSync(join(outside, 'leak.js'), `const t = '${GH}';\n`);
+    writeFileSync(join(dir, 'ok.js'), 'const a = 1;\n');
+    try {
+      // 'junction' needs no privilege on Windows (Node reports it as a symbolic link); on POSIX it is an ordinary symlink.
+      symlinkSync(outside, join(dir, 'linked'), 'junction');
+    } catch (error) {
+      t.skip(`cannot create a directory link on this machine: ${error.code}`);
+      return;
+    }
+    const f = collectLocalFacts(dir);
+    assert.ok(f.files.includes('ok.js'));
+    assert.ok(!f.files.some(p => p === 'linked' || p.startsWith('linked/')), 'link target must not be listed');
+    assert.equal(f.text['linked/leak.js'], undefined);
+    const r = analyzeLocalProject(f, now);
+    assert.equal(r.findings.filter(x => x.id.startsWith('secret-')).length, 0);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+    rmSync(outside, { recursive: true, force: true });
+  }
 });
 
 test('CLI: bad arguments exit 2; a folder with a secret exits 1 and prints no secret', () => {
