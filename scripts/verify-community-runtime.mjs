@@ -89,7 +89,16 @@ export function verifyRuntimeInspection(container) {
   const host = container.HostConfig || {};
   assert.equal(host.Privileged, false, 'Privileged container is forbidden');
   assert.equal(host.ReadonlyRootfs, true, 'Container root filesystem must be read-only');
-  assert.notEqual(host.NetworkMode, 'host', 'Host networking is forbidden');
+  // A shared container network namespace bypasses the meaning of a dedicated
+  // Compose network even when host port bindings appear localhost-only.
+  assert.ok(typeof host.NetworkMode === 'string' &&
+    /^[A-Za-z0-9_.-]+$/.test(host.NetworkMode) &&
+    !['host', 'none'].includes(host.NetworkMode),
+  'Host, shared, missing or unsupported Docker network mode is forbidden');
+  assert.ok(host.Sysctls == null ||
+    (typeof host.Sysctls === 'object' && !Array.isArray(host.Sysctls) &&
+      Object.keys(host.Sysctls).length === 0),
+  'Unexpected runtime sysctls');
   assert.deepEqual(host.CapDrop, ['ALL']);
   assert.ok(host.CapAdd == null ||
     (Array.isArray(host.CapAdd) && host.CapAdd.length === 0),
