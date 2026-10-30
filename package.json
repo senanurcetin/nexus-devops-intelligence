@@ -26,6 +26,7 @@
     "jarvis:mcp": "node --import tsx scripts/jarvis-mcp-server.mjs",
     "jarvis:digest": "node --import tsx scripts/jarvis-digest.mjs",
     "jarvis:watchlist": "node --import tsx scripts/jarvis-watchlist.mjs",
+    "jarvis:localcheck": "node --import tsx scripts/jarvis-localcheck.mjs",
     "jarvis:verify": "node scripts/verify-jarvis-mcp.mjs"
   },
   "dependencies": {
