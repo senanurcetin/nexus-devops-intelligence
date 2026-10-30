@@ -19,7 +19,8 @@ export const WATCHLIST_ORDER_RULE =
 
 export const WATCHLIST_SCOPE_NOTE =
   'Each row comes from the same bounded public sample as a single digest (10 workflow runs, 5 open PRs, ' +
-  'anonymous GitHub reads). "no_confirmed_signal" means nothing was observed in that sample, not that the ' +
+  'anonymous GitHub reads). Only investigations from verified source receipts contribute counts and links. ' +
+  '"no_confirmed_signal" means nothing was observed in that sample, not that the ' +
   'repository is safe. This is not an audit and not approval to merge, release, deploy or retry.';
 
 const POSTURE_RANK: Record<RiskPostureState, number> = {
@@ -114,8 +115,15 @@ function toEntry({ repository, digest }: WatchlistInput): WatchlistEntry {
       note: 'No verified source for this repository; retry later. Absence of data is not a clean result.',
     };
   }
+  // Source status labels are not sufficient: each investigation must be backed
+  // by its own source's canonical, verified receipt before it can be counted or linked.
+  const actionsVerified = verifiedSourceReceipt(digest.sources.actions);
+  const pullsVerified = verifiedSourceReceipt(digest.sources.pull_requests);
+  const verifiedInvestigations = digest.investigations.filter(item =>
+    item.source_type === 'workflow_run' ? actionsVerified :
+      item.source_type === 'pull_request' ? pullsVerified : false);
   const count = (severity: 'high' | 'medium' | 'info') =>
-    digest.investigations.filter(item => item.severity === severity).length;
+    verifiedInvestigations.filter(item => item.severity === severity).length;
   return {
     repository,
     readable: true,
@@ -123,8 +131,8 @@ function toEntry({ repository, digest }: WatchlistInput): WatchlistEntry {
     headline: sanitizeDigestText(digest.posture.headline, 160),
     high: count('high'), medium: count('medium'), info: count('info'),
     coverage: sanitizeDigestText(digest.posture.coverage, 20),
-    first_url: verifiedSourceUrl(repository, digest.investigations[0]),
-    note: !verifiedSourceReceipt(digest.sources.actions) || !verifiedSourceReceipt(digest.sources.pull_requests)
+    first_url: verifiedSourceUrl(repository, verifiedInvestigations[0]),
+    note: !actionsVerified || !pullsVerified
       ? 'Only one of the two sources was verified for this repository.' : null,
   };
 }
