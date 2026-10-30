@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import {
   triageWatchlist, watchlistMarkdown, WATCHLIST_MAX_REPOSITORIES, WATCHLIST_ORDER_RULE, WATCHLIST_SCOPE_NOTE,
+  WATCHLIST_SCHEMA,
 } from '../src/lib/nexus-watchlist-triage.ts';
 
 const now = new Date('2026-10-30T12:00:00.000Z');
@@ -35,6 +36,8 @@ test('orders by posture, then high count, then total, then name', () => {
   assert.deepEqual(t.entries.map(e => e.repository),
     ['o/more', 'o/a', 'o/b', 'o/review', 'o/fresh', 'o/wait', 'o/quiet']);
   assert.equal(t.readable, 7);
+  assert.equal(t.schema, 'nexus.devops.watchlist/v1'); // versioned contract for the Jarvis bridge
+  assert.equal(t.schema, WATCHLIST_SCHEMA);
 });
 
 test('unreadable digests are listed last and never read as clean', () => {
