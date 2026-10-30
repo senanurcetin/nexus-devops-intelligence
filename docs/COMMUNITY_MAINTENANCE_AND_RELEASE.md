@@ -1,6 +1,6 @@
 # Community maintenance, reproducible installation and release playbook
 
-**State:** DRAFT MANUAL PROCESS — **NO-GO** as of 18 October 2026. No Docker installer is present in `main`; it is proposed by [draft PR #80](https://github.com/senanurcetin/nexus-devops-intelligence/pull/80). The commands below are a **future acceptance protocol**, not a transcript of executed commands. An older Vercel deployment is not a local Community release.
+**State:** DRAFT MANUAL PROCESS — **NO-GO** as of 18 October 2026. The Docker installer entered `main` with [PR #80](https://github.com/senanurcetin/nexus-devops-intelligence/pull/80) (merged 28 October 2026) but has not been accepted on Windows/Ubuntu or released. The commands below are a **future acceptance protocol**, not a transcript of executed commands. An older Vercel deployment is not a local Community release.
 
 ## 1. Preparation and immutable identity
 
@@ -21,7 +21,7 @@ docker version
 docker compose version
 ```
 
-**Do not run** Docker commands on the present `main` until a reviewed Docker candidate has actually merged. For proposed #80 only, a local checkout of that **draft** SHA may be used for isolated development QA, not as a public release.
+**Do not run** Docker commands from `main` as a release procedure until the Windows/Ubuntu acceptance (issue #81) passes. A local checkout may be used for isolated development QA, not as a public release.
 
 ## 2. Reproducible source checks
 

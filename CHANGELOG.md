@@ -1,8 +1,8 @@
 # Changelog
 
-## Unreleased — 18 October 2026 — Community Docker candidate (draft #80)
+## Unreleased — 18 October 2026 — Community Docker candidate (PR #80, merged 28 October 2026)
 
-**Release state: NO-GO / not tagged.** The repository's `0.1.0` package metadata is not a public Community release; hosted Vercel Preview/Production continue to have separate authorization and older deployment sources. The current draft must not be advertised as a verified Windows/Ubuntu installer.
+**Release state: NO-GO / not tagged.** The repository's `0.1.0` package metadata is not a public Community release; hosted Vercel Preview/Production continue to have separate authorization and older deployment sources. The current candidate must not be advertised as a verified Windows/Ubuntu installer.
 
 - Added an opt-in Next.js standalone multi-stage Node 22 Docker candidate, Docker Compose host loopback mapping (`127.0.0.1:3000`), non-root runtime and a default-deny Docker context. This is **source packaging**, not independently accepted image/runtime security.
 - Added a local-only six-request smoke script for the homepage and five malformed public-repository API endpoints; it does not perform real upstream GitHub requests.
