@@ -67,7 +67,10 @@ gizleme; bağımsız Codex katkısını ayrıca ayır.
 - Test-fixture ve regresyon testleri önce `fd81c2706391039115e6719661141bb6a1f4894d` commit'i ile yazıldı.
 - Ana SHA'daki önceki `triageWatchlist` ve Markdown üretimi, GitHub'dan okunmuş kaynak metnindeki TypeScript tipleri geçici olarak çıkartılıp izole V8 ortamında çalıştırıldığında üç riskli davranışı gösterdi: başka repo digest'i kabulü, kontrolsüz dış URL ve ham HTML.
 - Düzeltme dalının son kodu üzerinde **20/20 izole V8 davranış kontrolü PASS**: üst seviye ve iç içe posture repo kimliği, reddedilen release yetkisi iddiası, eksik/bozuk envelope, canonical kaynaklar, kötü niyetli URL, HTML/Markdown ve tablo yapısı. İç içe repo ve release iddiasının önceki dal sürümünde yanlışlıkla kabul edildiği ayrıca gözlendi.
-- Bu kontrollerde import edilen sanitizer'ın eşdeğeri test ortamında yeniden üretildi. Dolayısıyla **tam Node test sonucu, TypeScript typecheck, Next.js build veya Codex CLI çalışması değildir.** Bunlar halen **NOT RUN**.
+- İzole V8 kontrolünde import edilen sanitizer'ın eşdeğeri test ortamında yeniden üretildi; bu sonuçlar aşağıdaki **gerçek Node testlerinden ayrıdır**.
+- **30 Ekim 2026, ayrı Windows klonu, tam kaynak commit SHA `666ba42ca34e3386ae833165a0c818a7bc1dea43`, Node v24.13.0 / npm 11.6.2:** `node --import tsx --test tests/nexus-watchlist-triage.test.mjs` **11/11 PASS, exit 0**; `npm test` **373/373 PASS, exit 0**; `npm run typecheck` **PASS, exit 0**; `npm run build` **PASS, exit 0**, Next.js 15.5.28. Son `git status --short` temizdi.
+- **Bağımlılık kurulumu sınırı:** `npm ci --ignore-scripts --no-audit --no-fund` 480 saniyelik zaman sınırında tamamlanmadı; **PASS değildir**. Gerçek testler, aynı `package-lock.json` SHA-256 (`823DB7B6853D814EAD1F9B7AD05E48A5F8AB57337687D2144F46083422B6A4E7`) bulunan mevcut başka bir yerel NEXUS klonundan **test klasörüne kopyalanan** `node_modules` ile çalıştırıldı. Mevcut ana çalışma klasörünün kaynakları değiştirilmedi. Bu, temiz npm kurulumu onayı değildir.
+- Bu Windows source-only doğrulamaları **GitHub-hosted Actions, Ubuntu, Docker, Preview, Production veya Codex CLI oturumu değildir**. Bu PR GPT-6 destekli hazırlanmıştır; bağımsız gerçek Codex oturumunun kanıtları farklı belgelerde tutulur.
 
 ## İnceleme ve yayın kontrolü
 
@@ -76,9 +79,9 @@ Bu repo, test ve öğretici **bir PR içinde inceleme için** sunulmalıdır. PR
 | Kanıt | Bu değişiklikte durum |
 | --- | --- |
 | Açık kaynak değişiklik ve regresyon testleri | Geliştirme dalında mevcut |
-| GitHub PR ve review | PR durumu ayrıca kontrol edilmeli |
+| GitHub PR ve review | [PR #100](https://github.com/senanurcetin/nexus-devops-intelligence/pull/100); güncel review/merge durumunu GitHub'dan kontrol edin |
 | GitHub ana SHA / dal kaynaklı izole V8 yeniden üretim | **Önceki davranış 3/3 doğrulandı; düzeltilmiş davranış 20/20 PASS** (tam Node testi değil) |
-| Bağımsız yerel Node test, typecheck, build | **NOT RUN** — bu ortamda repo bağımlılıkları kurulamadı |
+| Bağımsız yerel Node test, typecheck, build | **11/11 + 373/373 Node PASS; typecheck PASS; Next build PASS** — Windows, Node 24.13.0, SHA `666ba42c`; `npm ci` **TIMEOUT / NOT PASS** |
 | Gerçek Codex CLI kodlama/test oturumu | **NOT RUN** |
 | Video/sosyal medya/topluluk geri bildirimi | **NOT PUBLISHED / doğrulanmadı** |
 | Hosted CI, Production, Docker OS kabulü | **NOT RUN / yetkilendirilmedi** |
