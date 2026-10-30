@@ -17,7 +17,7 @@ const digest = (repository, state, { high = 0, medium = 0, info = 0, actions = '
   data_source: 'public-github-rest-via-local-nexus-devops',
   access: { mode: 'read_only', write_actions: [], release_authorized: false, merge_approval: false },
   sources: { actions: source(actions), pull_requests: source(prs) },
-  posture: { state, headline, coverage: 'both' },
+  posture: { state, headline, coverage: 'both', repository, releaseAuthorized: false },
   investigations: [...inv('high', high), ...inv('medium', medium), ...inv('info', info)],
 });
 
@@ -104,6 +104,8 @@ test('fails closed on missing or writable digest envelopes and malformed sources
   const variants = [
     { ...original, schema: 'other/v1' },
     { ...original, data_source: 'arbitrary' },
+    { ...original, posture: { ...original.posture, repository: 'o/other' } },
+    { ...original, posture: { ...original.posture, releaseAuthorized: true } },
     { ...original, access: { ...original.access, release_authorized: true } },
     { ...original, access: { ...original.access, write_actions: ['merge'] } },
     { ...original, sources: null },
