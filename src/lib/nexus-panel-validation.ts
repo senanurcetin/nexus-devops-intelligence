@@ -1,4 +1,4 @@
-import { validHeadFields, type PublicActionsSummary } from './github-public-actions.ts';
+import { isHeadSha, validHeadFields, type PublicActionsSummary } from './github-public-actions.ts';
 import type { PublicPullSummary, PullAttention } from './nexus-public-prs.ts';
 
 /**
@@ -94,7 +94,8 @@ export function isPublicPullSample(
         !string(pr.title, 300) || !string(pr.author, 100) ||
         !string(pr.explanation, 2000) || !timestamp(pr.updated_at) ||
         pr.html_url !== `https://github.com/${repository}/pull/${pr.number}` ||
-        !attentionStates.has(pr.attention as PullAttention)) {
+        !attentionStates.has(pr.attention as PullAttention) ||
+        !(pr.head_sha === undefined || isHeadSha(pr.head_sha))) {
       return false;
     }
     ids.add(pr.number);

@@ -3,7 +3,7 @@ import { createPublicSampleExport, createSampleFilename } from './nexus-public-s
 import { recommendInvestigations } from './nexus-recommendations.ts';
 import { assessRepositoryRiskPosture } from './nexus-risk-posture.ts';
 import { analyzeWorkflowRecurrence, describeRecurrenceSignal, RECURRENCE_SCOPE_NOTE } from './nexus-workflow-recurrence.ts';
-import { analyzeChangeImpact, CHANGE_IMPACT_SCOPE_NOTE, describeChangeImpact } from './nexus-change-impact.ts';
+import { analyzeChangeImpact, changeImpactMarkdownLines, hasChangeImpact } from './nexus-change-impact.ts';
 
 /**
  * Client-only handoff of up to five source-backed investigation suggestions.
@@ -108,16 +108,11 @@ export function createInvestigationHandoff(input: SampleExportInput): {
     }
     lines.push('', '_' + safeMarkdownText(RECURRENCE_SCOPE_NOTE, 400) + '_', '');
   }
-  const impact = snapshot.actions ? analyzeChangeImpact(snapshot.repository, snapshot.actions.records) : null;
-  if (impact && impact.signals.length) {
-    lines.push('## Change impact signals (sample-bound)', '');
-    for (const row of impact.signals) {
-      lines.push('- ' + safeMarkdownText(row.workflow) + (row.head_branch ? ' on branch ' + safeMarkdownText(row.head_branch) : '') + ': ' +
-        describeChangeImpact(row) + '. [Failing run](' + row.failing_run_url + '), [passing run](' + row.passing_run_url + ')' +
-        (row.compare_url ? ', [compare commits](' + row.compare_url + ')' : '') + '.');
-    }
-    lines.push('', '_' + safeMarkdownText(CHANGE_IMPACT_SCOPE_NOTE, 700) + ' ' + impact.runs_with_commit_data + ' of ' +
-      impact.sampled_runs + ' sampled runs carried commit data._', '');
+  const impact = snapshot.actions
+    ? analyzeChangeImpact(snapshot.repository, snapshot.actions.records, snapshot.pull_requests?.records ?? [])
+    : null;
+  if (impact && hasChangeImpact(impact)) {
+    lines.push('## Change impact signals (sample-bound)', '', ...changeImpactMarkdownLines(impact, safeMarkdownText), '');
   }
   lines.push(
     '## Checks before any engineering action',

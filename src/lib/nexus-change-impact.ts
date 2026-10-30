@@ -46,19 +46,38 @@ export type ChangeImpact = {
   failing_runs: number;
 };
 
+/** A sampled open PR; only an exact head commit id can match a sampled run. */
+export type PullRunInput = { number: number; html_url: string; head_sha?: string };
+
+export type PullRunLink = {
+  number: number;
+  html_url: string;
+  head_sha: string;
+  /** Workflows whose latest decisive run on the PR head commit failed (at most 3 are listed). */
+  failing: Array<{ workflow: string; run_url: string }>;
+  failing_workflows: number;
+};
+
 export type ChangeImpactResult = {
   signals: ChangeImpact[];
+  pull_links: PullRunLink[];
   sampled_runs: number;
   runs_with_commit_data: number;
+  sampled_pull_requests: number;
+  pull_requests_with_commit_data: number;
 };
 
 export const CHANGE_IMPACT_SAMPLE_LIMIT = 10;
+const PULL_SAMPLE_LIMIT = 5;
 export const MAX_CHANGE_IMPACT_SIGNALS = 5;
+export const MAX_PULL_LINKS = 5;
+const MAX_LISTED_FAILING = 3;
 export const CHANGE_IMPACT_SCOPE_NOTE =
   'Compares commits only between runs inside the exported sample (at most 10 recent runs) that carry commit data. ' +
   'A window shows where decisive outcomes changed in this sample, not which change caused the failure; ' +
   'a same-commit conflict points at a rerun or environment effect, not a diagnosis. ' +
-  'It is not a root cause, risk score or retry/merge approval, and older runs are not inspected.';
+  'It is not a root cause, risk score or retry/merge approval, and older runs are not inspected. ' +
+  'A pull request link matches only an exact head-commit id between a sampled open PR and a sampled run; a newer push to the PR is not seen.';
 
 const time = (value: string): number => Date.parse(value);
 
@@ -73,10 +92,22 @@ function isDecisive(run: ChangeImpactRun): boolean {
   return run.status === 'completed' && (isConfirmedWorkflowFailure(run.conclusion) || run.conclusion === 'success');
 }
 
-export function analyzeChangeImpact(repository: string, records: readonly ChangeImpactRun[]): ChangeImpactResult {
+export function analyzeChangeImpact(
+  repository: string,
+  records: readonly ChangeImpactRun[],
+  pulls: readonly PullRunInput[] = [],
+): ChangeImpactResult {
   parsePublicRepository(repository);
   if (!Array.isArray(records)) throw new Error('Workflow records must be an array.');
   if (records.length > CHANGE_IMPACT_SAMPLE_LIMIT) throw new Error('Workflow sample exceeds the bounded limit.');
+  if (!Array.isArray(pulls) || pulls.length > PULL_SAMPLE_LIMIT) throw new Error('Pull request sample exceeds the bounded limit.');
+  for (const pr of pulls) {
+    if (!pr || !Number.isSafeInteger(pr.number) || pr.number < 1 ||
+        pr.html_url !== 'https://github.com/' + repository + '/pull/' + pr.number ||
+        (pr.head_sha !== undefined && !isHeadSha(pr.head_sha))) {
+      throw new Error('Invalid pull request record.');
+    }
+  }
   const byWorkflow = new Map<string, Decisive[]>();
   let withCommit = 0;
   for (const run of records) {
@@ -148,11 +179,61 @@ export function analyzeChangeImpact(repository: string, records: readonly Change
 
   signals.sort((a, b) => rank[a.kind] - rank[b.kind] || b.failing_runs - a.failing_runs ||
     a.workflow.localeCompare(b.workflow, 'en') || a.failing_sha.localeCompare(b.failing_sha, 'en'));
+
+  // Sampled open PRs whose exact head commit has a failing workflow among the sampled runs.
+  const pull_links: PullRunLink[] = [];
+  for (const pr of pulls) {
+    if (pr.head_sha === undefined) continue;
+    const failing: Array<{ workflow: string; run_url: string }> = [];
+    for (const [workflow, runs] of byWorkflow) {
+      const latest = [...runs].sort(newestFirst).find(run => run.head_sha === pr.head_sha);
+      if (latest && isConfirmedWorkflowFailure(latest.conclusion)) failing.push({ workflow, run_url: latest.html_url });
+    }
+    if (!failing.length) continue;
+    failing.sort((a, b) => a.workflow.localeCompare(b.workflow, 'en'));
+    pull_links.push({
+      number: pr.number, html_url: pr.html_url, head_sha: pr.head_sha,
+      failing: failing.slice(0, MAX_LISTED_FAILING), failing_workflows: failing.length,
+    });
+  }
+  pull_links.sort((a, b) => b.number - a.number);
   return {
     signals: signals.slice(0, MAX_CHANGE_IMPACT_SIGNALS),
+    pull_links: pull_links.slice(0, MAX_PULL_LINKS),
     sampled_runs: records.length,
     runs_with_commit_data: withCommit,
+    sampled_pull_requests: pulls.length,
+    pull_requests_with_commit_data: pulls.filter(pr => pr.head_sha !== undefined).length,
   };
+}
+
+export const hasChangeImpact = (impact: ChangeImpactResult): boolean =>
+  impact.signals.length > 0 || impact.pull_links.length > 0;
+
+export function describePullRunLink(link: PullRunLink): string {
+  return 'head commit ' + shortSha(link.head_sha) + ' failed ' + link.failing_workflows +
+    (link.failing_workflows === 1 ? ' workflow' : ' workflows') + ' in the sampled runs';
+}
+
+/** Markdown bullet lines shared by the Evidence Brief and the Investigation Handoff; safe sanitises third-party text. */
+export function changeImpactMarkdownLines(
+  impact: ChangeImpactResult,
+  safe: (value: string, limit?: number) => string,
+): string[] {
+  const lines: string[] = [];
+  for (const row of impact.signals) {
+    lines.push('- ' + safe(row.workflow) + (row.head_branch ? ' on branch ' + safe(row.head_branch) : '') + ': ' +
+      describeChangeImpact(row) + '. [Failing run](' + row.failing_run_url + '), [passing run](' + row.passing_run_url + ')' +
+      (row.compare_url ? ', [compare commits](' + row.compare_url + ')' : '') + '.');
+  }
+  for (const link of impact.pull_links) {
+    lines.push('- Pull request [#' + link.number + '](' + link.html_url + '): ' + describePullRunLink(link) + ': ' +
+      link.failing.map(item => safe(item.workflow) + ' ([run](' + item.run_url + '))').join(', ') + '.');
+  }
+  lines.push('', '_' + safe(CHANGE_IMPACT_SCOPE_NOTE, 900) + ' ' + impact.runs_with_commit_data + ' of ' +
+    impact.sampled_runs + ' sampled runs and ' + impact.pull_requests_with_commit_data + ' of ' +
+    impact.sampled_pull_requests + ' sampled pull requests carried commit data._');
+  return lines;
 }
 
 export const shortSha = (sha: string): string => sha.slice(0, 7);

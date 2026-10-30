@@ -98,6 +98,7 @@ export function createPublicSampleExport(input: SampleExportInput): PublicSample
       number: pr.number, title: pr.title, author: pr.author,
       updated_at: pr.updated_at, html_url: pr.html_url,
       attention: pr.attention, explanation: pr.explanation,
+      ...(pr.head_sha ? { head_sha: pr.head_sha } : {}),
     })),
   } : null;
 

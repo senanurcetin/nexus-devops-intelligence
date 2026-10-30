@@ -1,6 +1,6 @@
 import { parsePublicRepository } from './github-public-actions.ts';
 import { analyzeWorkflowRecurrence, describeRecurrenceSignal, RECURRENCE_SCOPE_NOTE } from './nexus-workflow-recurrence.ts';
-import { analyzeChangeImpact, CHANGE_IMPACT_SCOPE_NOTE, describeChangeImpact } from './nexus-change-impact.ts';
+import { analyzeChangeImpact, changeImpactMarkdownLines, hasChangeImpact } from './nexus-change-impact.ts';
 import type { PublicSampleExport } from './nexus-public-sample-export.ts';
 import { createSampleFilename } from './nexus-public-sample-export.ts';
 
@@ -113,16 +113,9 @@ export function createAuditBrief(snapshot: PublicSampleExport): string {
       }
       lines.push('', '_' + safeText(RECURRENCE_SCOPE_NOTE, 400) + '_');
     }
-    const impact = analyzeChangeImpact(snapshot.repository, actions.records);
-    if (impact.signals.length) {
-      lines.push('', '#### Change impact signals (sample-bound)', '');
-      for (const row of impact.signals) {
-        lines.push('- ' + safeText(row.workflow) + (row.head_branch ? ' on branch ' + safeText(row.head_branch) : '') + ': ' +
-          describeChangeImpact(row) + '. [Failing run](' + row.failing_run_url + '), [passing run](' + row.passing_run_url + ')' +
-          (row.compare_url ? ', [compare commits](' + row.compare_url + ')' : '') + '.');
-      }
-      lines.push('', '_' + safeText(CHANGE_IMPACT_SCOPE_NOTE, 700) + ' ' + impact.runs_with_commit_data + ' of ' +
-        impact.sampled_runs + ' sampled runs carried commit data._');
+    const impact = analyzeChangeImpact(snapshot.repository, actions.records, snapshot.pull_requests?.records ?? []);
+    if (hasChangeImpact(impact)) {
+      lines.push('', '#### Change impact signals (sample-bound)', '', ...changeImpactMarkdownLines(impact, safeText));
     }
     lines.push('');
   } else {
