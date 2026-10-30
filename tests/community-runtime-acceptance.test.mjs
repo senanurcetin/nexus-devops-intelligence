@@ -10,6 +10,8 @@ const id = 'c'.repeat(64);
 const compose = {
   services: {
     nexus: {
+      image: 'nexus-devops-community:local',
+      build: { context: process.cwd(), dockerfile: 'Dockerfile' },
       ports: [{ host_ip: '127.0.0.1', target: 3000, published: '3000' }],
       read_only: true,
       cap_drop: ['ALL'],
@@ -100,6 +102,18 @@ test('Compose rejects public port, extra services, credentials and privilege esc
     x => { x.services.nexus.read_only = false; },
     x => { x.services.nexus.cap_drop = []; },
     x => { x.services.nexus.environment.GITHUB_TOKEN = 'not-a-real-token'; },
+    x => { x.services.nexus.image = 'untrusted/other:latest'; },
+    x => { x.services.nexus.build.context = '/tmp/other-source'; },
+    x => { x.services.nexus.build.dockerfile = 'Dockerfile.override'; },
+    x => { x.services.nexus.build.args = { LEAK: 'synthetic-test-value' }; },
+    x => { x.services.nexus.build.ssh = ['default']; },
+    x => { x.services.nexus.build.dockerfile_inline = 'FROM scratch'; },
+    x => { x.services.nexus.env_file = ['.env']; },
+    x => { x.services.nexus.command = ['node', 'different.js']; },
+    x => { x.services.nexus.entrypoint = ['other-entrypoint']; },
+    x => { x.services.nexus.user = 'root'; },
+    x => { x.services.nexus.secrets = ['test-secret']; },
+    x => { x.services.nexus.configs = ['unsafe-config']; },
   ];
   for (const mutate of cases) {
     const config = clone(compose);
