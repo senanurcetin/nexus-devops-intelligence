@@ -2,7 +2,9 @@
 
 This is a dated, **GitHub-search-based discovery record**, not a formal Anthropic eligibility verdict. Per owner instruction, GitHub account age verification is deferred until final review.
 
-**Update:** All 15 search-reported merged PRs have now been individually verified for author, destination owner, actual merge state, and UTC merge date. See the [15-row verified evidence register](OSS_VERIFIED_THIRD_PARTY_MERGED_PRS_2026-10-30.md) for source links and exact timestamps. That verification does not establish Anthropic's subjective qualitative acceptance.\n\n## Measured starting point
+**Update:** All 15 search-reported merged PRs have now been individually verified for author, destination owner, actual merge state, and UTC merge date. See the [15-row verified evidence register](OSS_VERIFIED_THIRD_PARTY_MERGED_PRS_2026-10-30.md) for source links and exact timestamps. That verification does not establish Anthropic's subjective qualitative acceptance.
+
+## Measured starting point
 
 GitHub-connected PR search with `author:senanurcetin`, `merged:>=2025-10-30`, and `-user:senanurcetin` returned **15 merged upstream PRs**. An analogous search for open third-party PRs returned **33**. Open PRs are not credited toward Anthropic's 100 merged external-PR threshold. If all 15 merged contributions qualify, the remaining numerical gap is **85**, but Anthropic can exclude trivial or manipulated activity.
 
@@ -13,6 +15,10 @@ GitHub-connected PR search with `author:senanurcetin`, `merged:>=2025-10-30`, an
 - Altair: [#4178](https://github.com/vega/altair/pull/4178), [#4179](https://github.com/vega/altair/pull/4179), [#4180](https://github.com/vega/altair/pull/4180)
 - DuckDB docs: [#7494](https://github.com/duckdb/duckdb-web/pull/7494), [#7495](https://github.com/duckdb/duckdb-web/pull/7495), [#7496](https://github.com/duckdb/duckdb-web/pull/7496)
 - [SciPy #26391](https://github.com/scipy/scipy/pull/26391), [Plotly #5823](https://github.com/plotly/plotly.py/pull/5823)
+
+## Complete 33-PR CI and review checkpoint
+
+See the [33-row upstream PR review and CI matrix](OSS_UPSTREAM_PR_REVIEW_MATRIX_2026-10-30.md), linked to each PR and its observed head revision. As of the 30 October 2026 snapshot: **3 GitHub Actions successes**, **20 `action_required` authorization holds**, **9 PRs with no visible workflow/commit status**, and **1 PR with a failing CircleCI Python 3.9 check** (12 other statuses successful). This is not upstream acceptance, and missing or authorization-blocked checks are not labeled successful.
 
 ## Review priorities
 
