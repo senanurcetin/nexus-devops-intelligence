@@ -95,3 +95,33 @@ test('unknown, malformed or future merged timestamps never count as verified', a
     assert.equal(result.merged_in_other_owners_repositories.complete, false);
   }
 });
+
+test('rejects normalized impossible dates and noncanonical merged timestamps', async () => {
+  for (const mergedAt of [
+    '2026-02-30T12:00:00Z',
+    '2026-10-20',
+    '2026-10-20T12:00:00+00:00',
+    '2026-10-20T12:00:00.1Z',
+    '2026-10-20T12:00:00.000+00:00',
+  ]) {
+    const item = pr('upstream', 78);
+    item.pull_request.merged_at = mergedAt;
+    const result = await auditUpstreamPRs('tester', {
+      now, fetchImpl: fixture([item]).fetchImpl,
+    });
+    assert.equal(result.merged_in_other_owners_repositories.confirmed_count, null, mergedAt);
+    assert.equal(result.merged_in_other_owners_repositories.observed_valid_external_prs, 0, mergedAt);
+    assert.equal(result.merged_in_other_owners_repositories.complete, false, mergedAt);
+  }
+});
+
+test('accepts exact GitHub UTC merged timestamps with seconds or milliseconds', async () => {
+  const seconds = pr('upstream', 79);
+  const milliseconds = pr('upstream', 80);
+  milliseconds.pull_request.merged_at = '2026-10-20T12:00:00.123Z';
+  const result = await auditUpstreamPRs('tester', {
+    now, fetchImpl: fixture([seconds, milliseconds]).fetchImpl,
+  });
+  assert.equal(result.merged_in_other_owners_repositories.confirmed_count, 2);
+  assert.equal(result.merged_in_other_owners_repositories.complete, true);
+});
