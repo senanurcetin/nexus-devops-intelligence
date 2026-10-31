@@ -79,13 +79,15 @@ function Invoke-Step([string]$Name, [string]$File, [string[]]$Arguments, [string
   try {
     $p = Start-Process -FilePath $File -ArgumentList $argLine -WorkingDirectory $WorkDir -WindowStyle Hidden -PassThru `
       -RedirectStandardOutput $outFile -RedirectStandardError $errFile
+    # Reading Handle caches the process handle; without it Windows PowerShell 5.1 can return a null ExitCode.
+    $null = $p.Handle
     try { $p.PriorityClass = 'BelowNormal' } catch { }
     if (-not $p.WaitForExit($TimeoutSec * 1000)) {
       $timedOut = $true
       & taskkill.exe /PID $p.Id /T /F 2>&1 | Out-Null
     }
     $p.WaitForExit()
-    $exit = $p.ExitCode
+    if ($null -eq $p.ExitCode) { $exit = -4 } else { $exit = [int]$p.ExitCode }
   } catch {
     $exit = -2
     [IO.File]::WriteAllText($errFile, $_.Exception.Message, $Utf8)
