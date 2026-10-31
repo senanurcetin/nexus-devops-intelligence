@@ -306,17 +306,41 @@ switch ($Task) {
       } else {
         $steps += [pscustomobject]@{ name = 'jarvis-devops-ruff'; exit = -3; timed_out = $false; seconds = 0; stdout = ''; tail = 'python or Jarvis tree not found' }
       }
+      # A node test run whose ONLY failures are Windows symlink-privilege errors (EPERM on fs.symlink) is an environment limit, not a code
+      # defect. It is reported as pass_env_limited with the counts and stays visible; any other failure keeps the gate red.
+      $envNotes = @()
+      foreach ($s in $steps) {
+        $s | Add-Member -NotePropertyName env_limited -NotePropertyValue $false -Force
+        if ($s.name -eq 'devops-node-tests' -and $s.exit -eq 1 -and -not $s.timed_out) {
+          $failing = ($s.stdout -split 'failing tests:', 2)
+          if ($failing.Count -eq 2) {
+            # One block per failing test ("test at <file>:<line>"); every block must contain the symlink EPERM error and no other error.
+            $blocks = @(($failing[1] -split '(?m)^test at ') | Select-Object -Skip 1)
+            $testCount = $blocks.Count
+            $allPerm = ($testCount -gt 0)
+            foreach ($b in $blocks) {
+              $errs = @(($b -split "`r?`n") | Where-Object { $_ -match '^\s+\w*Error\b' })
+              if ($errs.Count -eq 0 -or @($errs | Where-Object { $_ -notmatch 'EPERM: operation not permitted, symlink' }).Count -gt 0) { $allPerm = $false }
+            }
+            if ($allPerm) {
+              $s.env_limited = $true
+              $envNotes += "$testCount node test(s) blocked by Windows symlink privilege (EPERM); enable Developer Mode to run them"
+            }
+          }
+        }
+      }
       $gate.steps = @($steps | ForEach-Object {
           $t = $_.tail
           if ($_.exit -eq 0) { $t = (($_.tail -split "`n") | Select-Object -Last 3) -join "`n" }
-          [ordered]@{ name = $_.name; exit = $_.exit; timed_out = $_.timed_out; seconds = $_.seconds; tail = $t }
+          [ordered]@{ name = $_.name; exit = $_.exit; timed_out = $_.timed_out; seconds = $_.seconds; env_limited = $_.env_limited; tail = $t }
         })
-      $bad = @($steps | Where-Object { $_.exit -ne 0 })
+      $bad = @($steps | Where-Object { $_.exit -ne 0 -and -not $_.env_limited })
       if ($bad.Count -gt 0) { $gate.status = 'fail'; $gate.reason = 'failed steps: ' + (($bad | ForEach-Object { $_.name }) -join ', ') }
+      elseif ($envNotes.Count -gt 0) { $gate.status = 'pass_env_limited'; $gate.reason = ($envNotes -join '; ') }
     }
     $prevStatus = [string](Get-Prop $prevG 'status' 'pass')
     if ($gate.status -eq 'fail' -and $prevStatus -ne 'fail') { Add-Alert 'gate_failed' $gate.reason }
-    if ($gate.status -eq 'pass' -and $prevStatus -eq 'fail') { Add-Alert 'gate_recovered' 'all gate steps pass again' }
+    if ($gate.status -like 'pass*' -and $prevStatus -eq 'fail') { Add-Alert 'gate_recovered' 'no failing gate step remains' }
     Write-JsonAtomic (Join-Path $RuntimeDir 'gate-latest.json') $gate
     Add-JsonLine (Join-Path $RuntimeDir 'gate-history.jsonl') ([ordered]@{ ts = $gate.checked_at; status = $gate.status; reason = $gate.reason; repo_head = $gate.repo_head; jarvis_head = $gate.jarvis_head }) 200
     Update-StatusMd

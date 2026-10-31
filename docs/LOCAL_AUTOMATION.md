@@ -9,6 +9,10 @@ They are read-only: no GitHub writes, no deployments, no process control, no mod
 | `NEXUS-DevOps-Watch` | every 4 hours | Reading order for a short list of public repositories (`scripts/jarvis-watchlist.mjs`, anonymous GitHub reads) and a static check of each folder in the incoming-projects folder (`scripts/jarvis-localcheck.mjs`). |
 | `NEXUS-DevOps-Gate` | daily 03:40 | Local gate: `tsc --noEmit`, all `tests/*.test.mjs`, then `ruff` and `pytest` on the Jarvis DevOps tests. Skipped when free RAM is below 1500 MB. |
 
+Gate states: `pass`, `fail`, `skipped` (low RAM) and `pass_env_limited`. The last one is used only when every failing node test
+is a Windows symlink-privilege error (`EPERM` on `fs.symlink`, non-elevated account without Developer Mode); the counts stay in
+`gate-latest.json`. Any other failure keeps the gate `fail`.
+
 ## Install / remove
 
 ```powershell

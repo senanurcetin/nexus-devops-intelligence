@@ -64,6 +64,15 @@ test('installer registers exactly the three documented tasks, non-elevated', () 
   assert.ok(!/-RunLevel Highest/.test(text));
 });
 
+test('gate only downgrades node failures that are all Windows symlink EPERM errors', () => {
+  const text = sources.get(files[0]);
+  assert.match(text, /pass_env_limited/);
+  assert.match(text, /EPERM: operation not permitted, symlink/);
+  // Every failing-test block must be a symlink EPERM; one other error keeps the gate red.
+  assert.match(text, /\$allPerm = \$false/);
+  assert.match(text, /\$_\.exit -ne 0 -and -not \$_\.env_limited/);
+});
+
 test('automation redacts secret-looking values before writing child output', () => {
   const text = sources.get(files[0]);
   assert.match(text, /function Get-Redacted/);
