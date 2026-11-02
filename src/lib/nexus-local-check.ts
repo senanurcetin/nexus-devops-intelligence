@@ -92,6 +92,22 @@ function maskUrl(input: string): string {
   }
 }
 
+function hasEmbeddedRemoteCredential(input: string): boolean {
+  // Also flag sensitive query/fragment keys: masking the displayed URL is
+  // necessary, but credential-bearing Git configuration deserves a finding.
+  const m = /^[a-z][a-z0-9+.-]*:\/\/([^/@\s]+)@/i.exec(input);
+  if (m && (m[1].includes(':') || /^(?:gh[pousr]_|github_pat_)/.test(m[1]))) return true;
+  try {
+    const url = new URL(input);
+    const key = /^(?:access[_-]?token|auth[_-]?token|api[_-]?key|password|passwd|secret|token|private[_-]?key)$/i;
+    return url.password !== '' ||
+      Array.from(url.searchParams.keys()).some(k => key.test(k)) ||
+      key.test(url.hash.slice(1).split('=')[0]);
+  } catch {
+    return false;
+  }
+}
+
 type Add = (f: Omit<LocalFinding, 'id'> & { rule: string }) => void;
 
 function checkWorkflow(path: string, content: string, add: Add): void {
@@ -283,8 +299,7 @@ export function analyzeLocalProject(facts: LocalFacts, now: Date): LocalCheckRep
 
   // git config
   for (const url of facts.git.remoteUrls) {
-    const m = /^[a-z][a-z0-9+.-]*:\/\/([^/@\s]+)@/i.exec(url);
-    if (m && (m[1].includes(':') || /^(gh[pousr]_|github_pat_)/.test(m[1]))) {
+    if (hasEmbeddedRemoteCredential(url)) {
       add({ rule: 'git-remote-credentials', severity: 'high', title: 'Git remote URL contains credentials', file: '.git/config', line: null,
         detail: 'A password or token is embedded in a remote URL (value not shown).',
         recommendation: 'Revoke that token, then use a credential helper or SSH instead of embedding it in the URL.' });
