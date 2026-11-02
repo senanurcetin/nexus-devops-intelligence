@@ -31,8 +31,11 @@ function providerOf(value) {
 }
 
 function outcomeOfCheck(status, conclusion) {
+  // A completed check requiring human approval has not failed its tests.
+  // Keep it in the actionable/pending bucket, with the original conclusion.
+  if (conclusion === 'action_required') return 'pending';
   if (status !== 'completed') return 'pending';
-  if (['failure', 'timed_out', 'startup_failure', 'action_required'].includes(conclusion)) return 'failure';
+  if (['failure', 'timed_out', 'startup_failure'].includes(conclusion)) return 'failure';
   if (conclusion === 'success') return 'success';
   return 'other';
 }
@@ -78,7 +81,10 @@ export function buildCommitCheckReport({ repository, sha, checks, statuses, now 
       items.push({
         kind: 'check_run', id: run.id, provider, name, outcome: outcomeOfCheck(run.status, run.conclusion),
         reported_status: clean(run.status, 32), reported_conclusion: clean(run.conclusion, 32) || null,
-        source_url: url, inspection_hint: inspectionHint(name),
+        source_url: url,
+        inspection_hint: run.conclusion === 'action_required'
+          ? 'This check needs maintainer approval or another manual action; inspect GitHub before rerunning. No test failure is confirmed.'
+          : inspectionHint(name),
       });
     }
   }
@@ -124,6 +130,7 @@ export function buildCommitCheckReport({ repository, sha, checks, statuses, now 
       'Only checks and commit statuses reported to GitHub are visible; provider-native pipeline history is not queried.',
       'Records are observations, not unique pipelines; the same job may appear in both APIs.',
       'No logs or check annotations were read; inspection hints are not verified root-cause diagnoses.',
+      'An action_required check is awaiting manual intervention, not evidence of failing tests.',
       'A missing or incomplete source does not establish that CI passed or that deployment is ready.',
     ],
   };
