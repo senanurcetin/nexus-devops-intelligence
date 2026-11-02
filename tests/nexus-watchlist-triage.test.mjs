@@ -210,3 +210,26 @@ test('unverified Actions investigations cannot affect severity counts or the fir
   assert.equal(entry.first_url, 'https://github.com/o/good/pull/11');
   assert.match(entry.note, /Only one of the two sources/);
 });
+
+test('skips an invalid first investigation link and retains the next verified GitHub source', () => {
+  const report = digest('o/good', 'investigate_observed', { high: 2 });
+  report.investigations[0].source_url = 'https://github.com/o/other/actions/runs/1';
+  report.investigations[1].source_url = 'https://github.com/o/good/actions/runs/2';
+
+  const result = triageWatchlist([{ repository: 'o/good', digest: report }], now);
+  assert.equal(result.entries[0].readable, true);
+  assert.equal(result.entries[0].high, 2, 'a malformed link does not alter source-verified investigation counts');
+  assert.equal(result.entries[0].first_url, 'https://github.com/o/good/actions/runs/2');
+  const markdown = watchlistMarkdown(result);
+  assert.match(markdown, /https:\/\/github\.com\/o\/good\/actions\/runs\/2/);
+  assert.doesNotMatch(markdown, /https:\/\/github\.com\/o\/other/);
+});
+
+test('uses the next canonical source-kind link without accepting a mismatched PR link', () => {
+  const report = digest('o/good', 'review_observed', { medium: 2 });
+  report.investigations[0].source_url = 'https://github.com/o/good/pull/4';
+  report.investigations[1].source_url = 'https://github.com/o/good/actions/runs/5';
+
+  const result = triageWatchlist([{ repository: 'o/good', digest: report }], now);
+  assert.equal(result.entries[0].first_url, 'https://github.com/o/good/actions/runs/5');
+});
