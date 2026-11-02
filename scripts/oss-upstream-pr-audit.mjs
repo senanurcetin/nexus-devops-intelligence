@@ -73,7 +73,8 @@ async function searchPages(login, state, cutoff, fetchImpl, exactWindow = null) 
       if (!repo || !match || repo.toLowerCase() !== `${match[1]}/${match[2]}`.toLowerCase() ||
           match[1].toLowerCase() === login.toLowerCase() ||
           item?.user?.login?.toLowerCase() !== login.toLowerCase() ||
-          !item?.pull_request || !Number.isSafeInteger(Number(match[3])) || Number(match[3]) < 1) {
+          !item?.pull_request || !Number.isSafeInteger(Number(match[3])) || Number(match[3]) < 1 ||
+          !Number.isSafeInteger(item?.number) || item.number !== Number(match[3])) {
         complete = false;
         continue;
       }
