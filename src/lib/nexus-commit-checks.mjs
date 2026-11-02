@@ -66,11 +66,15 @@ export function buildCommitCheckReport({ repository, sha, checks, statuses, now 
   if (verifiedChecks) {
     const data = checks.data;
     if (!checkedInput(data) || !Number.isSafeInteger(data.total_count) || data.total_count < 0 ||
-        !Array.isArray(data.check_runs)) throw new Error('Invalid GitHub checks response.');
+        !Array.isArray(data.check_runs) ||
+        data.total_count < data.check_runs.length) throw new Error('Invalid GitHub checks response.');
+    // Every real GitHub check run has its own immutable head_sha; without it
+    // the run could belong to a different commit despite a valid response URL.
     checksTruncated = data.total_count > Math.min(MAX_ITEMS, data.check_runs.length);
     const ids = new Set();
     for (const run of data.check_runs.slice(0, MAX_ITEMS)) {
       if (!checkedInput(run) || !Number.isSafeInteger(run.id) || run.id < 1 || ids.has(run.id) ||
+          run.head_sha !== sha ||
           typeof run.name !== 'string' || typeof run.status !== 'string' ||
           !(run.conclusion === null || typeof run.conclusion === 'string')) {
         throw new Error('Invalid GitHub check run.');
@@ -90,8 +94,15 @@ export function buildCommitCheckReport({ repository, sha, checks, statuses, now 
   }
   if (verifiedStatuses) {
     const data = statuses.data;
-    if (!checkedInput(data) || !Array.isArray(data.statuses)) throw new Error('Invalid GitHub commit status response.');
-    statusesTruncated = data.statuses.length >= MAX_ITEMS;
+    // The combined status resource identifies the commit independently of the
+    // requested URL. Do not report a cached/proxied response for another SHA
+    // as evidence about the requested commit.
+    if (!checkedInput(data) || data.sha !== sha ||
+        !Number.isSafeInteger(data.total_count) || data.total_count < 0 ||
+        !Array.isArray(data.statuses) || data.total_count < data.statuses.length) {
+      throw new Error('Invalid GitHub commit status response.');
+    }
+    statusesTruncated = data.total_count > Math.min(MAX_ITEMS, data.statuses.length);
     // GitHub sends statuses newest first; retain only the newest state of each context.
     const contexts = new Set();
     for (const status of data.statuses.slice(0, MAX_ITEMS)) {
