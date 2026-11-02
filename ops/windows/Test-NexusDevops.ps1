@@ -9,6 +9,13 @@
 [CmdletBinding()]
 param([int]$Port = 3000, [string]$Repository = '')
 $ok = $true
+function Test-LoopbackOnly([object[]]$Sockets) {
+  if ($Sockets.Count -eq 0) { return $false }
+  foreach ($socket in $Sockets) {
+    if ($socket.LocalAddress -notin @('127.0.0.1', '::1')) { return $false }
+  }
+  return $true
+}
 $repoRoot = Resolve-Path (Join-Path $PSScriptRoot '..\..')
 $t = Get-ScheduledTask -TaskName 'NEXUS-DevOps-Local' -ErrorAction SilentlyContinue
 "task: " + $(if ($t) { "$($t.State)" } else { 'not registered' })
@@ -18,10 +25,11 @@ if (-not $t) { $ok = $false } else {
 }
 # On some Windows builds Get-NetTCPConnection reports an empty State for a listening socket (the socket still answers), so a
 # listener is also recognised by its unconnected remote endpoint instead of relying on -State Listen alone.
-$l = Get-NetTCPConnection -LocalPort $Port -ErrorAction SilentlyContinue | Where-Object { $_.State -eq 'Listen' -or ($_.RemotePort -eq 0 -and $_.RemoteAddress -in @('0.0.0.0', '::')) } | Select-Object -First 1
+$listeners = @(Get-NetTCPConnection -LocalPort $Port -ErrorAction SilentlyContinue | Where-Object { $_.State -eq 'Listen' -or ($_.RemotePort -eq 0 -and $_.RemoteAddress -in @('0.0.0.0', '::')) })
+$l = $listeners | Select-Object -First 1
 "listener: " + $(if ($l) { "$($l.LocalAddress):$($l.LocalPort) pid $($l.OwningProcess)" } else { 'none' })
 if (-not $l) { $ok = $false }
-elseif ($l.LocalAddress -notin @('127.0.0.1', '::1')) { 'listener: NOT loopback-only'; $ok = $false }
+elseif (-not (Test-LoopbackOnly $listeners)) { 'listener: NOT loopback-only'; $ok = $false }
 try { $r = Invoke-WebRequest -Uri "http://127.0.0.1:$Port/" -UseBasicParsing -TimeoutSec 5; "health: $($r.StatusCode)"; if ($r.StatusCode -ne 200) { $ok = $false } } catch { 'health: unreachable'; $ok = $false }
 $buildId = Join-Path $repoRoot '.next\BUILD_ID'
 if (Test-Path $buildId) {
