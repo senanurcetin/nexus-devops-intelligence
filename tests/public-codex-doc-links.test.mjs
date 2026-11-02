@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { existsSync, readFileSync, statSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { dirname, isAbsolute, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -16,6 +16,10 @@ const PUBLIC_DOCUMENTS = [
   'docs/CODEX_TIMESTAMP_PUBLICATION_KIT.md',
   'docs/CODEX_TIMESTAMP_REGRESSION_TUTORIAL_TR.md',
   'docs/CODEX_CONTENT_ROADMAP_2026_2027.md',
+  'docs/CODEX_INDEPENDENT_TEST_FIRST_EVIDENCE_20261027.md',
+  'docs/CODEX_MXC_NATIVE_TEST_FIRST_PROOF_20261027.md',
+  'docs/CODEX_OSS_SEARCH_PAGE_100_101_WORKSHOP_TR.md',
+  'docs/CODEX_TIMESTAMP_REVIEW_EVIDENCE_20261027.md',
   'docs/CODEX_WATCHLIST_TRUST_BOUNDARY_TUTORIAL_TR.md',
 ];
 
@@ -77,6 +81,15 @@ function linkProblems(documentPath, markdown, exists = existsSync) {
   }
   return failures;
 }
+
+test('every public Codex Markdown guide is covered by the offline link check', () => {
+  const guides = readdirSync(resolve(ROOT, 'docs'), { withFileTypes: true })
+    .filter(entry => entry.isFile() && /^CODEX_.*\.md$/.test(entry.name))
+    .map(entry => `docs/${entry.name}`)
+    .sort();
+  assert.ok(guides.length >= 10, 'unexpectedly few Codex guides');
+  assert.deepEqual(PUBLIC_DOCUMENTS.filter(path => path.startsWith('docs/CODEX_')).sort(), guides);
+});
 
 test('public Codex education and contributor links resolve without network', () => {
   const failures = [];
