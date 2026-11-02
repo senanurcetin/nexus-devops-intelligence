@@ -59,3 +59,18 @@ test('malformed remote URL does not reveal query fields in output', () => {
   assert.ok(!JSON.stringify(report).includes(credentials[1]));
   assert.ok(!localCheckMarkdown(report).includes(credentials[1]));
 });
+
+test('query access tokens are reported as credential risk even without URL userinfo', () => {
+  const url = 'https://github.com/example/project.git?access_token=' + credentials[1];
+  const report = scan([url]);
+  assert.equal(report.findings.filter(f => f.id.startsWith('git-remote-credentials')).length, 1);
+  assert.equal(report.findings.find(f => f.id.startsWith('git-remote-credentials')).severity, 'high');
+  assert.ok(!JSON.stringify(report).includes(credentials[1]));
+});
+
+test('provider-shaped credential segments in URL path are hidden', () => {
+  const synthetic = 'gh' + 'p_' + 'a1B2c3D4e5'.repeat(4);
+  const report = scan(['https://github.com/' + synthetic + '/sample.git']);
+  assert.deepEqual(report.facts.git.remotes, ['https://github.com/[path hidden]']);
+  assert.ok(!JSON.stringify(report).includes(synthetic));
+});
