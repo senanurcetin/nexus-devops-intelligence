@@ -3,11 +3,13 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import {
   parseEngineVersion, verifyComposeConfig, verifyRuntimeInspection,
-  verifyCommunityRuntime,
+  verifyImageIdentity, verifyCommunityRuntime,
 } from '../scripts/verify-community-runtime.mjs';
 
 const approvedHealthcheck = ['CMD', '/nodejs/bin/node', '-e', "fetch('http://127.0.0.1:3000/').then(r => process.exit(r.status === 200 ? 0 : 1)).catch(() => process.exit(1))"];
 const id = 'c'.repeat(64);
+const imageId = 'sha256:' + 'a'.repeat(64);
+const taggedImage = { Id: imageId, RepoTags: ['nexus-devops-community:local'] };
 const compose = {
   services: {
     nexus: {
@@ -23,6 +25,7 @@ const compose = {
   },
 };
 const inspection = {
+  Image: imageId,
   State: { Running: true, Health: { Status: 'healthy' } },
   Config: { Image: 'nexus-devops-community:local', Cmd: ['server.js'],
     Healthcheck: { Test: approvedHealthcheck },
@@ -42,7 +45,7 @@ const inspection = {
 };
 const clone = value => structuredClone(value);
 function fixtures({ engine = '28.5.0', config = compose, container = inspection,
-  port = '127.0.0.1:3000', containerId = id } = {}) {
+  image = taggedImage, port = '127.0.0.1:3000', containerId = id } = {}) {
   const calls = [];
   const docker = args => {
     calls.push(args);
@@ -51,6 +54,9 @@ function fixtures({ engine = '28.5.0', config = compose, container = inspection,
     if (line === 'compose -f compose.yaml config --format json') return JSON.stringify(config);
     if (line === 'compose -f compose.yaml ps -q nexus') return containerId;
     if (line === 'inspect --format {{json .}} ' + id) return JSON.stringify(container);
+    if (line === 'image inspect --format {{json .}} nexus-devops-community:local') {
+      return JSON.stringify(image);
+    }
     if (line === 'compose -f compose.yaml port nexus 3000') return port;
     throw new Error('Unexpected Docker command: ' + line);
   };
@@ -80,7 +86,7 @@ test('read-only container acceptance checks an existing healthy container and si
   });
   assert.equal(fake.getFetches(), 6);
   assert.deepEqual(fake.calls.map(args => args[0]),
-    ['version', 'compose', 'compose', 'inspect', 'compose']);
+    ['version', 'compose', 'compose', 'inspect', 'image', 'compose']);
   const source = readFileSync('scripts/verify-community-runtime.mjs', 'utf8');
   assert.doesNotMatch(source, /['"](?:up|build|pull|start|restart|down|push|create)['"]/);
 });
@@ -194,4 +200,39 @@ test('distroless UID 65532 with CA bundle path remains accepted but root remains
   assert.equal(verifyRuntimeInspection(container), true);
   container.Config.User = '0';
   assert.throws(() => verifyRuntimeInspection(container));
+});
+
+test('image ID matches running container before HTTP acceptance', () => {
+  assert.equal(verifyImageIdentity(clone(inspection), clone(taggedImage)), true);
+});
+
+test('re-tagged or stale containers fail closed before port and HTTP probes', async () => {
+  const wrongImageId = 'sha256:' + 'b'.repeat(64);
+  const cases = [
+    { container: { ...clone(inspection), Image: wrongImageId } },
+    { image: { ...clone(taggedImage), Id: wrongImageId } },
+    { image: { ...clone(taggedImage), RepoTags: ['unrelated:image'] } },
+    { container: { ...clone(inspection), Image: 'not-a-sha' } },
+    { image: { ...clone(taggedImage), Id: 'sha256:' + 'c'.repeat(63) } },
+    { image: { ...clone(taggedImage), Id: null } },
+    { image: {} },
+  ];
+  for (const overrides of cases) {
+    const f = fixtures(overrides);
+    await assert.rejects(verifyCommunityRuntime(f));
+    assert.equal(f.getFetches(), 0, 'unsafe image must never reach HTTP probe');
+    assert.deepEqual(f.calls.map(args => args[0]),
+      ['version', 'compose', 'compose', 'inspect', 'image'],
+      'unsafe image must be rejected before Compose port query');
+  }
+});
+
+test('Docker image inspection failure is never accepted as a release pass', async () => {
+  const f = fixtures();
+  const docker = args => {
+    if (args[0] === 'image') throw new Error('Image tag not found');
+    return f.docker(args);
+  };
+  await assert.rejects(verifyCommunityRuntime({ docker, fetchImpl: f.fetchImpl }));
+  assert.equal(f.getFetches(), 0);
 });

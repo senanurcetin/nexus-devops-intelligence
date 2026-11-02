@@ -106,7 +106,7 @@ test('Recurrence: wording never claims root cause, flake rate or approval', () =
 
 const sampleActions = runs => ({
   repository: repo, total_matching_runs: 50, inspected_runs: runs.length,
-  successful_runs: 0, failed_runs: runs.length, pending_runs: 0, other_outcome_runs: 0,
+  ...countWorkflowRunOutcomes(runs),
   scope_note: 'Recent sample only', runs,
 });
 const briefFor = (runs, workflowFilter = 'all') => createAuditBrief(createPublicSampleExport({
@@ -144,7 +144,7 @@ test('Evidence Brief: recurrence is computed only from exported rows, so a succe
 
 // ---- Investigation Handoff (also the markdown carried by the Jarvis digest) ----
 import { createInvestigationHandoff } from '../src/lib/nexus-investigation-handoff.ts';
-import { summarizePublicActions } from '../src/lib/github-public-actions.ts';
+import { countWorkflowRunOutcomes, summarizePublicActions } from '../src/lib/github-public-actions.ts';
 import { createJarvisMcpHandler } from '../src/lib/nexus-jarvis-mcp.ts';
 
 const handoffFor = (runs, workflowFilter = 'all') => createInvestigationHandoff({

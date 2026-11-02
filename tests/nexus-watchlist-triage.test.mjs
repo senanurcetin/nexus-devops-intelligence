@@ -56,6 +56,7 @@ test('unreadable digests are listed last and never read as clean', () => {
 test('one verified source out of two is flagged', () => {
   const t = triageWatchlist([{ repository: 'o/half', digest: digest('o/half', 'review_observed', { prs: 'rate_limited' }) }], now);
   assert.equal(t.entries[0].readable, true);
+  assert.equal(t.entries[0].coverage, 'actions_only');
   assert.match(t.entries[0].note, /Only one of the two sources/);
 });
 
@@ -177,6 +178,7 @@ test('partially valid source receipts never appear as fully verified coverage', 
   forged.sources.pull_requests.received_at_utc = '2026-10-30T12:00:00Z';
   const result = triageWatchlist([{ repository: 'o/good', digest: forged }], now);
   assert.equal(result.readable, 1, 'the valid actions receipt still permits a partial reading');
+  assert.equal(result.entries[0].coverage, 'actions_only', 'forged posture coverage cannot claim both');
   assert.match(result.entries[0].note, /Only one of the two sources was verified/);
 });
 
@@ -209,4 +211,90 @@ test('unverified Actions investigations cannot affect severity counts or the fir
   assert.deepEqual([entry.high, entry.medium, entry.info], [0, 1, 0]);
   assert.equal(entry.first_url, 'https://github.com/o/good/pull/11');
   assert.match(entry.note, /Only one of the two sources/);
+});
+
+test('coverage cannot be forged by a digest posture claim when source receipts disagree', () => {
+  const onlyActions = digest('o/good', 'review_observed', { prs: 'rate_limited' });
+  onlyActions.posture.coverage = 'both';
+  const a = triageWatchlist([{ repository: 'o/good', digest: onlyActions }], now).entries[0];
+  assert.equal(a.coverage, 'actions_only');
+  assert.match(a.note, /Only one of the two sources/);
+
+  const onlyPrs = digest('o/good', 'review_observed', { actions: 'unavailable' });
+  onlyPrs.posture.coverage = 'both';
+  const b = triageWatchlist([{ repository: 'o/good', digest: onlyPrs }], now).entries[0];
+  assert.equal(b.coverage, 'prs_only');
+  assert.match(b.note, /Only one of the two sources/);
+
+  const both = digest('o/good', 'review_observed');
+  both.posture.coverage = 'none';
+  const c = triageWatchlist([{ repository: 'o/good', digest: both }], now).entries[0];
+  assert.equal(c.coverage, 'both');
+  assert.equal(c.note, null);
+
+  const neither = digest('o/good', 'no_confirmed_signal', { actions: 'unavailable', prs: 'rate_limited' });
+  neither.posture.coverage = 'both';
+  const d = triageWatchlist([{ repository: 'o/good', digest: neither }], now).entries[0];
+  assert.equal(d.readable, false);
+  assert.equal(d.coverage, 'none');
+});
+
+test('partial source coverage is reflected in the rendered watchlist table', () => {
+  const report = digest('o/good', 'review_observed', { prs: 'unavailable' });
+  report.posture.coverage = 'both';
+  const markdown = watchlistMarkdown(triageWatchlist([{ repository: 'o/good', digest: report }], now));
+  const row = markdown.split('\n').find(line => line.startsWith('| 1 |'));
+  assert.ok(row);
+  assert.match(row, /\| actions\\_only \|/);
+  assert.doesNotMatch(row, /\| both \|/);
+});
+
+test('skips an invalid first investigation link and retains the next verified GitHub source', () => {
+  const report = digest('o/good', 'investigate_observed', { high: 2 });
+  report.investigations[0].source_url = 'https://github.com/o/other/actions/runs/1';
+  report.investigations[1].source_url = 'https://github.com/o/good/actions/runs/2';
+
+  const result = triageWatchlist([{ repository: 'o/good', digest: report }], now);
+  assert.equal(result.entries[0].readable, true);
+  assert.equal(result.entries[0].high, 2, 'a malformed link does not alter source-verified investigation counts');
+  assert.equal(result.entries[0].first_url, 'https://github.com/o/good/actions/runs/2');
+  const markdown = watchlistMarkdown(result);
+  assert.match(markdown, /https:\/\/github\.com\/o\/good\/actions\/runs\/2/);
+  assert.doesNotMatch(markdown, /https:\/\/github\.com\/o\/other/);
+});
+
+test('uses the next canonical source-kind link without accepting a mismatched PR link', () => {
+  const report = digest('o/good', 'review_observed', { medium: 2 });
+  report.investigations[0].source_url = 'https://github.com/o/good/pull/4';
+  report.investigations[1].source_url = 'https://github.com/o/good/actions/runs/5';
+
+  const result = triageWatchlist([{ repository: 'o/good', digest: report }], now);
+  assert.equal(result.entries[0].first_url, 'https://github.com/o/good/actions/runs/5');
+});
+
+
+test('future-dated source receipts cannot contribute watchlist counts or evidence links', () => {
+  const partial = digest('o/good', 'investigate_observed', { high: 1 });
+  partial.sources.actions.received_at_utc = '2026-10-30T12:01:00.001Z';
+  const result = triageWatchlist([{ repository: 'o/good', digest: partial }], now);
+  const row = result.entries[0];
+  assert.equal(row.readable, true, 'the valid independent PR receipt remains readable');
+  assert.deepEqual([row.high, row.medium, row.info], [0, 0, 0]);
+  assert.equal(row.first_url, null);
+  assert.match(row.note, /Only one of the two sources/);
+
+  partial.sources.pull_requests = source('unavailable');
+  const invalid = triageWatchlist([{ repository: 'o/good', digest: partial }], now);
+  assert.equal(invalid.readable, 0, 'a future source alone cannot make a digest readable');
+  assert.equal(invalid.entries[0].first_url, null);
+});
+
+test('watchlist source receipts allow only the same one-minute skew as risk posture', () => {
+  const report = digest('o/good', 'investigate_observed', { high: 1, prs: 'unavailable' });
+  report.sources.actions.received_at_utc = '2026-10-30T12:01:00.000Z';
+  report.investigations[0].source_url = 'https://github.com/o/good/actions/runs/1';
+  const row = triageWatchlist([{ repository: 'o/good', digest: report }], now).entries[0];
+  assert.equal(row.readable, true);
+  assert.equal(row.high, 1);
+  assert.equal(row.first_url, 'https://github.com/o/good/actions/runs/1');
 });

@@ -27,7 +27,9 @@
     "jarvis:digest": "node --import tsx scripts/jarvis-digest.mjs",
     "jarvis:watchlist": "node --import tsx scripts/jarvis-watchlist.mjs",
     "jarvis:localcheck": "node --import tsx scripts/jarvis-localcheck.mjs",
-    "jarvis:verify": "node scripts/verify-jarvis-mcp.mjs"
+    "jarvis:verify": "node scripts/verify-jarvis-mcp.mjs",
+    "jarvis:commit-checks": "node scripts/jarvis-commit-checks.mjs",
+    "jarvis:commit-checks:mcp": "node scripts/jarvis-commit-checks-mcp.mjs"
   },
   "dependencies": {
     "lucide-react": "^0.475.0",

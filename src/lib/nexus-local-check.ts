@@ -69,7 +69,76 @@ const INJECTION =
 const indentOf = (line: string): number => line.length - line.trimStart().length;
 const isWorkflow = (p: string) => /^\.github\/workflows\/[^/]+\.ya?ml$/.test(p);
 const isDockerfile = (p: string) => /(^|\/)(Dockerfile(\..+)?|[^/]+\.dockerfile)$/i.test(p);
-const maskUrl = (u: string) => u.replace(/^([a-z][a-z0-9+.-]*:\/\/)[^/@\s]+@/i, '$1');
+// Remote URLs are untrusted local Git metadata. Do not echo URL credentials,
+// query strings, fragments, or arbitrary path text into JSON/Markdown reports.
+// Keep only a conventional repository locator when it has a simple safe shape.
+const SAFE_REMOTE_PATH = /^\/[A-Za-z0-9_.-]{1,100}\/[A-Za-z0-9_.-]{1,100}\/?$/;
+const REMOTE_CREDENTIAL_MARKER = /(?:github_pat_|gh[pousr]_|sk-(?:proj-|ant-)|xox[baprs]-|AKIA|ASIA)/i;
+function safeRemotePath(path: string): string {
+  return SAFE_REMOTE_PATH.test(path) && !REMOTE_CREDENTIAL_MARKER.test(path)
+    ? path : '/[path hidden]';
+}
+function maskUrl(input: string): string {
+  // Standard SSH scp-style Git remote, e.g. git@github.com:owner/repo.git.
+  const scp = /^git@([A-Za-z0-9.-]+):([A-Za-z0-9_.-]{1,100}\/[A-Za-z0-9_.-]{1,100})$/.exec(input);
+  if (scp && !REMOTE_CREDENTIAL_MARKER.test(scp[2])) return input;
+  try {
+    const url = new URL(input);
+    if (!['https:', 'http:', 'ssh:', 'git:'].includes(url.protocol) ||
+        !/^[A-Za-z0-9.-]+$/.test(url.hostname)) return '[remote URL hidden]';
+    return `${url.protocol}//${url.host}${safeRemotePath(url.pathname)}`;
+  } catch {
+    return '[remote URL hidden]';
+  }
+}
+
+function hasEmbeddedRemoteCredential(input: string): boolean {
+  // Also flag sensitive query/fragment keys: masking the displayed URL is
+  // necessary, but credential-bearing Git configuration deserves a finding.
+  const m = /^[a-z][a-z0-9+.-]*:\/\/([^/@\s]+)@/i.exec(input);
+  if (m && (m[1].includes(':') || /^(?:gh[pousr]_|github_pat_)/.test(m[1]))) return true;
+  try {
+    const url = new URL(input);
+    const key = /^(?:access[_-]?token|auth[_-]?token|api[_-]?key|password|passwd|secret|token|private[_-]?key)$/i;
+    return url.password !== '' ||
+      Array.from(url.searchParams.keys()).some(k => key.test(k)) ||
+      key.test(url.hash.slice(1).split('=')[0]);
+  } catch {
+    return false;
+  }
+}
+
+// This intentionally supports only a small, auditable subset of .gitignore
+// patterns. A generic Git wildmatch implementation would be required to
+// prove all ignore behavior. Unknown rules never certify an .env file as safe.
+function envIgnoreRuleMatch(rule: string, path: string): boolean | null {
+  const anchored = rule.startsWith('/');
+  const pattern = rule.replace(/^\//, '').replace(/^\*\*\//, '');
+  const basename = path.slice(path.lastIndexOf('/') + 1);
+  if (anchored && path.includes('/')) return false;
+  if (pattern === '.env') return basename === '.env';
+  if (pattern === '.env*') return basename.startsWith('.env');
+  if (pattern === '.env.*') return basename.startsWith('.env.');
+  if (pattern === '*.env') return basename.endsWith('.env');
+  if (/^\.env\.[A-Za-z0-9_.-]+$/.test(pattern)) return basename === pattern;
+  return null;
+}
+function envFileAppearsIgnored(path: string, rules: string[]): boolean {
+  let ignored = false;
+  for (const entry of rules) {
+    const negated = entry.startsWith('!');
+    const pattern = negated ? entry.slice(1) : entry;
+    const matched = envIgnoreRuleMatch(pattern, path);
+    if (matched === null) {
+      // A negation that is not understood may re-expose this file. Never
+      // downgrade a possible secret leak based on a partial parser.
+      if (negated) ignored = false;
+    } else if (matched) {
+      ignored = !negated;
+    }
+  }
+  return ignored;
+}
 
 type Add = (f: Omit<LocalFinding, 'id'> & { rule: string }) => void;
 
@@ -239,15 +308,15 @@ export function analyzeLocalProject(facts: LocalFacts, now: Date): LocalCheckRep
   // env files and .gitignore
   const gitignore = facts.text['.gitignore'] ?? null;
   const ignoreLines = (gitignore ?? '').split(/\r?\n/).map(l => l.trim()).filter(l => l && !l.startsWith('#'));
-  const ignoresEnv = ignoreLines.some(l => /^\/?\*?\*?\/?\.env(\*|\.\*)?$/.test(l) || l === '.env*' || l === '*.env');
   for (const p of facts.files) {
     const b = base(p);
     if (/^\.env(\..+)?$/.test(b) && !/\.(example|sample|template|dist|defaults?)$/.test(b)) {
+      const ignored = envFileAppearsIgnored(p, ignoreLines);
       add({
-        rule: 'env-file', severity: ignoresEnv ? 'info' : 'high', title: 'Environment file present', file: p, line: null,
-        detail: ignoresEnv
-          ? 'The file exists locally and .gitignore appears to ignore it.'
-          : '.gitignore does not appear to ignore environment files, so this file could be committed.',
+        rule: 'env-file', severity: ignored ? 'info' : 'high', title: 'Environment file present', file: p, line: null,
+        detail: ignored
+          ? 'The file appears covered by a recognized .gitignore rule; its tracked status was not checked.'
+          : 'No recognized .gitignore rule safely covers this file (or an exception may re-expose it), so it could be committed.',
         recommendation: 'Keep real environment files out of git and commit only a `.env.example` without values.',
       });
     }
@@ -262,8 +331,7 @@ export function analyzeLocalProject(facts: LocalFacts, now: Date): LocalCheckRep
 
   // git config
   for (const url of facts.git.remoteUrls) {
-    const m = /^[a-z][a-z0-9+.-]*:\/\/([^/@\s]+)@/i.exec(url);
-    if (m && (m[1].includes(':') || /^(gh[pousr]_|github_pat_)/.test(m[1]))) {
+    if (hasEmbeddedRemoteCredential(url)) {
       add({ rule: 'git-remote-credentials', severity: 'high', title: 'Git remote URL contains credentials', file: '.git/config', line: null,
         detail: 'A password or token is embedded in a remote URL (value not shown).',
         recommendation: 'Revoke that token, then use a credential helper or SSH instead of embedding it in the URL.' });

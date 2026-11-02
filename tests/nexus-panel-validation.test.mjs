@@ -125,3 +125,37 @@ test('readPublicPanel passes validated data and preserves HTTP error semantics',
   assert.equal(rateLimited.data, null);
   assert.match(rateLimited.error, /wait at least 21 seconds/i);
 });
+
+
+test('Actions browser boundary rejects plausible-looking aggregate counts that contradict run outcomes', () => {
+  const legitimate = goodActions();
+  assert.deepEqual([legitimate.successful_runs, legitimate.failed_runs], [1, 1]);
+  const forged = clone(legitimate);
+  forged.successful_runs = 2;
+  forged.failed_runs = 0;
+  assert.equal(
+    forged.successful_runs + forged.failed_runs + forged.pending_runs + forged.other_outcome_runs,
+    forged.inspected_runs,
+    'the old simple total check still balances despite hiding a failed workflow',
+  );
+  assert.equal(isPublicActionsSample(forged, repo), false);
+  assert.equal(isPublicActionsSample(legitimate, repo), true);
+});
+
+test('Actions browser boundary checks pending versus other-completed outcomes per run', () => {
+  const legitimate = summarizePublicActions(repo, {
+    total_count: 3,
+    workflow_runs: [
+      run(7, 'success'),
+      { ...run(8, null), status: 'queued' },
+      { ...run(9, 'skipped'), status: 'completed' },
+    ],
+  });
+  assert.equal(isPublicActionsSample(legitimate, repo), true);
+  const forged = clone(legitimate);
+  forged.pending_runs = 0;
+  forged.other_outcome_runs = 2;
+  assert.equal(forged.successful_runs + forged.failed_runs + forged.pending_runs +
+    forged.other_outcome_runs, forged.inspected_runs);
+  assert.equal(isPublicActionsSample(forged, repo), false);
+});

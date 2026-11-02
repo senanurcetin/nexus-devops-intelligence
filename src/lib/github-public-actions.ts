@@ -61,6 +61,24 @@ export function validHeadFields(run: { head_sha?: unknown; head_branch?: unknown
 
 const IN_PROGRESS_STATUSES = new Set(['queued', 'in_progress', 'requested', 'waiting', 'pending']);
 
+/**
+ * Derive the four mutually exclusive outcome buckets from the same bounded
+ * workflow records. Used by both the API summarizer and the untrusted JSON
+ * consumer so balanced-but-forged counters cannot hide confirmed failures.
+ */
+export function countWorkflowRunOutcomes(
+  runs: ReadonlyArray<Pick<PublicWorkflowRun, 'status' | 'conclusion'>>,
+): Pick<PublicActionsSummary, 'successful_runs' | 'failed_runs' | 'pending_runs' | 'other_outcome_runs'> {
+  const counts = { successful_runs: 0, failed_runs: 0, pending_runs: 0, other_outcome_runs: 0 };
+  for (const run of runs) {
+    if (run.status === 'completed' && run.conclusion === 'success') counts.successful_runs++;
+    else if (run.status === 'completed' && isConfirmedWorkflowFailure(run.conclusion)) counts.failed_runs++;
+    else if (IN_PROGRESS_STATUSES.has(run.status)) counts.pending_runs++;
+    else counts.other_outcome_runs++;
+  }
+  return counts;
+}
+
 export function summarizePublicActions(repository: string, payload: unknown): PublicActionsSummary {
   parsePublicRepository(repository);
   if (!payload || typeof payload !== 'object') {
@@ -102,18 +120,12 @@ export function summarizePublicActions(repository: string, payload: unknown): Pu
       ...(isHeadBranch(run.head_branch) ? { head_branch: run.head_branch } : {}),
     };
   });
-  const failed = runs.filter(r => r.status === 'completed' && isConfirmedWorkflowFailure(r.conclusion)).length;
-  const successful = runs.filter(r => r.status === 'completed' && r.conclusion === 'success').length;
-  const pending = runs.filter(r => IN_PROGRESS_STATUSES.has(r.status)).length;
-  const otherCompleted = runs.length - failed - successful - pending;
+  const outcomes = countWorkflowRunOutcomes(runs);
   return {
     repository,
     total_matching_runs: data.total_count as number,
     inspected_runs: runs.length,
-    successful_runs: successful,
-    failed_runs: failed,
-    pending_runs: pending,
-    other_outcome_runs: otherCompleted,
+    ...outcomes,
     runs,
     scope_note: 'Public workflows only. Sample of up to 10 runs; completed cancelled/skipped/neutral runs are not pending or failures. not billed minutes, monthly costs or a full historical audit.',
   };
