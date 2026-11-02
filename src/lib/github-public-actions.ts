@@ -36,6 +36,20 @@ export function parsePublicRepository(value: unknown): [string, string] {
   return parts;
 }
 
+/**
+ * GitHub public REST timestamps must be canonical UTC ISO 8601 instants.
+ * Date.parse alone accepts "1" and normalizes nonexistent calendar dates.
+ * Preserve GitHub's optional 1-9 fractional digits; milliseconds are the
+ * finest precision Date supports, so compare the exact whole-second portion.
+ */
+export function isCanonicalGithubUtcTimestamp(value: unknown): value is string {
+  if (typeof value !== 'string' ||
+      !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,9})?Z$/.test(value)) return false;
+  const millis = Date.parse(value);
+  return Number.isFinite(millis) &&
+    new Date(millis).toISOString().slice(0, 19) === value.slice(0, 19);
+}
+
 /** GitHub conclusions that definitively indicate a failed workflow run. */
 export function isConfirmedWorkflowFailure(conclusion: string | null): boolean {
   return conclusion === 'failure' || conclusion === 'timed_out' ||
@@ -101,7 +115,7 @@ export function summarizePublicActions(repository: string, payload: unknown): Pu
         runIds.has(run.id) || typeof run.name !== 'string' ||
         typeof run.status !== 'string' || typeof run.event !== 'string' ||
         (run.conclusion !== null && typeof run.conclusion !== 'string') ||
-        typeof run.created_at !== 'string' || !Number.isFinite(Date.parse(run.created_at)) ||
+        !isCanonicalGithubUtcTimestamp(run.created_at) ||
         typeof run.html_url !== 'string' || !validHeadFields(run)) {
       throw new Error('Invalid workflow run.');
     }
