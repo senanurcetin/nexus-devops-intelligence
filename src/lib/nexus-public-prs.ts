@@ -1,4 +1,4 @@
-import { isHeadSha, parsePublicRepository } from './github-public-actions.ts';
+import { isCanonicalGithubUtcTimestamp, isHeadSha, parsePublicRepository } from './github-public-actions.ts';
 
 export type PullAttention = 'draft' | 'conflict' | 'blocked' | 'behind' | 'unstable' | 'clear' | 'unknown';
 
@@ -93,7 +93,7 @@ export function summarizePublicPullRequests(
     const pr = entry as Partial<GithubPullListItem>;
     if (!Number.isSafeInteger(pr.number) || (pr.number ?? 0) < 1 ||
         typeof pr.title !== 'string' || typeof pr.draft !== 'boolean' ||
-        typeof pr.updated_at !== 'string' || !Number.isFinite(Date.parse(pr.updated_at)) ||
+        !isCanonicalGithubUtcTimestamp(pr.updated_at) ||
         typeof pr.html_url !== 'string' ||
         (pr.head?.sha !== undefined && pr.head?.sha !== null && !isHeadSha(pr.head.sha))) {
       throw new Error('Invalid GitHub pull request.');
