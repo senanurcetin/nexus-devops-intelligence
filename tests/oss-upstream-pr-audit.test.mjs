@@ -57,6 +57,23 @@ test('excludes self-owned PRs instead of counting them toward upstream', async (
 });
 
 for (const query of ['merged', 'open']) {
+  for (const [type, login] of [['number', 42], ['object', {}], ['array', []]]) {
+    test(`a Search hit with a ${type} author login leaves ${query} totals unverifiable without rejecting the audit`, async () => {
+      const hit = pr('upstream', 12, login);
+      const result = await auditUpstreamPRs('tester', {
+        now, fetchImpl: fixture(query === 'merged' ? [hit] : [], query === 'open' ? [hit] : []).fetchImpl,
+      });
+      const part = result[`${query}_in_other_owners_repositories`];
+      assert.equal(part.complete, false);
+      assert.equal(part.confirmed_count, null);
+      assert.equal(part.observed_valid_external_prs, 0);
+      assert.deepEqual(part.prs, []);
+      assert.equal(result[`${query === 'merged' ? 'open' : 'merged'}_in_other_owners_repositories`].complete, true);
+    });
+  }
+}
+
+for (const query of ['merged', 'open']) {
   test(`a Search hit with contradictory state cannot certify ${query} totals`, async () => {
     const hit = { ...pr('upstream', 12), state: query === 'merged' ? 'open' : 'closed' };
     const result = await auditUpstreamPRs('tester', {

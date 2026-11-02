@@ -72,7 +72,7 @@ async function searchPages(login, state, cutoff, fetchImpl, exactWindow = null) 
       const match = typeof url === 'string' ? /^https:\/\/github\.com\/([^/]+)\/([^/]+)\/pull\/(\d+)$/.exec(url) : null;
       if (!repo || !match || repo.toLowerCase() !== `${match[1]}/${match[2]}`.toLowerCase() ||
           match[1].toLowerCase() === login.toLowerCase() ||
-          item?.user?.login?.toLowerCase() !== login.toLowerCase() ||
+          typeof item?.user?.login !== 'string' || item.user.login.toLowerCase() !== login.toLowerCase() ||
           item?.state !== (state === 'merged' ? 'closed' : 'open') ||
           !item?.pull_request || !Number.isSafeInteger(Number(match[3])) || Number(match[3]) < 1 ||
           !Number.isSafeInteger(item?.number) || item.number !== Number(match[3])) {
