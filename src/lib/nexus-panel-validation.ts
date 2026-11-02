@@ -1,4 +1,4 @@
-import { countWorkflowRunOutcomes, isHeadSha, validHeadFields, type PublicActionsSummary, type PublicWorkflowRun } from './github-public-actions.ts';
+import { countWorkflowRunOutcomes, isCanonicalGithubUtcTimestamp, isHeadSha, validHeadFields, type PublicActionsSummary, type PublicWorkflowRun } from './github-public-actions.ts';
 import type { PublicPullSummary, PullAttention } from './nexus-public-prs.ts';
 
 /**
@@ -19,17 +19,8 @@ const positiveInt = (value: unknown): value is number =>
 const string = (value: unknown, max = 2000): value is string =>
   typeof value === 'string' && value.length <= max;
 
-// GitHub REST timestamps use ISO 8601 UTC. Date.parse alone also accepts
-// non-timestamps like "1" and normalizes impossible calendar dates.
-const timestamp = (value: unknown): value is string => {
-  if (!string(value, 100) ||
-      !/^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(?:\.[0-9]{1,9})?Z$/.test(value)) {
-    return false;
-  }
-  const parsed = Date.parse(value);
-  return Number.isFinite(parsed) &&
-    new Date(parsed).toISOString().slice(0, 19) === value.slice(0, 19);
-};
+// Reuse the source validator at the browser boundary to prevent contract drift.
+const timestamp = isCanonicalGithubUtcTimestamp;
 
 const attentionStates = new Set<PullAttention>([
   'draft', 'conflict', 'blocked', 'behind', 'unstable', 'clear', 'unknown',
