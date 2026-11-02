@@ -254,6 +254,7 @@ test('future-dated source receipts cannot contribute watchlist counts or evidenc
 test('watchlist source receipts allow only the same one-minute skew as risk posture', () => {
   const report = digest('o/good', 'investigate_observed', { high: 1, prs: 'unavailable' });
   report.sources.actions.received_at_utc = '2026-10-30T12:01:00.000Z';
+  report.investigations[0].source_url = 'https://github.com/o/good/actions/runs/1';
   const row = triageWatchlist([{ repository: 'o/good', digest: report }], now).entries[0];
   assert.equal(row.readable, true);
   assert.equal(row.high, 1);
