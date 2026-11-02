@@ -26,8 +26,8 @@ if ($sid -in @('S-1-5-18', 'S-1-5-19', 'S-1-5-20') -or
 }
 
 $root = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..')).TrimEnd('\')
-$git = Get-Command git -CommandType Application -ErrorAction SilentlyContinue
-$node = Get-Command node -CommandType Application -ErrorAction SilentlyContinue
+$git = @(Get-Command git -CommandType Application -All -ErrorAction SilentlyContinue) | Select-Object -First 1
+$node = @(Get-Command node -CommandType Application -All -ErrorAction SilentlyContinue) | Select-Object -First 1
 if (-not $git -or -not $node) {
     Stop-Verification 'Git and Node.js must already be installed' 31
 }
