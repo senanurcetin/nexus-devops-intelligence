@@ -78,3 +78,20 @@ test('automation redacts secret-looking values before writing child output', () 
   assert.match(text, /function Get-Redacted/);
   assert.match(text, /github_pat_/);
 });
+
+test('health requires an HTTP 200 response rather than any non-server-error status', () => {
+  const text = sources.get(files[0]);
+  const match = text.match(/^\s*\$up\s*=\s*(\([^\r\n]+\))\s*$/m);
+  assert.ok(match, 'Health needs an explicit status predicate');
+  const expr = match[1];
+  const exe = powershell();
+  if (!exe) {
+    assert.match(expr, /^\(\$http\s*-eq\s*200\)$/);
+    return;
+  }
+  const statuses = [0, 200, 201, 204, 301, 401, 404, 500];
+  const script = `$statuses = @(${statuses.join(',')}); foreach ($http in $statuses) { $up = ${expr}; if ($up) { 'true' } else { 'false' } }`;
+  const run = spawnSync(exe, ['-NoProfile', '-NonInteractive', '-Command', script], { encoding: 'utf8', timeout: 30_000 });
+  assert.equal(run.status, 0, `${run.stdout}${run.stderr}`);
+  assert.deepEqual(run.stdout.trim().split(/\r?\n/).map(s => s.trim().toLowerCase()), statuses.map(s => String(s === 200)));
+});

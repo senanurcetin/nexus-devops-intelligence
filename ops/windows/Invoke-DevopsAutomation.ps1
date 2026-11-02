@@ -167,7 +167,8 @@ switch ($Task) {
     $prev = Read-JsonOrNull (Join-Path $RuntimeDir 'health.json')
     $http = 0
     try { $http = [int](Invoke-WebRequest -Uri "http://127.0.0.1:$Port/" -UseBasicParsing -TimeoutSec 6).StatusCode } catch { $http = 0 }
-    $up = ($http -ge 200 -and $http -lt 500)
+    # Match Test-NexusDevops.ps1: only the expected application response proves health.
+    $up = ($http -eq 200)
     $prevFails = [int](Get-Prop (Get-Prop $prev 'service') 'consecutive_failures' 0)
     $fails = 0
     if (-not $up) { $fails = $prevFails + 1 }
