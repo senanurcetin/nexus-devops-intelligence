@@ -35,6 +35,7 @@ type GithubPullListItem = {
   updated_at: string;
   user?: { login?: string } | null;
   head?: { sha?: unknown } | null;
+  base?: { sha?: unknown } | null;
 };
 
 type GithubPullDetails = {
@@ -43,7 +44,26 @@ type GithubPullDetails = {
   draft?: boolean;
   mergeable?: boolean | null;
   mergeable_state?: string;
+  head?: { sha?: unknown } | null;
+  base?: { sha?: unknown } | null;
 };
+
+/**
+ * The listing and detail requests are separately cacheable. A detail can
+ * refer to a different PR revision or base branch even when its URL and
+ * number are unchanged. Do not promote stale conflict/clear labels to facts.
+ * Legacy fixture payloads with neither SHA remain supported; if either side
+ * identifies a revision, both must provide the same valid Git SHA.
+ */
+function sameGitRevision(
+  listed?: { sha?: unknown } | null,
+  detailed?: { sha?: unknown } | null,
+): boolean {
+  const before = listed?.sha;
+  const after = detailed?.sha;
+  if (before == null && after == null) return true;
+  return isHeadSha(before) && isHeadSha(after) && before === after;
+}
 
 export function classifyPullRequest(draft: boolean, detail: unknown): {
   attention: PullAttention; explanation: string;
@@ -95,7 +115,8 @@ export function summarizePublicPullRequests(
         typeof pr.title !== 'string' || typeof pr.draft !== 'boolean' ||
         typeof pr.updated_at !== 'string' || !Number.isFinite(Date.parse(pr.updated_at)) ||
         typeof pr.html_url !== 'string' ||
-        (pr.head?.sha !== undefined && pr.head?.sha !== null && !isHeadSha(pr.head.sha))) {
+        (pr.head?.sha !== undefined && pr.head?.sha !== null && !isHeadSha(pr.head.sha)) ||
+        (pr.base?.sha !== undefined && pr.base?.sha !== null && !isHeadSha(pr.base.sha))) {
       throw new Error('Invalid GitHub pull request.');
     }
     const number = pr.number as number;
@@ -107,7 +128,10 @@ export function summarizePublicPullRequests(
     // Do not allow details from a different PR to influence this PR's status.
     const detail = raw && typeof raw === 'object' &&
       (raw as GithubPullDetails).number === number &&
-      (raw as GithubPullDetails).html_url === html_url ? raw : null;
+      (raw as GithubPullDetails).html_url === html_url &&
+      sameGitRevision(pr.head, (raw as GithubPullDetails).head) &&
+      sameGitRevision(pr.base, (raw as GithubPullDetails).base)
+        ? raw : null;
     const { attention, explanation } = classifyPullRequest(pr.draft as boolean, detail);
     return {
       number,
