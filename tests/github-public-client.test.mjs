@@ -366,3 +366,24 @@ test('PRs: multiple already-in-flight limits retain longest trusted wait without
   assert.equal(result.retryAfterSeconds, 240);
   assert.equal(calls.length, 3);
 });
+
+test('PRs: a stale GitHub detail response cannot affirm clean mergeability for a new head', async () => {
+  const listed = {
+    ...goodPR(91),
+    head: { sha: 'a'.repeat(40) },
+    base: { sha: 'c'.repeat(40) },
+  };
+  const { calls, fetcher } = fakeFetcher(url =>
+    url.includes('per_page=6') ? answer(200, [listed]) :
+      answer(200, {
+        ...details(91, 'clean'),
+        head: { sha: 'b'.repeat(40) },
+        base: { sha: 'c'.repeat(40) },
+      }));
+  const result = await loadPublicPulls(repo, fetcher);
+  assert.equal(result.status, 200);
+  assert.equal(result.body.pull_requests[0].attention, 'unknown');
+  assert.equal(result.body.unknown, 1);
+  assert.equal(result.body.needs_attention, 1);
+  assert.equal(calls.length, 2, 'no extra GitHub request');
+});
