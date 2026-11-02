@@ -108,6 +108,37 @@ function hasEmbeddedRemoteCredential(input: string): boolean {
   }
 }
 
+// This intentionally supports only a small, auditable subset of .gitignore
+// patterns. A generic Git wildmatch implementation would be required to
+// prove all ignore behavior. Unknown rules never certify an .env file as safe.
+function envIgnoreRuleMatch(rule: string, path: string): boolean | null {
+  const anchored = rule.startsWith('/');
+  const pattern = rule.replace(/^\//, '').replace(/^\*\*\//, '');
+  const basename = path.slice(path.lastIndexOf('/') + 1);
+  if (anchored && path.includes('/')) return false;
+  if (pattern === '.env') return basename === '.env';
+  if (pattern === '.env*') return basename.startsWith('.env');
+  if (pattern === '.env.*') return basename.startsWith('.env.');
+  if (pattern === '*.env') return basename.endsWith('.env');
+  return null;
+}
+function envFileAppearsIgnored(path: string, rules: string[]): boolean {
+  let ignored = false;
+  for (const entry of rules) {
+    const negated = entry.startsWith('!');
+    const pattern = negated ? entry.slice(1) : entry;
+    const matched = envIgnoreRuleMatch(pattern, path);
+    if (matched === null) {
+      // A negation that is not understood may re-expose this file. Never
+      // downgrade a possible secret leak based on a partial parser.
+      if (negated) ignored = false;
+    } else if (matched) {
+      ignored = !negated;
+    }
+  }
+  return ignored;
+}
+
 type Add = (f: Omit<LocalFinding, 'id'> & { rule: string }) => void;
 
 function checkWorkflow(path: string, content: string, add: Add): void {
@@ -276,15 +307,15 @@ export function analyzeLocalProject(facts: LocalFacts, now: Date): LocalCheckRep
   // env files and .gitignore
   const gitignore = facts.text['.gitignore'] ?? null;
   const ignoreLines = (gitignore ?? '').split(/\r?\n/).map(l => l.trim()).filter(l => l && !l.startsWith('#'));
-  const ignoresEnv = ignoreLines.some(l => /^\/?\*?\*?\/?\.env(\*|\.\*)?$/.test(l) || l === '.env*' || l === '*.env');
   for (const p of facts.files) {
     const b = base(p);
     if (/^\.env(\..+)?$/.test(b) && !/\.(example|sample|template|dist|defaults?)$/.test(b)) {
+      const ignored = envFileAppearsIgnored(p, ignoreLines);
       add({
-        rule: 'env-file', severity: ignoresEnv ? 'info' : 'high', title: 'Environment file present', file: p, line: null,
-        detail: ignoresEnv
-          ? 'The file exists locally and .gitignore appears to ignore it.'
-          : '.gitignore does not appear to ignore environment files, so this file could be committed.',
+        rule: 'env-file', severity: ignored ? 'info' : 'high', title: 'Environment file present', file: p, line: null,
+        detail: ignored
+          ? 'The file appears covered by a recognized .gitignore rule; its tracked status was not checked.'
+          : 'No recognized .gitignore rule safely covers this file (or an exception may re-expose it), so it could be committed.',
         recommendation: 'Keep real environment files out of git and commit only a `.env.example` without values.',
       });
     }
