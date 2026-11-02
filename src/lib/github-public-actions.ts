@@ -87,7 +87,11 @@ export function countWorkflowRunOutcomes(
   for (const run of runs) {
     if (run.status === 'completed' && run.conclusion === 'success') counts.successful_runs++;
     else if (run.status === 'completed' && isConfirmedWorkflowFailure(run.conclusion)) counts.failed_runs++;
-    else if (IN_PROGRESS_STATUSES.has(run.status)) counts.pending_runs++;
+    // A fork workflow can be marked completed/action_required before any tests
+    // execute: a maintainer still needs to approve or dismiss the request.
+    // Treat this as actionable/waiting, never as a confirmed test failure.
+    else if (IN_PROGRESS_STATUSES.has(run.status) ||
+      (run.status === 'completed' && run.conclusion === 'action_required')) counts.pending_runs++;
     else counts.other_outcome_runs++;
   }
   return counts;
@@ -141,6 +145,6 @@ export function summarizePublicActions(repository: string, payload: unknown): Pu
     inspected_runs: runs.length,
     ...outcomes,
     runs,
-    scope_note: 'Public workflows only. Sample of up to 10 runs; completed cancelled/skipped/neutral runs are not pending or failures. not billed minutes, monthly costs or a full historical audit.',
+    scope_note: 'Public workflows only. Sample of up to 10 runs; completed cancelled/skipped/neutral runs are not pending or failures; completed action_required runs need human approval and count as pending, not failed. not billed minutes, monthly costs or a full historical audit.',
   };
 }
