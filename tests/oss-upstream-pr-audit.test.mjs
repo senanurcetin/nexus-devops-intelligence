@@ -153,3 +153,30 @@ test('duplicate same-day cutoff exclusions cannot masquerade as complete results
   assert.equal(result.merged_in_other_owners_repositories.complete, false);
   assert.equal(result.merged_in_other_owners_repositories.excluded_before_exact_window, 1);
 });
+
+
+test('a GitHub Search page over the requested 100-row cap never certifies upstream PR totals', async () => {
+  const overfull = Array.from({ length: 101 }, (_, i) => pr('upstream', i + 1));
+  const result = await auditUpstreamPRs('tester', {
+    now, fetchImpl: fixture(overfull, overfull).fetchImpl,
+  });
+  for (const key of ['merged_in_other_owners_repositories', 'open_in_other_owners_repositories']) {
+    const part = result[key];
+    assert.equal(part.github_reported_matches, 101);
+    assert.equal(part.complete, false, 'nonconforming GitHub page must fail closed');
+    assert.equal(part.confirmed_count, null, 'overfull page is not certified evidence');
+    assert.ok(part.observed_valid_external_prs <= 100, 'audit must inspect no more than the requested page size');
+    assert.ok(part.prs.length <= 100, 'output list is bounded to requested page size');
+  }
+});
+
+test('a full and conforming 100-row GitHub Search page can still be certified', async () => {
+  const exact = Array.from({ length: 100 }, (_, i) => pr('upstream', i + 1));
+  const result = await auditUpstreamPRs('tester', {
+    now, fetchImpl: fixture(exact, exact).fetchImpl,
+  });
+  assert.equal(result.merged_in_other_owners_repositories.confirmed_count, 100);
+  assert.equal(result.open_in_other_owners_repositories.confirmed_count, 100);
+  assert.equal(result.merged_in_other_owners_repositories.complete, true);
+  assert.equal(result.open_in_other_owners_repositories.complete, true);
+});
