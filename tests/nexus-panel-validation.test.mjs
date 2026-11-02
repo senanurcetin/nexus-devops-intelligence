@@ -159,3 +159,25 @@ test('Actions browser boundary checks pending versus other-completed outcomes pe
     forged.other_outcome_runs, forged.inspected_runs);
   assert.equal(isPublicActionsSample(forged, repo), false);
 });
+
+test('browser reconciles manually approved workflow gates with actual run outcomes', () => {
+  const valid = summarizePublicActions(repo, {
+    total_count: 3,
+    workflow_runs: [
+      run(31, 'action_required'),
+      run(32, 'cancelled'),
+      { ...run(33, null), status: 'in_progress' },
+    ],
+  });
+  assert.equal(valid.pending_runs, 2);
+  assert.equal(valid.failed_runs, 0);
+  assert.equal(valid.other_outcome_runs, 1);
+  assert.equal(isPublicActionsSample(valid, repo), true);
+
+  // A spoofed server payload cannot hide an approval gate in the other bucket,
+  // even if all totals remain arithmetically balanced.
+  const forged = clone(valid);
+  forged.pending_runs = 1;
+  forged.other_outcome_runs = 2;
+  assert.equal(isPublicActionsSample(forged, repo), false);
+});
