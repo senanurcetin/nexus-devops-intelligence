@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
 import {
   collectCommitChecks, buildCommitCheckReport, validateCommitTarget,
 } from '../src/lib/nexus-commit-checks.mjs';
@@ -112,7 +113,7 @@ test('oversized upstream JSON is rejected without assuming success', async () =>
 });
 
 test('CLI invalid input returns exit 2 without attempting any GitHub call', () => {
-  const result = spawnSync(process.execPath, ['scripts/jarvis-commit-checks.mjs', '--json', 'x/y', 'main'], { encoding: 'utf8' });
+  const result = spawnSync(process.execPath, [fileURLToPath(new URL('../scripts/jarvis-commit-checks.mjs', import.meta.url)), '--json', 'x/y', 'main'], { encoding: 'utf8' });
   assert.equal(result.status, 2);
   assert.match(result.stderr, /commit SHA/);
 });

@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
 import { once } from 'node:events';
+import { fileURLToPath } from 'node:url';
 import {
   createCommitChecksMcpHandler, handleCommitChecksMcpLine, COMMIT_CHECKS_MCP_TOOL,
 } from '../src/lib/nexus-commit-checks-mcp.mjs';
@@ -84,7 +85,7 @@ test('unavailable or fabricated upstream results do not become successful MCP ev
 });
 
 test('standalone MCP process supports framed stdio even with the dashboard stopped', async () => {
-  const child = spawn(process.execPath, ['scripts/jarvis-commit-checks-mcp.mjs'], {
+  const child = spawn(process.execPath, [fileURLToPath(new URL('../scripts/jarvis-commit-checks-mcp.mjs', import.meta.url))], {
     stdio: ['pipe', 'pipe', 'pipe'],
   });
   let received = '';
