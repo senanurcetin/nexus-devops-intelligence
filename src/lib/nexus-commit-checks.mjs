@@ -175,14 +175,21 @@ export async function collectCommitChecks({ repository, sha, fetcher = fetch, no
     githubJson(fetcher, base + '/check-runs?per_page=100&page=1'),
     githubJson(fetcher, base + '/status?per_page=100&page=1'),
   ]);
-  // Malformed provider data fails its own source, while the other source stays usable.
-  let result;
-  try { result = buildCommitCheckReport({ repository, sha, checks, statuses, now: now() }); }
-  catch {
-    const checked = checks.state === 'verified' ? { state: 'invalid' } : checks;
-    const stat = statuses.state === 'verified' ? { state: 'invalid' } : statuses;
-    try { result = buildCommitCheckReport({ repository, sha, checks: checked, statuses: stat, now: now() }); }
-    catch { throw new Error('Cannot normalize GitHub check data.'); }
+  // Validate each independent provider surface separately; one malformed response
+  // must not erase the other source's correctly verified evidence.
+  let safeChecks = checks;
+  let safeStatuses = statuses;
+  try {
+    buildCommitCheckReport({ repository, sha, checks, statuses: { state: 'unavailable' }, now: now() });
+  } catch {
+    safeChecks = { state: 'invalid' };
   }
-  return result;
+  try {
+    buildCommitCheckReport({ repository, sha, checks: { state: 'unavailable' }, statuses, now: now() });
+  } catch {
+    safeStatuses = { state: 'invalid' };
+  }
+  return buildCommitCheckReport({
+    repository, sha, checks: safeChecks, statuses: safeStatuses, now: now(),
+  });
 }
