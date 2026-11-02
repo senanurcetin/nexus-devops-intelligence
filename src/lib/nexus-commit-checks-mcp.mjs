@@ -84,7 +84,9 @@ export function createCommitChecksMcpHandler({
     catch { return success(id, asToolResult({ error: 'invalid_arguments' }, true)); }
 
     const tick = now();
-    const key = args.repository.toLowerCase() + '@' + args.sha;
+    // Reports echo the caller's exact repository spelling: sharing a cached
+    // report across case aliases would return another caller's target field.
+    const key = args.repository + '@' + args.sha;
     const hit = cache.get(key);
     if (hit && tick >= hit.timestamp && tick - hit.timestamp < ttl) {
       return success(id, asToolResult(hit.payload, false));
