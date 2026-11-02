@@ -105,3 +105,57 @@ test('standalone MCP process supports framed stdio even with the dashboard stopp
     if (child.exitCode === null) child.kill();
   }
 });
+
+
+test('concurrent identical commit reads share one upstream query and one budget slot', async () => {
+  let release;
+  const gate = new Promise(resolve => { release = resolve; });
+  let calls = 0;
+  const handle = createCommitChecksMcpHandler({
+    maxRequestsPerHour: 1,
+    now: () => 3_600_000,
+    collect: async () => {
+      calls += 1;
+      await gate;
+      return sample;
+    },
+  });
+  const first = call(handle, 'devops_commit_checks', args);
+  const second = call(handle, 'devops_commit_checks', args);
+  release();
+  const [a, b] = await Promise.all([first, second]);
+  assert.equal(calls, 1, 'one outstanding GitHub read per exact commit');
+  assert.equal(a.result.isError, false);
+  assert.equal(b.result.isError, false, 'coalesced request must not receive budget_exhausted');
+  assert.deepEqual(a.result.structuredContent, sample);
+  assert.deepEqual(b.result.structuredContent, sample);
+  const separate = await call(handle, 'devops_commit_checks', { repository: 'owner/other', sha });
+  assert.equal(JSON.parse(separate.result.content[0].text).error, 'github_request_budget_exhausted');
+  assert.equal(calls, 1);
+});
+
+test('a failed in-flight read does not become reusable successful evidence', async () => {
+  let release;
+  const gate = new Promise(resolve => { release = resolve; });
+  let calls = 0;
+  const handle = createCommitChecksMcpHandler({
+    maxRequestsPerHour: 2,
+    collect: async () => {
+      calls += 1;
+      await gate;
+      throw new Error('synthetic upstream outage');
+    },
+  });
+  const first = call(handle, 'devops_commit_checks', args);
+  const second = call(handle, 'devops_commit_checks', args);
+  release();
+  const [a, b] = await Promise.all([first, second]);
+  assert.equal(calls, 1);
+  assert.equal(a.result.isError, true);
+  assert.equal(b.result.isError, true);
+  assert.equal(JSON.parse(a.result.content[0].text).error, 'github_check_collection_failed');
+  assert.equal(JSON.parse(b.result.content[0].text).error, 'github_check_collection_failed');
+  const retry = await call(handle, 'devops_commit_checks', args);
+  assert.equal(retry.result.isError, true);
+  assert.equal(calls, 2, 'failure cleared in-flight state and allows a separately budgeted retry');
+});
