@@ -30,7 +30,8 @@
     "jarvis:verify": "node scripts/verify-jarvis-mcp.mjs",
     "jarvis:commit-checks": "node scripts/jarvis-commit-checks.mjs",
     "jarvis:commit-checks:mcp": "node scripts/jarvis-commit-checks-mcp.mjs",
-    "jarvis:check-annotations": "node scripts/jarvis-check-annotations.mjs"
+    "jarvis:check-annotations": "node scripts/jarvis-check-annotations.mjs",
+    "jarvis:workflow-steps": "node --import tsx scripts/jarvis-workflow-steps.mjs"
   },
   "dependencies": {
     "lucide-react": "^0.475.0",
