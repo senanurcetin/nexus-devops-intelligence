@@ -6,6 +6,7 @@ const now = new Date('2026-10-30T10:00:00.000Z');
 function pr(owner, number, author = 'tester') {
   return {
     html_url: `https://github.com/${owner}/widget/pull/${number}`,
+    number,
     repository_url: `https://api.github.com/repos/${owner}/widget`,
     title: `Fix ${number}`,
     user: { login: author },
@@ -167,6 +168,20 @@ test('a GitHub Search page over the requested 100-row cap never certifies upstre
     assert.equal(part.confirmed_count, null, 'overfull page is not certified evidence');
     assert.ok(part.observed_valid_external_prs <= 100, 'audit must inspect no more than the requested page size');
     assert.ok(part.prs.length <= 100, 'output list is bounded to requested page size');
+  }
+});
+
+test('a Search hit with a PR number contradicting its URL cannot certify merged or open totals', async () => {
+  const forged = pr('upstream', 12);
+  forged.number = 99; // URL identifies #12 while provider object identifies #99.
+  const result = await auditUpstreamPRs('tester', {
+    now, fetchImpl: fixture([forged], [forged]).fetchImpl,
+  });
+  for (const key of ['merged_in_other_owners_repositories', 'open_in_other_owners_repositories']) {
+    assert.equal(result[key].complete, false);
+    assert.equal(result[key].confirmed_count, null);
+    assert.equal(result[key].observed_valid_external_prs, 0);
+    assert.deepEqual(result[key].prs, []);
   }
 });
 
