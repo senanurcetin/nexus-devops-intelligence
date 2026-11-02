@@ -1,4 +1,4 @@
-import { isHeadSha, validHeadFields, type PublicActionsSummary } from './github-public-actions.ts';
+import { countWorkflowRunOutcomes, isHeadSha, validHeadFields, type PublicActionsSummary, type PublicWorkflowRun } from './github-public-actions.ts';
 import type { PublicPullSummary, PullAttention } from './nexus-public-prs.ts';
 
 /**
@@ -67,7 +67,13 @@ export function isPublicActionsSample(
     }
     ids.add(run.id);
   }
-  return true;
+  // A plausible aggregate total is insufficient: successful, failed, pending
+  // and other counts must each reconcile to their actual inspected runs.
+  const outcomes = countWorkflowRunOutcomes(value.runs as PublicWorkflowRun[]);
+  return value.successful_runs === outcomes.successful_runs &&
+    value.failed_runs === outcomes.failed_runs &&
+    value.pending_runs === outcomes.pending_runs &&
+    value.other_outcome_runs === outcomes.other_outcome_runs;
 }
 
 export function isPublicPullSample(

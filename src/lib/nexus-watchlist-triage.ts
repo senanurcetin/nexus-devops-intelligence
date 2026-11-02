@@ -20,7 +20,7 @@ export const WATCHLIST_ORDER_RULE =
 
 export const WATCHLIST_SCOPE_NOTE =
   'Each row comes from the same bounded public sample as a single digest (10 workflow runs, 5 open PRs, ' +
-  'anonymous GitHub reads). Only investigations from verified source receipts contribute counts and links. ' +
+  'anonymous GitHub reads). Coverage, investigation counts and links derive from verified source receipts. ' +
   '"no_confirmed_signal" means nothing was observed in that sample, not that the ' +
   'repository is safe. This is not an audit and not approval to merge, release, deploy or retry.';
 
@@ -61,12 +61,14 @@ const isPostureState = (value: unknown): value is RiskPostureState =>
   typeof value === 'string' && Object.prototype.hasOwnProperty.call(POSTURE_RANK, value);
 
 /** Require a real, canonical UTC receipt time, not a bare 'verified' label. */
-function verifiedSourceReceipt(source: JarvisDigest['sources']['actions'] | undefined): boolean {
+function verifiedSourceReceipt(source: JarvisDigest['sources']['actions'] | undefined, asOf: Date): boolean {
   const timestamp = source?.received_at_utc;
   return source?.state === 'verified' && source.http_status === 200 &&
     typeof timestamp === 'string' &&
     /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/.test(timestamp) &&
-    Number.isFinite(Date.parse(timestamp)) && new Date(timestamp).toISOString() === timestamp;
+    Number.isFinite(Date.parse(timestamp)) && new Date(timestamp).toISOString() === timestamp &&
+    // Reject source times >1 minute ahead, consistent with risk-posture freshness.
+    Date.parse(timestamp) - asOf.getTime() <= 60 * 1000;
 }
 
 /**
@@ -74,7 +76,7 @@ function verifiedSourceReceipt(source: JarvisDigest['sources']['actions'] | unde
  * A valid status from an unrelated repository (or a mutated "write-enabled"
  * envelope) must not be relabeled as evidence for the requested repository.
  */
-function verifiedDigestFor(repository: string, digest: JarvisDigest | null): digest is JarvisDigest {
+function verifiedDigestFor(repository: string, digest: JarvisDigest | null, asOf: Date): digest is JarvisDigest {
   if (!digest || digest.schema !== JARVIS_DIGEST_SCHEMA ||
       digest.data_source !== 'public-github-rest-via-local-nexus-devops' ||
       typeof digest.repository !== 'string' ||
@@ -91,7 +93,7 @@ function verifiedDigestFor(repository: string, digest: JarvisDigest | null): dig
       !digest.investigations.every(item => item && ['high', 'medium', 'info'].includes(item.severity))) {
     return false;
   }
-  return verifiedSourceReceipt(digest.sources.actions) || verifiedSourceReceipt(digest.sources.pull_requests);
+  return verifiedSourceReceipt(digest.sources.actions, asOf) || verifiedSourceReceipt(digest.sources.pull_requests, asOf);
 }
 
 /**
@@ -109,8 +111,8 @@ function verifiedSourceUrl(repository: string, source: JarvisDigest['investigati
   return `https://github.com/${repository}/${match[3]}/${Number(match[4])}`;
 }
 
-function toEntry({ repository, digest }: WatchlistInput): WatchlistEntry {
-  if (!verifiedDigestFor(repository, digest)) {
+function toEntry({ repository, digest }: WatchlistInput, asOf: Date): WatchlistEntry {
+  if (!verifiedDigestFor(repository, digest, asOf)) {
     return {
       repository, readable: false, posture_state: null, headline: 'digest unavailable',
       high: 0, medium: 0, info: 0, coverage: 'none', first_url: null,
@@ -119,8 +121,8 @@ function toEntry({ repository, digest }: WatchlistInput): WatchlistEntry {
   }
   // Source status labels are not sufficient: each investigation must be backed
   // by its own source's canonical, verified receipt before it can be counted or linked.
-  const actionsVerified = verifiedSourceReceipt(digest.sources.actions);
-  const pullsVerified = verifiedSourceReceipt(digest.sources.pull_requests);
+  const actionsVerified = verifiedSourceReceipt(digest.sources.actions, asOf);
+  const pullsVerified = verifiedSourceReceipt(digest.sources.pull_requests, asOf);
   const verifiedInvestigations = digest.investigations.filter(item =>
     item.source_type === 'workflow_run' ? actionsVerified :
       item.source_type === 'pull_request' ? pullsVerified : false);
@@ -132,8 +134,14 @@ function toEntry({ repository, digest }: WatchlistInput): WatchlistEntry {
     posture_state: digest.posture.state,
     headline: sanitizeDigestText(digest.posture.headline, 160),
     high: count('high'), medium: count('medium'), info: count('info'),
-    coverage: sanitizeDigestText(digest.posture.coverage, 20),
-    first_url: verifiedSourceUrl(repository, verifiedInvestigations[0]),
+    // Source coverage is evidence, not a label to copy from an untrusted digest.
+    // verifiedDigestFor requires at least one canonical verified source receipt.
+    coverage: actionsVerified && pullsVerified ? 'both' :
+      actionsVerified ? 'actions_only' : 'prs_only',
+    // A malformed first URL must not hide a later canonical URL from a verified source.
+    first_url: verifiedInvestigations
+      .map(item => verifiedSourceUrl(repository, item))
+      .find(url => url !== null) ?? null,
     note: !actionsVerified || !pullsVerified
       ? 'Only one of the two sources was verified for this repository.' : null,
   };
@@ -149,7 +157,7 @@ export function triageWatchlist(inputs: WatchlistInput[], now: Date): WatchlistT
     seen.add(key);
     return true;
   }).slice(0, WATCHLIST_MAX_REPOSITORIES);
-  const entries = unique.map(toEntry).sort((a, b) => {
+  const entries = unique.map(item => toEntry(item, now)).sort((a, b) => {
     if (a.readable !== b.readable) return a.readable ? -1 : 1;
     if (a.readable && b.readable) {
       const rank = POSTURE_RANK[a.posture_state as RiskPostureState] - POSTURE_RANK[b.posture_state as RiskPostureState];

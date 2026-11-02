@@ -162,6 +162,28 @@ export function verifyRuntimeInspection(container) {
   return true;
 }
 
+/**
+ * Local tags are mutable. Checking only Config.Image's name can falsely
+ * accept a stale container after the tag has been rebuilt or retagged.
+ * Docker image inspect is read-only and resolves the CURRENT local tag.
+ * This does not attest to the image's source, build, or vulnerability status.
+ */
+export function verifyImageIdentity(container, taggedImage) {
+  const id = container?.Image;
+  const currentId = taggedImage?.Id;
+  const sha256 = /^sha256:[0-9a-f]{64}$/;
+  assert.ok(typeof id === 'string' && sha256.test(id),
+    'Running container has no verifiable image ID');
+  assert.ok(typeof currentId === 'string' && sha256.test(currentId),
+    'The local Community image tag has no verifiable image ID');
+  assert.ok(Array.isArray(taggedImage?.RepoTags) &&
+    taggedImage.RepoTags.includes(EXPECTED_IMAGE),
+    'The inspected image does not hold the expected Community tag');
+  assert.equal(id, currentId,
+    'Running container image ID differs from the current local Community tag');
+  return true;
+}
+
 export function runDocker(args) {
   const result = spawnSync('docker', args, {
     encoding: 'utf8', timeout: 15_000, maxBuffer: 2 * 1024 * 1024,
@@ -191,6 +213,12 @@ export async function verifyCommunityRuntime({
   // user-supplied container or a remotely provided URL.
   const inspected = JSON.parse(docker(['inspect', '--format', '{{json .}}', containerId]));
   verifyRuntimeInspection(inspected);
+  // Re-resolve the tagged image before any HTTP acceptance checks. The tag
+  // alone is insufficient to identify the immutable running image.
+  const taggedImage = JSON.parse(docker([
+    'image', 'inspect', '--format', '{{json .}}', EXPECTED_IMAGE,
+  ]));
+  verifyImageIdentity(inspected, taggedImage);
   assert.equal(docker([...composeArgs, 'port', 'nexus', '3000']),
     '127.0.0.1:3000', 'Docker Compose reports a non-localhost published port');
   const requests = await verifyCommunityLocalhost({ port: 3000, fetchImpl });

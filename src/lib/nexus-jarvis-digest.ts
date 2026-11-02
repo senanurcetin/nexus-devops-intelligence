@@ -69,11 +69,16 @@ export const sanitizeDigestText = (value: unknown, limit: number): string =>
 function classify(
   receipt: SourceReceipt | null,
   isValid: (body: unknown) => boolean,
+  asOf: Date,
 ): { status: SourceStatus; verified: boolean } {
   if (!receipt) return { status: { state: 'unavailable', http_status: null, received_at_utc: null }, verified: false };
   const http = Number.isInteger(receipt.status) ? receipt.status : null;
   if (receipt.status === 200) {
-    if (validUtc(receipt.receivedAtUtc) && isValid(receipt.body)) {
+    // Match risk-posture's one-minute clock-skew allowance: later timestamps
+    // cannot become verified inputs to findings or the human handoff.
+    if (validUtc(receipt.receivedAtUtc) &&
+        Date.parse(receipt.receivedAtUtc) - asOf.getTime() <= 60 * 1000 &&
+        isValid(receipt.body)) {
       return { status: { state: 'verified', http_status: 200, received_at_utc: receipt.receivedAtUtc }, verified: true };
     }
     return { status: { state: 'invalid', http_status: 200, received_at_utc: null }, verified: false };
@@ -92,8 +97,8 @@ export function buildJarvisDigest(input: {
 }): JarvisDigest {
   parsePublicRepository(input.repository);
   const generatedAt = input.now.toISOString();
-  const actions = classify(input.actions, body => isPublicActionsSample(body, input.repository));
-  const prs = classify(input.pullRequests, body => isPublicPullSample(body, input.repository));
+  const actions = classify(input.actions, body => isPublicActionsSample(body, input.repository), input.now);
+  const prs = classify(input.pullRequests, body => isPublicPullSample(body, input.repository), input.now);
   const actionsData = actions.verified
     ? (input.actions as SourceReceipt).body as Parameters<typeof recommendInvestigations>[0] : null;
   const prsData = prs.verified
