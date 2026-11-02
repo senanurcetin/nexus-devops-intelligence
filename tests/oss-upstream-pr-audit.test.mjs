@@ -185,6 +185,25 @@ test('a Search hit with a PR number contradicting its URL cannot certify merged 
   }
 });
 
+test('multi-page Search can observe 101 distinct hits but cannot certify snapshot completeness', async () => {
+  const rows = Array.from({ length: 101 }, (_, i) => pr('upstream', i + 1));
+  const fetchImpl = async (url) => {
+    const page = Number(new URL(url).searchParams.get('page'));
+    const items = page === 1 ? rows.slice(0, 100) : rows.slice(100);
+    return {
+      ok: true,
+      json: async () => ({ total_count: 101, incomplete_results: false, items }),
+    };
+  };
+  const result = await auditUpstreamPRs('tester', { now, fetchImpl });
+  for (const key of ['merged_in_other_owners_repositories', 'open_in_other_owners_repositories']) {
+    assert.equal(result[key].pages_read, 2);
+    assert.equal(result[key].observed_valid_external_prs, 101);
+    assert.equal(result[key].complete, false, 'GitHub Search does not guarantee snapshot-stable pagination');
+    assert.equal(result[key].confirmed_count, null, 'multi-page totals are observed, not certified');
+  }
+});
+
 test('a full and conforming 100-row GitHub Search page can still be certified', async () => {
   const exact = Array.from({ length: 100 }, (_, i) => pr('upstream', i + 1));
   const result = await auditUpstreamPRs('tester', {
