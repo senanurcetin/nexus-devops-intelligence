@@ -20,7 +20,7 @@ export const WATCHLIST_ORDER_RULE =
 
 export const WATCHLIST_SCOPE_NOTE =
   'Each row comes from the same bounded public sample as a single digest (10 workflow runs, 5 open PRs, ' +
-  'anonymous GitHub reads). Only investigations from verified source receipts contribute counts and links. ' +
+  'anonymous GitHub reads). Coverage, investigation counts and links derive from verified source receipts. ' +
   '"no_confirmed_signal" means nothing was observed in that sample, not that the ' +
   'repository is safe. This is not an audit and not approval to merge, release, deploy or retry.';
 
@@ -134,7 +134,10 @@ function toEntry({ repository, digest }: WatchlistInput, asOf: Date): WatchlistE
     posture_state: digest.posture.state,
     headline: sanitizeDigestText(digest.posture.headline, 160),
     high: count('high'), medium: count('medium'), info: count('info'),
-    coverage: sanitizeDigestText(digest.posture.coverage, 20),
+    // Source coverage is evidence, not a label to copy from an untrusted digest.
+    // verifiedDigestFor requires at least one canonical verified source receipt.
+    coverage: actionsVerified && pullsVerified ? 'both' :
+      actionsVerified ? 'actions_only' : 'prs_only',
     // A malformed first URL must not hide a later canonical URL from a verified source.
     first_url: verifiedInvestigations
       .map(item => verifiedSourceUrl(repository, item))
