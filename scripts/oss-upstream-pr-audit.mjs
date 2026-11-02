@@ -61,9 +61,12 @@ async function searchPages(login, state, cutoff, fetchImpl, exactWindow = null) 
     }
     pagesRead++;
     if (totalCount === null) totalCount = result.total_count;
-    if (result.total_count !== totalCount || result.incomplete_results !== false) complete = false;
+    if (result.total_count !== totalCount || result.incomplete_results !== false ||
+        result.items.length > PAGE_SIZE) complete = false;
     seenRows += result.items.length;
-    for (const item of result.items) {
+    // A nonconforming provider page is not evidence of complete pagination.
+    // Inspect at most the requested page size even when upstream returns more.
+    for (const item of result.items.slice(0, PAGE_SIZE)) {
       const repo = repoFromApiUrl(item?.repository_url);
       const url = item?.html_url;
       const match = typeof url === 'string' ? /^https:\/\/github\.com\/([^/]+)\/([^/]+)\/pull\/(\d+)$/.exec(url) : null;
