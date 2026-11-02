@@ -142,3 +142,24 @@ test('private GitHub token is opt-in, never used unless explicitly enabled', asy
   await collectCommitChecks({ repository, sha, fetcher, token: 'bad\nsecret', allowToken: true });
   assert.deepEqual(seen, [undefined, undefined], 'malformed token must not be forwarded');
 });
+
+
+test('approval-gated GitHub checks need action but are not failed test evidence', () => {
+  const report = buildCommitCheckReport({
+    repository, sha,
+    checks: { state: 'verified', data: {
+      total_count: 1,
+      check_runs: [{
+        id: 21, name: 'Test', status: 'completed', conclusion: 'action_required',
+        app: { slug: 'github-actions' },
+      }],
+    } },
+    statuses: { state: 'unavailable' },
+  });
+  assert.deepEqual(report.counts, { failure: 0, pending: 1, success: 0, other: 0 });
+  assert.equal(report.observed_state, 'pending_observed');
+  assert.equal(report.attention.length, 1);
+  assert.equal(report.attention[0].reported_conclusion, 'action_required');
+  assert.match(report.attention[0].inspection_hint, /approval|authorization|action/i);
+  assert.equal(report.attention[0].outcome, 'pending');
+});
