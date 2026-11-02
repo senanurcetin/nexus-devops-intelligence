@@ -125,3 +125,20 @@ test('untrusted check names are sanitized and links are always GitHub commit lin
   assert.equal(result.attention[0].name.includes('\n'), false);
   assert.ok(result.attention[0].name.length <= 160);
 });
+
+
+test('private GitHub token is opt-in, never used unless explicitly enabled', async () => {
+  const seen = [];
+  const fetcher = async (url, init) => {
+    seen.push(init.headers.Authorization);
+    return url.includes('/check-runs?') ? json(checks) : json(statuses);
+  };
+  await collectCommitChecks({ repository, sha, fetcher, token: 'ghp_example', allowToken: false });
+  assert.deepEqual(seen, [undefined, undefined]);
+  seen.length = 0;
+  await collectCommitChecks({ repository, sha, fetcher, token: 'ghp_example', allowToken: true });
+  assert.deepEqual(seen, ['Bearer ghp_example', 'Bearer ghp_example']);
+  seen.length = 0;
+  await collectCommitChecks({ repository, sha, fetcher, token: 'bad\nsecret', allowToken: true });
+  assert.deepEqual(seen, [undefined, undefined], 'malformed token must not be forwarded');
+});
