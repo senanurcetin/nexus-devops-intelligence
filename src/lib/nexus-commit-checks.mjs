@@ -1,6 +1,7 @@
 // Zero-cost, read-only GitHub commit-check collector for NEXUS JARVIS.
 // Includes GitHub Checks (GitHub Actions / installed apps) and legacy commit statuses
-// (CircleCI publishes these by default). No provider token or paid API is required.
+// (CircleCI publishes these by default). Anonymous by default; optional GitHub token
+// for private repositories is used only with NEXUS_DEVOPS_ALLOW_GITHUB_TOKEN=1.
 const REPOSITORY = /^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/;
 const SHA = /^(?:[a-f0-9]{40}|[a-f0-9]{64})$/;
 const MAX_BYTES = 2_000_000;
@@ -128,13 +129,14 @@ export function buildCommitCheckReport({ repository, sha, checks, statuses, now 
   };
 }
 
-async function githubJson(fetcher, url) {
+async function githubJson(fetcher, url, authorization) {
   try {
     const response = await fetcher(url, {
       headers: {
         Accept: 'application/vnd.github+json',
         'X-GitHub-Api-Version': '2022-11-28',
         'User-Agent': 'nexus-devops-jarvis-commit-checks',
+        ...(authorization ? { Authorization: 'Bearer ' + authorization } : {}),
       },
       redirect: 'error', signal: AbortSignal.timeout(12_000),
     });
@@ -168,12 +170,19 @@ async function githubJson(fetcher, url) {
   }
 }
 
-export async function collectCommitChecks({ repository, sha, fetcher = fetch, now = () => new Date() }) {
+export async function collectCommitChecks({
+  repository, sha, fetcher = fetch, now = () => new Date(),
+  token = process.env.NEXUS_GITHUB_TOKEN,
+  allowToken = process.env.NEXUS_DEVOPS_ALLOW_GITHUB_TOKEN === '1',
+}) {
   validateCommitTarget(repository, sha); // Reject invalid inputs before any HTTP call.
+  // Credentials never leave api.github.com and are never sent without an opt-in.
+  const authToken = allowToken && typeof token === 'string' && token.length > 0 &&
+    token.length <= 500 && !/[\r\n]/.test(token) ? token : null;
   const base = 'https://api.github.com/repos/' + repository + '/commits/' + sha;
   const [checks, statuses] = await Promise.all([
-    githubJson(fetcher, base + '/check-runs?per_page=100&page=1'),
-    githubJson(fetcher, base + '/status?per_page=100&page=1'),
+    githubJson(fetcher, base + '/check-runs?per_page=100&page=1', authToken),
+    githubJson(fetcher, base + '/status?per_page=100&page=1', authToken),
   ]);
   // Validate each independent provider surface separately; one malformed response
   // must not erase the other source's correctly verified evidence.
