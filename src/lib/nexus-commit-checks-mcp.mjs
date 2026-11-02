@@ -50,6 +50,8 @@ export function createCommitChecksMcpHandler({
   maxRequestsPerHour = 8,
 } = {}) {
   const cache = new Map();
+  // Share one active upstream read across concurrent calls for the same commit.
+  const inFlight = new Map();
   const requests = [];
   const ttl = Math.max(0, Math.min(600_000, cacheTtlMs));
   const budget = Math.max(1, Math.min(20, maxRequestsPerHour));
@@ -87,6 +89,10 @@ export function createCommitChecksMcpHandler({
     if (hit && tick >= hit.timestamp && tick - hit.timestamp < ttl) {
       return success(id, asToolResult(hit.payload, false));
     }
+    // Joining a matching in-flight read needs neither another upstream fetch
+    // nor a second hourly-budget slot; each caller still receives its own id.
+    const active = inFlight.get(key);
+    if (active) return success(id, await active);
     while (requests.length && (tick < requests[0] || tick - requests[0] >= 3_600_000)) requests.shift();
     if (requests.length >= budget) {
       return success(id, asToolResult({
@@ -95,19 +101,28 @@ export function createCommitChecksMcpHandler({
       }, true));
     }
     requests.push(tick);
-    try {
-      const result = await collect({ repository: args.repository, sha: args.sha });
-      const verified = result?.coverage && result.coverage !== 'none';
-      if (!result || result.schema !== 'nexus.devops.commit-checks/v1' ||
-          result.repository !== args.repository || result.commit_sha !== args.sha ||
-          result.access?.mode !== 'read_only' || result.access?.paid_api_used !== false ||
-          !Array.isArray(result.access.write_actions) || result.access.write_actions.length > 0) {
-        return success(id, asToolResult({ error: 'invalid_upstream_result' }, true));
+    const pending = (async () => {
+      try {
+        const result = await collect({ repository: args.repository, sha: args.sha });
+        const verified = result?.coverage && result.coverage !== 'none';
+        if (!result || result.schema !== 'nexus.devops.commit-checks/v1' ||
+            result.repository !== args.repository || result.commit_sha !== args.sha ||
+            result.access?.mode !== 'read_only' || result.access?.paid_api_used !== false ||
+            !Array.isArray(result.access.write_actions) || result.access.write_actions.length > 0) {
+          return asToolResult({ error: 'invalid_upstream_result' }, true);
+        }
+        if (verified) cache.set(key, { timestamp: tick, payload: result });
+        return asToolResult(result, !verified);
+      } catch {
+        return asToolResult({ error: 'github_check_collection_failed' }, true);
       }
-      if (verified) cache.set(key, { timestamp: tick, payload: result });
-      return success(id, asToolResult(result, !verified));
-    } catch {
-      return success(id, asToolResult({ error: 'github_check_collection_failed' }, true));
+    })();
+    inFlight.set(key, pending);
+    try {
+      return success(id, await pending);
+    } finally {
+      // Failed and incomplete reads are never retained as cache evidence.
+      if (inFlight.get(key) === pending) inFlight.delete(key);
     }
   };
 }
