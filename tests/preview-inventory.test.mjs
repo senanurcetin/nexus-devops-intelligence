@@ -1,9 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp,writeFile,symlink,rm } from 'node:fs/promises';
+import { mkdtemp,writeFile,rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { assessPreviewInventory,readPreviewInventory } from '../scripts/verify-preview-inventory.mjs';
+import { assertFileSymlinkRejected } from './windows-symlink-helper.mjs';
 
 const sha = 'a'.repeat(40), prior = 'b'.repeat(40);
 const projectId = 'prj_sbU4ylt4OV4fLkcog3VpSr2fEXYe';
@@ -62,14 +63,15 @@ test('Snapshot freshness, schema and SSO shape required',()=>{
  const n=sample();n.schema_version=99;assert.throws(()=>run(n));
  const a=sample();delete a.project.ssoProtection;assert.throws(()=>run(a));
 });
-test('File reader rejects malformed JSON, symlink and oversize inventory',async()=>{
+test('File reader rejects malformed JSON, symlink and oversize inventory',async t=>{
  const dir=await mkdtemp(join(tmpdir(),'nexus-preview-'));
  const path=join(dir,'snapshot.json');
  try{
   await writeFile(path,JSON.stringify(sample()));
   assert.equal((await readPreviewInventory(path)).schema_version,1);
-  const link=join(dir,'alias.json');await symlink(path,link);
-  await assert.rejects(readPreviewInventory(link),/bounded regular file/);
+  await assertFileSymlinkRejected(t, path, join(dir,'alias.json'), async link => {
+    await assert.rejects(readPreviewInventory(link),/bounded regular file/);
+  });
   await writeFile(path,'{corrupted');
   await assert.rejects(readPreviewInventory(path),/malformed/);
   await writeFile(path,'a'.repeat(70*1024));

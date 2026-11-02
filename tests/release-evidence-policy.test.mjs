@@ -1,10 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp, mkdir, writeFile, symlink, rm } from 'node:fs/promises';
+import { mkdtemp, mkdir, writeFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createHash } from 'node:crypto';
 import { evaluateReleaseEvidence, readManifest, SOURCE_CHECKS, PHASE_CHECKS } from '../scripts/verify-release-evidence.mjs';
+import { assertFileSymlinkRejected } from './windows-symlink-helper.mjs';
 
 const sha = 'a'.repeat(40);
 const now = new Date('2026-10-27T18:00:00.000Z');
@@ -78,16 +79,18 @@ test('Tampering, stale receipt, fake source and missing hash fail closed', async
   });
 });
 
-test('Receipt path traversal and symlink are forbidden', async () => {
+test('Receipt path traversal and symlink are forbidden', async t => {
   await sandbox(async dir => {
     const m = manifest();
     m.checks.node_tests = { status: 'PASS', receipt_path: '../secret.json',
       receipt_sha256: '0'.repeat(64) };
     assert.equal((await evaluateReleaseEvidence(m, options(dir))).checks[0].reason, 'unsafe_receipt_reference');
-    await symlink(join(dir, 'receipts/missing.json'), join(dir, 'receipts/link.json'));
-    m.checks.node_tests = { status: 'PASS', receipt_path: 'receipts/link.json',
-      receipt_sha256: '0'.repeat(64) };
-    assert.equal((await evaluateReleaseEvidence(m, options(dir))).checks[0].reason, 'unsafe_receipt_file');
+    await assertFileSymlinkRejected(t, join(dir, 'receipts/missing.json'),
+      join(dir, 'receipts/link.json'), async () => {
+        m.checks.node_tests = { status: 'PASS', receipt_path: 'receipts/link.json',
+          receipt_sha256: '0'.repeat(64) };
+        assert.equal((await evaluateReleaseEvidence(m, options(dir))).checks[0].reason, 'unsafe_receipt_file');
+      });
   });
 });
 
@@ -103,14 +106,14 @@ test('FAIL vetoes; NOT_RUN cannot masquerade as proof; unexpected fields rejecte
   });
 });
 
-test('Manifest must be a bounded regular file without symlink', async () => {
+test('Manifest must be a bounded regular file without symlink', async t => {
   await sandbox(async dir => {
     const p = join(dir, 'manifest.json');
     await writeFile(p, JSON.stringify(manifest()));
     assert.equal((await readManifest(p)).data.source_sha, sha);
-    const link = join(dir, 'linked.json');
-    await symlink(p, link);
-    await assert.rejects(readManifest(link), /allowed regular file/);
+    await assertFileSymlinkRejected(t, p, join(dir, 'linked.json'), async link => {
+      await assert.rejects(readManifest(link), /allowed regular file/);
+    });
     await writeFile(p, 'x'.repeat(100_000));
     await assert.rejects(readManifest(p), /allowed regular file/);
   });
