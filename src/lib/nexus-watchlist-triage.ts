@@ -20,7 +20,8 @@ export const WATCHLIST_ORDER_RULE =
 
 export const WATCHLIST_SCOPE_NOTE =
   'Each row comes from the same bounded public sample as a single digest (10 workflow runs, 5 open PRs, ' +
-  'anonymous GitHub reads). Coverage, investigation counts and links derive from verified source receipts. ' +
+  'anonymous GitHub reads). Coverage uses verified source receipts; investigation counts and links also require ' +
+  'a canonical same-repository GitHub URL and exclude duplicate evidence URLs. ' +
   '"no_confirmed_signal" means nothing was observed in that sample, not that the ' +
   'repository is safe. This is not an audit and not approval to merge, release, deploy or retry.';
 
@@ -123,9 +124,27 @@ function toEntry({ repository, digest }: WatchlistInput, asOf: Date): WatchlistE
   // by its own source's canonical, verified receipt before it can be counted or linked.
   const actionsVerified = verifiedSourceReceipt(digest.sources.actions, asOf);
   const pullsVerified = verifiedSourceReceipt(digest.sources.pull_requests, asOf);
-  const verifiedInvestigations = digest.investigations.filter(item =>
-    item.source_type === 'workflow_run' ? actionsVerified :
-      item.source_type === 'pull_request' ? pullsVerified : false);
+  // An HTTP-200 source receipt alone cannot vouch for each item in an
+  // untrusted MCP digest. Require a canonical URL of the correct kind and
+  // repository, then count each underlying GitHub run/PR at most once.
+  const seenEvidenceUrls = new Set<string>();
+  const verifiedInvestigations = digest.investigations.filter(item => {
+    const sourceVerified = item.source_type === 'workflow_run' ? actionsVerified :
+      item.source_type === 'pull_request' ? pullsVerified : false;
+    if (!sourceVerified) return false;
+    const url = verifiedSourceUrl(repository, item);
+    if (!url || seenEvidenceUrls.has(url)) return false;
+    seenEvidenceUrls.add(url);
+    return true;
+  });
+  const omitted = digest.investigations.length - verifiedInvestigations.length;
+  const notes: string[] = [];
+  if (!actionsVerified || !pullsVerified) {
+    notes.push('Only one of the two sources was verified for this repository.');
+  }
+  if (omitted > 0) {
+    notes.push(`${omitted} unverifiable or duplicate investigation${omitted === 1 ? '' : 's'} excluded.`);
+  }
   const count = (severity: 'high' | 'medium' | 'info') =>
     verifiedInvestigations.filter(item => item.severity === severity).length;
   return {
@@ -142,8 +161,7 @@ function toEntry({ repository, digest }: WatchlistInput, asOf: Date): WatchlistE
     first_url: verifiedInvestigations
       .map(item => verifiedSourceUrl(repository, item))
       .find(url => url !== null) ?? null,
-    note: !actionsVerified || !pullsVerified
-      ? 'Only one of the two sources was verified for this repository.' : null,
+    note: notes.length ? notes.join(' ') : null,
   };
 }
 
