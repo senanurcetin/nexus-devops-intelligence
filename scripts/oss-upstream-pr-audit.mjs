@@ -117,6 +117,9 @@ async function searchPages(login, state, cutoff, fetchImpl, exactWindow = null) 
   // Duplicate, unverifiable and incomplete rows still invalidate confirmation.
   if (totalCount > MAX_PAGES * PAGE_SIZE || seenRows !== totalCount ||
       observed.size + excludedBeforeExactWindow !== seenRows) complete = false;
+  // GitHub Search pagination is not snapshot-isolated. Even unique hits and a
+  // stable reported total cannot prove no PR moved between separate page reads.
+  if (pagesRead > 1) complete = false;
   return {
     github_reported_matches: totalCount,
     observed_valid_external_prs: observed.size,
