@@ -133,7 +133,10 @@ function toEntry({ repository, digest }: WatchlistInput): WatchlistEntry {
     headline: sanitizeDigestText(digest.posture.headline, 160),
     high: count('high'), medium: count('medium'), info: count('info'),
     coverage: sanitizeDigestText(digest.posture.coverage, 20),
-    first_url: verifiedSourceUrl(repository, verifiedInvestigations[0]),
+    // A malformed first URL must not hide a later canonical URL from a verified source.
+    first_url: verifiedInvestigations
+      .map(item => verifiedSourceUrl(repository, item))
+      .find(url => url !== null) ?? null,
     note: !actionsVerified || !pullsVerified
       ? 'Only one of the two sources was verified for this repository.' : null,
   };
