@@ -69,7 +69,28 @@ const INJECTION =
 const indentOf = (line: string): number => line.length - line.trimStart().length;
 const isWorkflow = (p: string) => /^\.github\/workflows\/[^/]+\.ya?ml$/.test(p);
 const isDockerfile = (p: string) => /(^|\/)(Dockerfile(\..+)?|[^/]+\.dockerfile)$/i.test(p);
-const maskUrl = (u: string) => u.replace(/^([a-z][a-z0-9+.-]*:\/\/)[^/@\s]+@/i, '$1');
+// Remote URLs are untrusted local Git metadata. Do not echo URL credentials,
+// query strings, fragments, or arbitrary path text into JSON/Markdown reports.
+// Keep only a conventional repository locator when it has a simple safe shape.
+const SAFE_REMOTE_PATH = /^\/[A-Za-z0-9_.-]{1,100}\/[A-Za-z0-9_.-]{1,100}\/?$/;
+const REMOTE_CREDENTIAL_MARKER = /(?:github_pat_|gh[pousr]_|sk-(?:proj-|ant-)|xox[baprs]-|AKIA|ASIA)/i;
+function safeRemotePath(path: string): string {
+  return SAFE_REMOTE_PATH.test(path) && !REMOTE_CREDENTIAL_MARKER.test(path)
+    ? path : '/[path hidden]';
+}
+function maskUrl(input: string): string {
+  // Standard SSH scp-style Git remote, e.g. git@github.com:owner/repo.git.
+  const scp = /^git@([A-Za-z0-9.-]+):([A-Za-z0-9_.-]{1,100}\/[A-Za-z0-9_.-]{1,100})$/.exec(input);
+  if (scp && !REMOTE_CREDENTIAL_MARKER.test(scp[2])) return input;
+  try {
+    const url = new URL(input);
+    if (!['https:', 'http:', 'ssh:', 'git:'].includes(url.protocol) ||
+        !/^[A-Za-z0-9.-]+$/.test(url.hostname)) return '[remote URL hidden]';
+    return `${url.protocol}//${url.host}${safeRemotePath(url.pathname)}`;
+  } catch {
+    return '[remote URL hidden]';
+  }
+}
 
 type Add = (f: Omit<LocalFinding, 'id'> & { rule: string }) => void;
 
