@@ -120,6 +120,7 @@ function envIgnoreRuleMatch(rule: string, path: string): boolean | null {
   if (pattern === '.env*') return basename.startsWith('.env');
   if (pattern === '.env.*') return basename.startsWith('.env.');
   if (pattern === '*.env') return basename.endsWith('.env');
+  if (/^\.env\.[A-Za-z0-9_.-]+$/.test(pattern)) return basename === pattern;
   return null;
 }
 function envFileAppearsIgnored(path: string, rules: string[]): boolean {
