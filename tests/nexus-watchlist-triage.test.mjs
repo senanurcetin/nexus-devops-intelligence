@@ -233,3 +233,29 @@ test('uses the next canonical source-kind link without accepting a mismatched PR
   const result = triageWatchlist([{ repository: 'o/good', digest: report }], now);
   assert.equal(result.entries[0].first_url, 'https://github.com/o/good/actions/runs/5');
 });
+
+
+test('future-dated source receipts cannot contribute watchlist counts or evidence links', () => {
+  const partial = digest('o/good', 'investigate_observed', { high: 1 });
+  partial.sources.actions.received_at_utc = '2026-10-30T12:01:00.001Z';
+  const result = triageWatchlist([{ repository: 'o/good', digest: partial }], now);
+  const row = result.entries[0];
+  assert.equal(row.readable, true, 'the valid independent PR receipt remains readable');
+  assert.deepEqual([row.high, row.medium, row.info], [0, 0, 0]);
+  assert.equal(row.first_url, null);
+  assert.match(row.note, /Only one of the two sources/);
+
+  partial.sources.pull_requests = source('unavailable');
+  const invalid = triageWatchlist([{ repository: 'o/good', digest: partial }], now);
+  assert.equal(invalid.readable, 0, 'a future source alone cannot make a digest readable');
+  assert.equal(invalid.entries[0].first_url, null);
+});
+
+test('watchlist source receipts allow only the same one-minute skew as risk posture', () => {
+  const report = digest('o/good', 'investigate_observed', { high: 1, prs: 'unavailable' });
+  report.sources.actions.received_at_utc = '2026-10-30T12:01:00.000Z';
+  const row = triageWatchlist([{ repository: 'o/good', digest: report }], now).entries[0];
+  assert.equal(row.readable, true);
+  assert.equal(row.high, 1);
+  assert.equal(row.first_url, 'https://github.com/o/good/actions/runs/1');
+});
