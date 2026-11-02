@@ -19,7 +19,10 @@ function fixture(mergedItems = [], openItems = [], { mergedIncomplete = false, r
     calls.push({ url, opts });
     const isMerged = new URL(url).searchParams.get('q').includes('is:merged');
     if (status && isMerged) return { ok: false, status };
-    const items = isMerged ? mergedItems : openItems;
+    const items = (isMerged ? mergedItems : openItems).map(item => ({
+      state: isMerged ? 'closed' : 'open',
+      ...item,
+    }));
     return { ok: true, json: async () => ({ total_count: isMerged && reportedTotal !== null ? reportedTotal : items.length, incomplete_results: isMerged && mergedIncomplete, items }) };
   };
   return { fetchImpl, calls };
@@ -52,6 +55,20 @@ test('excludes self-owned PRs instead of counting them toward upstream', async (
   assert.equal(result.merged_in_other_owners_repositories.complete, false);
   assert.equal(result.merged_in_other_owners_repositories.observed_valid_external_prs, 0);
 });
+
+for (const query of ['merged', 'open']) {
+  test(`a Search hit with contradictory state cannot certify ${query} totals`, async () => {
+    const hit = { ...pr('upstream', 12), state: query === 'merged' ? 'open' : 'closed' };
+    const result = await auditUpstreamPRs('tester', {
+      now, fetchImpl: fixture(query === 'merged' ? [hit] : [], query === 'open' ? [hit] : []).fetchImpl,
+    });
+    const part = result[`${query}_in_other_owners_repositories`];
+    assert.equal(part.complete, false);
+    assert.equal(part.confirmed_count, null);
+    assert.equal(part.observed_valid_external_prs, 0);
+    assert.deepEqual(part.prs, []);
+  });
+}
 
 test('does not certify partial GitHub search or unverifiable PR links', async () => {
   const { fetchImpl } = fixture([pr('upstream', 5)], [], { mergedIncomplete: true });
@@ -188,8 +205,11 @@ test('a Search hit with a PR number contradicting its URL cannot certify merged 
 test('multi-page Search can observe 101 distinct hits but cannot certify snapshot completeness', async () => {
   const rows = Array.from({ length: 101 }, (_, i) => pr('upstream', i + 1));
   const fetchImpl = async (url) => {
-    const page = Number(new URL(url).searchParams.get('page'));
-    const items = page === 1 ? rows.slice(0, 100) : rows.slice(100);
+    const params = new URL(url).searchParams;
+    const page = Number(params.get('page'));
+    const items = (page === 1 ? rows.slice(0, 100) : rows.slice(100)).map(item => ({
+      ...item, state: params.get('q').includes('is:merged') ? 'closed' : 'open',
+    }));
     return {
       ok: true,
       json: async () => ({ total_count: 101, incomplete_results: false, items }),
