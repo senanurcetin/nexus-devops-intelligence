@@ -80,6 +80,18 @@ while ($true) {
   $now = Get-Date
   while ($starts.Count -gt 0 -and ($now - $starts.Peek()).TotalMinutes -gt 10) { [void]$starts.Dequeue() }
   if ($starts.Count -ge 8) { Write-Log 'restart storm: 8 starts within 10 minutes; giving up until the next scheduled attempt'; exit 5 }
+  # A scheduled restart must not serve a now-stale app or pressure other
+  # NEXUS notebooks when the workstation is short of free memory.
+  $restartBuild = Get-NexusDevopsBuildStatus -RepoRoot $RepoRoot
+  if ($restartBuild.State -ne 'current') {
+    Write-Log "restart blocked: build freshness is $($restartBuild.State); $($restartBuild.Detail)"
+    exit 4
+  }
+  $restartFreeRamMb = try { [math]::Floor((Get-CimInstance Win32_OperatingSystem -ErrorAction Stop).FreePhysicalMemory / 1024) } catch { 0 }
+  if ($restartFreeRamMb -lt 2048) {
+    Write-Log "restart blocked: only $restartFreeRamMb MB free RAM (2048 MB required)"
+    exit 6
+  }
   $starts.Enqueue($now)
   Write-Log "starting next on 127.0.0.1:$Port with $NodePath"
   & $NodePath (Join-Path $RepoRoot 'node_modules\next\dist\bin\next') start -H 127.0.0.1 -p $Port 2>&1 | Add-ToLog

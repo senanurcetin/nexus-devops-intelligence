@@ -14,6 +14,10 @@ $repoRoot = Resolve-Path (Join-Path $PSScriptRoot '..\..')
 $t = Get-ScheduledTask -TaskName 'NEXUS-DevOps-Local' -ErrorAction SilentlyContinue
 "task: " + $(if ($t) { "$($t.State)" } else { 'not registered' })
 if (-not $t) { $ok = $false } else {
+  if ($t.State -notin @('Ready', 'Running')) {
+    'task: not eligible to supervise a running local service'
+    $ok = $false
+  }
   $trig = ($t.Triggers | ForEach-Object { $_.CimClass.CimClassName -replace '^MSFT_Task', '' -replace 'Trigger$', '' }) -join '+'
   "triggers: $trig; restart on failure: $($t.Settings.RestartCount)x every $($t.Settings.RestartInterval); instances: $($t.Settings.MultipleInstances)"
 }

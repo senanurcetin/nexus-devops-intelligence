@@ -45,3 +45,12 @@ For a fresh production build and JARVIS MCP loopback acceptance, use the
 default mode is a read-only resource/commit preflight; it never schedules a
 task, and requires at least 4 GB free RAM before any isolated build.
 This manual acceptance is separate from the Health/Watch/Gate schedules.
+
+## Service restart safety
+
+The local Windows service re-checks production-build freshness before every
+Next.js restart and refuses to launch the next child when free RAM is below
+2048 MB. A fresh initial build still requires 4096 MB. The read-only
+status script reports ATTENTION when the local service task is disabled or
+otherwise not eligible to supervise the service; an HTTP 200 alone does not
+prove local runtime readiness. Neither check re-enables a task.
