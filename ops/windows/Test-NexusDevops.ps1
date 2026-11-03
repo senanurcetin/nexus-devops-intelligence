@@ -2,14 +2,14 @@
 .SYNOPSIS
   Read-only status check: task state, task triggers, port listener, health, running-build freshness, and (optional) one digest through the Jarvis CLI.
 .DESCRIPTION
-  Exit code 0 when the task is registered, the listener is loopback-only and HTTP 200 has the expected NEXUS page title; 1 otherwise.
-  A STALE build is reported but does not fail the check: it means the served `.next` build is older than the
-  checked-out commit, so recent source changes are not yet visible in the running service.
+  Exit code 0 requires the task, a loopback-only listener, the expected HTTP 200 NEXUS page and a current local build.
+  STALE/missing/unverifiable build evidence returns exit code 1, even if an existing page answers HTTP 200.
 #>
 [CmdletBinding()]
 param([int]$Port = 3000, [string]$Repository = '')
 $ok = $true
 . (Join-Path $PSScriptRoot 'DevopsServiceIdentity.ps1')
+. (Join-Path $PSScriptRoot 'DevopsBuildStatus.ps1')
 $repoRoot = Resolve-Path (Join-Path $PSScriptRoot '..\..')
 $t = Get-ScheduledTask -TaskName 'NEXUS-DevOps-Local' -ErrorAction SilentlyContinue
 "task: " + $(if ($t) { "$($t.State)" } else { 'not registered' })
@@ -29,19 +29,9 @@ try {
   if (Test-NexusDevopsPage -StatusCode $r.StatusCode -Body ([string]$r.Content)) { 'health: HTTP 200 and verified NEXUS page' }
   else { 'health: unexpected service identity'; $ok = $false }
 } catch { 'health: unreachable'; $ok = $false }
-$buildId = Join-Path $repoRoot '.next\BUILD_ID'
-if (Test-Path $buildId) {
-  $built = (Get-Item $buildId).LastWriteTimeUtc
-  # Only commits that can change the served app count (docs, tests, scripts, ops files and package.json scripts do not make a build stale).
-  $appPaths = @('src', 'public', 'package-lock.json', 'next.config.ts', 'next.config.js', 'next.config.mjs', 'postcss.config.mjs', 'tsconfig.json') |
-    Where-Object { Test-Path (Join-Path $repoRoot $_) }
-  $headUnix = (& git -C $repoRoot log -1 --format=%ct -- @appPaths 2>$null)
-  if ($headUnix) {
-    $head = [DateTimeOffset]::FromUnixTimeSeconds([int64]$headUnix).UtcDateTime
-    $state = if ($built -ge $head) { 'current' } else { 'STALE (rebuild and restart to serve the checked-out commit)' }
-    "build: $state; built $($built.ToString('u')), last app change committed $($head.ToString('u'))"
-  } else { 'build: present (git not available to compare)' }
-} else { 'build: none (the start script builds once on first run)' }
+$build = Get-NexusDevopsBuildStatus -RepoRoot $repoRoot
+"build: $($build.State); $($build.Detail)"
+if ($build.State -ne 'current') { $ok = $false }
 if ($Repository) {
   Push-Location $repoRoot
   $env:NEXUS_DEVOPS_BASE_URL = "http://127.0.0.1:$Port"

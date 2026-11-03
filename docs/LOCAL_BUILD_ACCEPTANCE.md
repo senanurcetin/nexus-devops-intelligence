@@ -68,3 +68,13 @@ node --test tests\local-build-acceptance.test.mjs
 The Node wrapper runs the Python regressions when Python 3.11+ is on PATH
 or `NEXUS_ACCEPTANCE_PYTHON` names an available interpreter; otherwise
 the Python-dependent checks are reported as skipped.
+
+The Windows local service entrypoint also refuses a stale or unverified
+.next build. A missing build may be created only if Git application sources
+are clean and Windows reports at least 4096 MB available RAM. The status
+checker treats stale/unverifiable build recency as attention, not healthy.
+
+Build freshness uses a conservative Git application-source timestamp check,
+not cryptographic artifact provenance. A documentation-only change does not
+require a new build. A false or unverifiable timestamp does not authorize
+starting a stale binary.

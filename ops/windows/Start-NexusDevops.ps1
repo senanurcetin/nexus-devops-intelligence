@@ -5,7 +5,7 @@
   Intended to be launched by the per-user logon task (see Install-NexusDevopsAutostart.ps1) but safe to run by hand.
   - Binds 127.0.0.1 only; there is no parameter to change the bind address.
   - Exits 0 without starting a second copy only for a loopback-only NEXUS page with the expected title.
-  - Builds once if no production build exists.
+  - Refuses stale/unverifiable builds; an absent build may be created only with >=4096 MB free RAM.
   - Writes a size-rotated log to %LOCALAPPDATA%\NEXUS\devops\logs. No secrets are read or written.
 #>
 [CmdletBinding()]
@@ -16,6 +16,7 @@ param(
 )
 $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'DevopsServiceIdentity.ps1')
+. (Join-Path $PSScriptRoot 'DevopsBuildStatus.ps1')
 if (-not $RepoRoot) { $RepoRoot = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path }
 if (-not $NodePath) { $NodePath = (Get-Command node -ErrorAction Stop).Source }
 $logDir = Join-Path $env:LOCALAPPDATA 'NEXUS\devops\logs'
@@ -36,7 +37,16 @@ function Test-Health {
   } catch { return $false }
 }
 
-if (Test-Health) { Write-Log "already healthy on 127.0.0.1:$Port; not starting a second copy"; exit 0 }
+$build = Get-NexusDevopsBuildStatus -RepoRoot $RepoRoot
+if ($build.State -in @('stale', 'unknown')) {
+  Write-Log "refusing to use unverified/stale production build: $($build.State); $($build.Detail)"
+  exit 4
+}
+if (Test-Health) {
+  if ($build.State -ne 'current') { Write-Log 'refusing health short-circuit without a confirmed build'; exit 4 }
+  Write-Log "already healthy on 127.0.0.1:$Port; not starting a second copy"
+  exit 0
+}
 # On some Windows builds Get-NetTCPConnection reports an empty State for a listening socket (the socket still answers), so a
 # listener is also recognised by its unconnected remote endpoint instead of relying on -State Listen alone.
 $listener = Get-NetTCPConnection -LocalPort $Port -ErrorAction SilentlyContinue | Where-Object { $_.State -eq 'Listen' -or ($_.RemotePort -eq 0 -and $_.RemoteAddress -in @('0.0.0.0', '::')) }
@@ -49,11 +59,20 @@ $env:NODE_ENV = 'production'
 # The scheduled task can start this script at BelowNormal priority; the node child inherits it and, on a loaded machine,
 # `next start` then needed ~9 minutes to become ready. Run at Normal (never higher) so a restart is not starved.
 try { (Get-Process -Id $PID).PriorityClass = [System.Diagnostics.ProcessPriorityClass]::Normal } catch { Write-Log "could not set Normal priority: $($_.Exception.Message)" }
-if (-not (Test-Path (Join-Path $RepoRoot '.next\BUILD_ID'))) {
-  Write-Log 'no production build found; running npm run build once'
+if ($build.State -eq 'missing') {
+  # The first-build path must never run under RAM pressure or on a dirty app tree.
+  $freeRamMb = try { [math]::Floor((Get-CimInstance Win32_OperatingSystem -ErrorAction Stop).FreePhysicalMemory / 1024) } catch { 0 }
+  if ($freeRamMb -lt 4096) { Write-Log "first build blocked: only $freeRamMb MB free RAM (4096 MB required)"; exit 4 }
+  Write-Log 'no production build found; running a guarded first build'
   & $NodePath (Join-Path $RepoRoot 'node_modules\next\dist\bin\next') build 2>&1 | Add-ToLog
   if ($LASTEXITCODE -ne 0) { Write-Log "build failed (exit $LASTEXITCODE)"; exit 4 }
+  $build = Get-NexusDevopsBuildStatus -RepoRoot $RepoRoot
+  if ($build.State -ne 'current') {
+    Write-Log "first build completed but source freshness could not be verified: $($build.State)"
+    exit 4
+  }
 }
+
 # Supervise: Task Scheduler does not restart a task whose action merely exits non-zero, so restart here with a
 # storm guard (max 8 starts per 10 minutes). The task's repetition trigger retries later after a give-up.
 $starts = New-Object 'System.Collections.Generic.Queue[datetime]'
