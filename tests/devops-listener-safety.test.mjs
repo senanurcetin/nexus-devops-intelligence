@@ -8,6 +8,7 @@ import path from 'node:path';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const file = path.join(root, 'ops', 'windows', 'Test-NexusDevops.ps1');
 const source = readFileSync(file, 'utf8');
+const helperSource = readFileSync(path.join(root, 'ops', 'windows', 'DevopsServiceIdentity.ps1'), 'utf8');
 
 function powershell() {
   for (const exe of ['powershell.exe', 'pwsh']) {
@@ -19,8 +20,8 @@ function powershell() {
 
 test('status script checks every listener and refuses wildcard or non-loopback binds', t => {
   assert.match(source, /\$listeners\s*=\s*@\(Get-NetTCPConnection/);
-  assert.match(source, /Test-LoopbackOnly\s+\$listeners/);
-  const helper = source.match(/^function Test-LoopbackOnly\([^\r\n]*\)\s*\{[\s\S]*?^\}/m)?.[0];
+  assert.match(source, /Test-NexusDevopsLoopback\s+-Sockets\s+\$listeners/);
+  const helper = helperSource.match(/^function Test-NexusDevopsLoopback\s*\{[\s\S]*?^\}/m)?.[0];
   assert.ok(helper, 'status script must provide a testable loopback predicate');
   const exe = powershell();
   if (!exe) return t.skip('PowerShell is not available on this machine');
@@ -36,7 +37,7 @@ test('status script checks every listener and refuses wildcard or non-loopback b
   ];
   const command = [helper, ...cases.map(([addresses]) => {
     const sockets = addresses.map(address => `[pscustomobject]@{ LocalAddress = '${address}' }`).join(', ');
-    return `$listeners = @(${sockets}); if (Test-LoopbackOnly $listeners) { 'true' } else { 'false' }`;
+    return `$listeners = @(${sockets}); if (Test-NexusDevopsLoopback -Sockets $listeners) { 'true' } else { 'false' }`;
   })].join('\n');
   const run = spawnSync(exe, ['-NoProfile', '-NonInteractive', '-Command', command], { encoding: 'utf8', timeout: 30_000 });
   assert.equal(run.status, 0, `${run.stdout}${run.stderr}`);

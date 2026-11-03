@@ -5,7 +5,7 @@ They are read-only: no GitHub writes, no deployments, no process control, no mod
 
 | Task | Schedule | What it does |
 | --- | --- | --- |
-| `NEXUS-DevOps-Health` | every 5 minutes | Probes `127.0.0.1:3000`, reads the Jarvis gateway lease (`lease_id` and `expires_at` only), records free RAM and disk. |
+| `NEXUS-DevOps-Health` | every 5 minutes | Verifies loopback-only listeners and HTTP 200 with the expected NEXUS page title at `127.0.0.1:3000`, reads the Jarvis gateway lease (`lease_id` and `expires_at` only), records free RAM and disk. |
 | `NEXUS-DevOps-Watch` | every 4 hours | Reading order for a short list of public repositories (`scripts/jarvis-watchlist.mjs`, anonymous GitHub reads) and a static check of each folder in the incoming-projects folder (`scripts/jarvis-localcheck.mjs`). |
 | `NEXUS-DevOps-Gate` | daily 03:40 | Local gate: `tsc --noEmit`, all `tests/*.test.mjs`, then `ruff` and `pytest` on the Jarvis DevOps tests. Skipped when free RAM is below 1500 MB. |
 

@@ -4,7 +4,7 @@
 .DESCRIPTION
   Intended to be launched by the per-user logon task (see Install-NexusDevopsAutostart.ps1) but safe to run by hand.
   - Binds 127.0.0.1 only; there is no parameter to change the bind address.
-  - Exits 0 without starting a second copy when the port already answers.
+  - Exits 0 without starting a second copy only for a loopback-only NEXUS page with the expected title.
   - Builds once if no production build exists.
   - Writes a size-rotated log to %LOCALAPPDATA%\NEXUS\devops\logs. No secrets are read or written.
 #>
@@ -15,6 +15,7 @@ param(
   [string]$RepoRoot = ''
 )
 $ErrorActionPreference = 'Stop'
+. (Join-Path $PSScriptRoot 'DevopsServiceIdentity.ps1')
 if (-not $RepoRoot) { $RepoRoot = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path }
 if (-not $NodePath) { $NodePath = (Get-Command node -ErrorAction Stop).Source }
 $logDir = Join-Path $env:LOCALAPPDATA 'NEXUS\devops\logs'
@@ -27,9 +28,11 @@ function Write-Log([string]$m) { Add-Content -Path $log -Encoding UTF8 -Value ("
 function Add-ToLog { process { Add-Content -Path $log -Encoding UTF8 -Value ([string]$_) } }
 
 function Test-Health {
+  $listeners = @(Get-NetTCPConnection -LocalPort $Port -ErrorAction SilentlyContinue | Where-Object { $_.State -eq 'Listen' -or ($_.RemotePort -eq 0 -and $_.RemoteAddress -in @('0.0.0.0', '::')) })
+  if (-not (Test-NexusDevopsLoopback -Sockets $listeners)) { return $false }
   try {
-    $r = Invoke-WebRequest -Uri "http://127.0.0.1:$Port/" -UseBasicParsing -TimeoutSec 3
-    return ($r.StatusCode -eq 200)
+    $r = Invoke-WebRequest -Uri "http://127.0.0.1:$Port/" -UseBasicParsing -MaximumRedirection 0 -TimeoutSec 3
+    return (Test-NexusDevopsPage -StatusCode $r.StatusCode -Body ([string]$r.Content))
   } catch { return $false }
 }
 

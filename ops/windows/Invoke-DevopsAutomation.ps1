@@ -30,6 +30,7 @@ param(
   [ValidateRange(1, 48)][int]$LeaseWarnHours = 4
 )
 $ErrorActionPreference = 'Stop'
+. (Join-Path $PSScriptRoot 'DevopsServiceIdentity.ps1')
 if (-not $RepoRoot) { $RepoRoot = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path }
 if (-not $LeaseFile) { $LeaseFile = Join-Path $env:LOCALAPPDATA 'NEXUS\devops-module\gateway\lease-devops.json' }
 $Utf8 = New-Object System.Text.UTF8Encoding($false)
@@ -166,9 +167,16 @@ switch ($Task) {
   'Health' {
     $prev = Read-JsonOrNull (Join-Path $RuntimeDir 'health.json')
     $http = 0
-    try { $http = [int](Invoke-WebRequest -Uri "http://127.0.0.1:$Port/" -UseBasicParsing -TimeoutSec 6).StatusCode } catch { $http = 0 }
-    # Match Test-NexusDevops.ps1: only the expected application response proves health.
-    $up = ($http -eq 200)
+    $html = ''
+    try {
+      $reply = Invoke-WebRequest -Uri "http://127.0.0.1:$Port/" -UseBasicParsing -MaximumRedirection 0 -TimeoutSec 6
+      $http = [int]$reply.StatusCode
+      $html = [string]$reply.Content
+    } catch { $http = 0 }
+    $listeners = @(Get-NetTCPConnection -LocalPort $Port -ErrorAction SilentlyContinue | Where-Object { $_.State -eq 'Listen' -or ($_.RemotePort -eq 0 -and $_.RemoteAddress -in @('0.0.0.0', '::')) })
+    $identity = (Test-NexusDevopsPage -StatusCode $http -Body $html)
+    $loopback = (Test-NexusDevopsLoopback -Sockets $listeners)
+    $up = ($identity -and $loopback)
     $prevFails = [int](Get-Prop (Get-Prop $prev 'service') 'consecutive_failures' 0)
     $fails = 0
     if (-not $up) { $fails = $prevFails + 1 }
@@ -180,7 +188,7 @@ switch ($Task) {
     if ($drive) { $diskGb = [math]::Round($drive.Free / 1GB, 1) }
     $health = [ordered]@{
       checked_at = (Get-Stamp)
-      service = [ordered]@{ state = $svcState; http = $http; consecutive_failures = $fails; port = $Port }
+      service = [ordered]@{ state = $svcState; http = $http; identity_verified = $identity; loopback_only = $loopback; consecutive_failures = $fails; port = $Port }
       lease = $lease
       free_ram_mb = (Get-FreeRamMb)
       free_disk_gb = $diskGb
