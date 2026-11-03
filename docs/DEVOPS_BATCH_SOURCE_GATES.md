@@ -7,12 +7,12 @@ performs cloud deployment or authorizes a release.
 
 ## 1. Safe Node suite inventory (default read-only)
 
-Run against the **accepted primary checkout** and specify its complete SHA,
-even when the helper is being developed in a separate feature worktree.
+Run against the **current clean primary checkout** and specify its complete SHA.
+Never use a historical acceptance SHA for an integrated source revision.
 
 ```powershell
 $accepted = "C:\NEXUS-AI\nexus-devops-intelligence"
-$sha = "4d748e6178dee9b2875173976b31cae164198e7b"
+$sha = (& git -C $accepted rev-parse HEAD).Trim()
 python -B scripts\run-node-shards.py --repo $accepted --expect-sha $sha
 ```
 
@@ -45,7 +45,7 @@ also hash-checked before resume. Logs are read with a strict 4 MB limit
 runner uses exclusive lock creation, atomic state writes, immutable numbered
 attempt log paths and never overwrites prior runs.
 
-To isolate a single exact file from the accepted 76-file test inventory,
+To isolate a single exact test from the current commit's test inventory,
 use the following command when sufficient RAM is available; it never runs
 any other test file or allows path traversal:
 
@@ -70,7 +70,8 @@ discovered `.test.mjs` files locally passed without skips on this SHA,
 ## 2. Read-only evidence-gap inventory
 
 ```powershell
-python -B scripts\inspect-source-readiness.py --repo $accepted --expect-sha $sha --manifest C:\NEXUS-AI\runtime\devops-automation\release-candidate-4d748e6-source3-20261103\manifest.json
+$manifest = 'C:\NEXUS-AI\runtime\devops-automation\release-candidate-1f3d4c1-20261104\manifest.json'
+python -B scripts\inspect-source-readiness.py --repo $accepted --expect-sha $sha --manifest $manifest
 ```
 
 
@@ -80,10 +81,10 @@ and returns actionable missing-source IDs. It always exits with status **3**
 and always reports `release_authorized: false`. It does not promote
 any Node shard record or untrusted result into a PASS receipt.
 
-At the time of the initial evidence manifest, local-source status is
-**3/9 PASS, 6/9 NOT_RUN** (Node suite, npm audit, JS budget and three browser
-fixtures). Self-hosted is **3/13** and production **3/18**; all three remain
-HOLD. Source claims are self-reported local records, not signed attestations.
+The example manifest belongs to historical source SHA 1f3d4c1.
+If HEAD changes, create a new exact-SHA manifest first: earlier typecheck,
+build or smoke receipts are NOT transferable. The release gate must return
+HOLD for stale or missing evidence. Local receipts are not signed attestations.
 
 ## 3. Offline dependency lockfile metadata check
 
@@ -102,18 +103,25 @@ or external network access. A metadata PASS never promotes the independent
 evidence is available and independently checked. Always
 `release_authorized: false`.
 
-## 4. Regression tests
+## 4. Cached browser readiness (read-only)
+
+Python Playwright Chromium, Firefox and WebKit binaries may be cached even
+when the Node manual runner lacks playwright-core or axe-core. See
+DEVOPS_BROWSER_READINESS.md for the offline inventory. This inventory does
+not establish any browser fixture PASS.
+
+## 5. Regression tests
 
 ```powershell
 python -B tests\test_run_node_shards.py
 python -B tests\test_inspect_source_readiness.py
 python -B tests\test_inspect_lockfile_offline.py
 node --test tests\devops-source-gates-batch.test.mjs
+python -B tests\test_inspect_browser_cache.py
+node --test tests\browser-cache-readiness.test.mjs
 ```
 
 
-The existing `docs/LOCAL_ACCEPTANCE_EVIDENCE_AUDIT.md` covers auditing
-the 3 November 2026 local acceptance proof separately. It must be kept distinct from
-future release approval. Creating a feature-branch code commit does **not**
-invalidate the original 4d748e6 acceptance, but changes to the primary
-accepted source would require a new exact-SHA build and smoke acceptance.
+LOCAL_ACCEPTANCE_EVIDENCE_AUDIT.md documents the historical 4d748e6
+acceptance, valid only for that exact source SHA. Integration into a newer
+primary SHA requires new real build, HTTP and MCP smoke acceptance.
