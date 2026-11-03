@@ -1,0 +1,72 @@
+{
+  "schema_version": 1,
+  "context": "Independent content practice calendar; not an official Ambassador term or proof of program acceptance",
+  "months": [
+    {
+      "month": "2026-11",
+      "topic": "Real native Codex test-first malformed GitHub Search author guard",
+      "status": "PUBLISHED_IN_REPO",
+      "artifact": "docs/CODEX_NATIVE_MXC_MALFORMED_AUTHOR_WORKSHOP_TR_EN.md",
+      "published_at": "2026-11-02",
+      "source_pr": "https://github.com/senanurcetin/nexus-devops-intelligence/pull/152",
+      "share_url": null,
+      "shared_at": null,
+      "feedback_urls": []
+    },
+    {
+      "month": "2026-12",
+      "topic": "Python open-source regression design and exact-head tests",
+      "status": "PLANNED",
+      "artifact": null,
+      "published_at": null,
+      "source_pr": null,
+      "share_url": null,
+      "shared_at": null,
+      "feedback_urls": []
+    },
+    {
+      "month": "2027-01",
+      "topic": "Read-only CI and PR investigation walkthrough",
+      "status": "PLANNED",
+      "artifact": null,
+      "published_at": null,
+      "source_pr": null,
+      "share_url": null,
+      "shared_at": null,
+      "feedback_urls": []
+    },
+    {
+      "month": "2027-02",
+      "topic": "Data-science reproducibility and leakage boundaries",
+      "status": "PLANNED",
+      "artifact": null,
+      "published_at": null,
+      "source_pr": null,
+      "share_url": null,
+      "shared_at": null,
+      "feedback_urls": []
+    },
+    {
+      "month": "2027-03",
+      "topic": "Secure agentic maintenance and attribution",
+      "status": "PLANNED",
+      "artifact": null,
+      "published_at": null,
+      "source_pr": null,
+      "share_url": null,
+      "shared_at": null,
+      "feedback_urls": []
+    },
+    {
+      "month": "2027-04",
+      "topic": "OSS review and maintainer feedback retrospective",
+      "status": "PLANNED",
+      "artifact": null,
+      "published_at": null,
+      "source_pr": null,
+      "share_url": null,
+      "shared_at": null,
+      "feedback_urls": []
+    }
+  ]
+}
