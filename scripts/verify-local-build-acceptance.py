@@ -21,6 +21,7 @@ import sys
 import time
 import urllib.error
 import urllib.request
+from urllib.parse import urlsplit
 
 MIN_START_MB = 4096
 MIN_RUNNING_MB = 1800
@@ -169,16 +170,36 @@ def temporary_port_closed(port: int, retries: int = 5) -> bool:
     return False
 
 
+class RejectRedirect(urllib.request.HTTPRedirectHandler):
+    """Do not let a local probe follow a 30x response, even to another origin."""
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        return None
+
+
 def probe_root(base: str) -> bool:
-    # Explicit no-proxy handler prevents environment proxy bypass of loopback.
-    opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
+    # Do not trust caller-provided origins or inherited proxy/redirect settings.
     try:
-        req = urllib.request.Request(base + "/", headers={"Accept": "text/html"})
+        target = urlsplit(base)
+        if (target.scheme != "http" or target.hostname != "127.0.0.1"
+                or target.username is not None or target.password is not None
+                or target.path not in ("", "/") or target.query or target.fragment
+                or target.port is None):
+            return False
+    except ValueError:
+        return False
+    opener = urllib.request.build_opener(
+        urllib.request.ProxyHandler({}), RejectRedirect()
+    )
+    try:
+        req = urllib.request.Request(base.rstrip("/") + "/", headers={"Accept": "text/html"})
         with opener.open(req, timeout=3) as response:
-            if response.status != 200 or "text/html" not in response.headers.get("content-type", ""):
+            if response.status != 200 or response.headers.get_content_type() != "text/html":
                 return False
-            html = response.read(1_000_001).decode("utf-8", "replace")
-            return len(html) <= 1_000_000 and "<title>NEXUS DevOps Intelligence</title>" in html
+            raw = response.read(1_000_001)
+            if len(raw) > 1_000_000:
+                return False
+            return "<title>NEXUS DevOps Intelligence</title>" in raw.decode("utf-8", "replace")
     except (urllib.error.URLError, OSError, TimeoutError):
         return False
 

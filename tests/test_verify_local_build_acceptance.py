@@ -5,6 +5,8 @@ import importlib.util
 import io
 import os
 import socket
+import threading
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 import sys
 import tempfile
@@ -172,6 +174,94 @@ class AcceptanceTests(unittest.TestCase):
             junction.rmdir()
         self.assertTrue(source.exists())
         self.assertFalse(junction.exists())
+
+    def local_http(self):
+        class LocalHandler(BaseHTTPRequestHandler):
+            def do_GET(self):
+                mode = self.server.mode
+                self.server.requests.append(self.path)
+                if self.path != "/":
+                    self.send_response(200)
+                    self.end_headers()
+                    self.wfile.write(b"other path")
+                    return
+                if mode.startswith("redirect-"):
+                    self.send_response(302)
+                    if mode == "redirect-local":
+                        target = "/other"
+                    else:
+                        target = "https://example.invalid/not-the-service"
+                    self.send_header("Location", target)
+                    self.end_headers()
+                    return
+                self.send_response(200)
+                content_type = "text/plain" if mode == "wrong-mime" else "text/html; charset=utf-8"
+                self.send_header("Content-Type", content_type)
+                self.end_headers()
+                valid = b"<html><head><title>NEXUS DevOps Intelligence</title></head></html>"
+                if mode == "wrong-title":
+                    valid = b"<html><title>Foreign application</title></html>"
+                if mode == "oversize":
+                    valid = valid + b"X" * 1_000_100
+                self.wfile.write(valid)
+
+            def log_message(self, *_):
+                pass
+
+        server = ThreadingHTTPServer(("127.0.0.1", 0), LocalHandler)
+        server.mode = "valid"
+        server.requests = []
+        worker = threading.Thread(target=server.serve_forever, daemon=True)
+        worker.start()
+        def cleanup():
+            server.shutdown()
+            worker.join(timeout=5)
+            server.server_close()
+        self.addCleanup(cleanup)
+        return server, "http://127.0.0.1:" + str(server.server_address[1])
+
+    def test_local_probe_accepts_only_expected_page(self):
+        server, base = self.local_http()
+        self.assertTrue(runner.probe_root(base))
+        self.assertEqual(server.requests, ["/"])
+
+    def test_local_probe_rejects_redirects_without_following_them(self):
+        server, base = self.local_http()
+        server.mode = "redirect-local"
+        self.assertFalse(runner.probe_root(base))
+        self.assertEqual(server.requests, ["/"], "redirect target must not be requested")
+        server.requests.clear()
+        server.mode = "redirect-external"
+        self.assertFalse(runner.probe_root(base))
+        self.assertEqual(server.requests, ["/"], "redirect to external host must never be followed")
+
+    def test_local_probe_rejects_wrong_mime_and_foreign_title(self):
+        server, base = self.local_http()
+        for mode in ("wrong-mime", "wrong-title"):
+            with self.subTest(mode=mode):
+                server.mode = mode
+                self.assertFalse(runner.probe_root(base))
+
+    def test_local_probe_caps_raw_http_body_not_decoded_characters(self):
+        server, base = self.local_http()
+        server.mode = "oversize"
+        self.assertFalse(runner.probe_root(base))
+
+    def test_local_probe_rejects_nonliteral_loopback_before_network(self):
+        server, base = self.local_http()
+        urls = [
+            base.replace("127.0.0.1", "localhost"),
+            base.replace("http://", "https://"),
+            base + "/other",
+            base + "?debug=true",
+            base.replace("http://", "http://login@"),
+            "http://127.0.0.1:invalid",
+            "http://127.0.0.1",
+        ]
+        for url in urls:
+            with self.subTest(url=url):
+                self.assertFalse(runner.probe_root(url))
+        self.assertEqual(server.requests, [], "invalid origins must not be requested")
 
     def test_default_mode_is_read_only(self):
         with mock.patch.object(runner, "preflight", return_value={"state": "blocked"}), \

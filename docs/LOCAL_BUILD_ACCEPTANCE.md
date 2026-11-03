@@ -33,8 +33,10 @@ The runner then:
    already installed local `node_modules`. It never runs npm install.
 2. Builds Next.js at BelowNormal priority with a bounded Node heap, without
    replacing the primary checkout's `.next`.
-3. Temporarily starts that build on a free `127.0.0.1` port, verifying
-   HTTP 200, HTML and the expected NEXUS page title.
+3. Temporarily starts that build on a free literal 127.0.0.1 port. Its
+   root probe rejects redirects and non-loopback origins, checks HTTP 200,
+   HTML and the expected NEXUS title, and limits raw response to 1 MB.
+   Proxy environment variables cannot redirect the root probe.
 4. Runs the 16 negative-input HTTP probes and JARVIS's read-only MCP protocol
    and health checks, without intentionally sending a valid GitHub/Redis
    repository query.
