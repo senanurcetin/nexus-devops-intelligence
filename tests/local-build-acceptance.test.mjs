@@ -27,6 +27,9 @@ test('local acceptance must remain opt-in, isolated and non-deploying', () => {
   assert.match(source, /if not args\.execute:\s*\n\s*print\(json\.dumps\(readiness/);
   assert.match(source, /MIN_START_MB = 4096/);
   assert.match(source, /MIN_RUNNING_MB = 1800/);
+  assert.match(source, /current\["head"\] != head/);
+  assert.match(source, /cleanup\["temporary_port_closed"\] = temporary_port_closed\(temporary_port\)/);
+  assert.match(source, /with report_path\.open\("x", encoding="utf-8"\)/);
   assert.match(source, /checked_git\(repo, "worktree", "add", "--detach"/);
   assert.match(source, /"worktree", "remove", "--force", str\(worktree\)/);
   assert.match(source, /"NEXUS_BASE_URL": base, "NEXUS_DEVOPS_BASE_URL": base/);
@@ -39,7 +42,7 @@ test('Python safety regressions validate resource guards without running a serve
   const run = spawnSync(exe, ['-B', suite],
     { cwd: root, encoding: 'utf8', timeout: 30_000, windowsHide: true });
   assert.equal(run.status, 0, run.stdout + '\n' + run.stderr);
-  assert.match(run.stdout + run.stderr, /Ran 12 tests/);
+  assert.match(run.stdout + run.stderr, /Ran 17 tests/);
 });
 
 test('default Python CLI only reports preflight status', t => {

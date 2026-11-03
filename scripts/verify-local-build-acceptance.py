@@ -153,6 +153,22 @@ def select_port() -> int:
         return sock.getsockname()[1]
 
 
+def temporary_port_closed(port: int, retries: int = 5) -> bool:
+    # A successful taskkill/parent exit is not sufficient if a server child
+    # still owns the listener. Never report PASS while its port is reachable.
+    for attempt in range(retries):
+        try:
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+                sock.settimeout(1)
+                if sock.connect_ex(("127.0.0.1", port)) != 0:
+                    return True
+        except OSError:
+            return False  # An uncheckable port is not safe evidence.
+        if attempt + 1 < retries:
+            time.sleep(0.3)
+    return False
+
+
 def probe_root(base: str) -> bool:
     # Explicit no-proxy handler prevents environment proxy bypass of loopback.
     opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
@@ -172,7 +188,7 @@ def run_acceptance(repo: Path, runtime: Path, readiness: dict) -> dict:
     worktree = repo.parent / "wt" / ("devops-accept-" + head[:12])
     link = worktree / "node_modules"
     lock = runtime / "acceptance.lock"
-    stamp = dt.datetime.now(dt.timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    stamp = dt.datetime.now(dt.timezone.utc).strftime("%Y%m%dT%H%M%S%fZ")
     report_path = runtime / ("acceptance-" + head[:12] + "-" + stamp + ".json")
     if worktree.exists() or lock.exists():
         raise ResourceGuard("existing worktree or acceptance lock; refusing to alter it")
@@ -188,13 +204,17 @@ def run_acceptance(repo: Path, runtime: Path, readiness: dict) -> dict:
     own_junction = False
     server = None
     server_log = None
+    temporary_port = None
     try:
-        if preflight(repo)["state"] != "ready":
+        current = preflight(repo)
+        if current["state"] != "ready" or current["head"] != head:
             raise ResourceGuard("resources or source changed before execution")
         checked_git(repo, "worktree", "add", "--detach", str(worktree), head)
         own_worktree = True
         if checked_git(worktree, "rev-parse", "HEAD") != head:
             raise ResourceGuard("worktree SHA mismatch")
+        if checked_git(repo, "rev-parse", "HEAD") != head or checked_git(repo, "status", "--porcelain=v1"):
+            raise ResourceGuard("primary source changed after checkout")
         ps_link = str(link).replace("'", "''")
         ps_target = str(repo / "node_modules").replace("'", "''")
         ps_command = ("$ErrorActionPreference='Stop'; New-Item -ItemType Junction "
@@ -218,6 +238,7 @@ def run_acceptance(repo: Path, runtime: Path, readiness: dict) -> dict:
         if free_ram_mb() < MIN_START_MB:
             raise ResourceGuard("RAM guard after build")
         port = select_port()
+        temporary_port = port
         base = "http://127.0.0.1:" + str(port)
         env.update({"NEXUS_BASE_URL": base, "NEXUS_DEVOPS_BASE_URL": base})
         server_log = (runtime / ("server-" + stamp + ".log")).open("w", encoding="utf-8")
@@ -261,6 +282,8 @@ def run_acceptance(repo: Path, runtime: Path, readiness: dict) -> dict:
         if server_log is not None:
             server_log.close()
         server_stopped = server is None or cleanup.get("owned_server_stopped", False)
+        if temporary_port is not None:
+            cleanup["temporary_port_closed"] = temporary_port_closed(temporary_port)
         if own_junction:
             if not server_stopped:
                 cleanup["junction_removed"] = False
@@ -283,6 +306,7 @@ def run_acceptance(repo: Path, runtime: Path, readiness: dict) -> dict:
         else:
             cleanup["isolated_worktree_removed"] = not own_worktree
         cleanup_ok = ((server is None or cleanup.get("owned_server_stopped", False))
+                      and (temporary_port is None or cleanup.get("temporary_port_closed", False))
                       and (not own_junction or cleanup.get("junction_removed", False))
                       and cleanup["isolated_worktree_removed"])
         if not cleanup_ok:
@@ -290,8 +314,8 @@ def run_acceptance(repo: Path, runtime: Path, readiness: dict) -> dict:
             evidence.setdefault("error", "temporary resources could not be fully cleaned up")
         evidence["ended_at_utc"] = dt.datetime.now(dt.timezone.utc).isoformat()
         try:
-            report_path.write_text(json.dumps(evidence, ensure_ascii=False, indent=2),
-                                   encoding="utf-8")
+            with report_path.open("x", encoding="utf-8") as report_file:
+                json.dump(evidence, report_file, ensure_ascii=False, indent=2)
         finally:
             lock.unlink(missing_ok=True)
     return evidence

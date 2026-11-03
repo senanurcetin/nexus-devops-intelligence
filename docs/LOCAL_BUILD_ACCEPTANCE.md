@@ -43,6 +43,10 @@ The runner then:
 
 Evidence and logs are stored in
 `C:\NEXUS-AI\runtime\devops-automation\acceptance\`.
+The runner checks the primary Git SHA again after acquiring its lock and
+after creating its worktree; an intervening source change blocks execution.
+It also confirms the temporary TCP port is no longer listening after stopping
+its own server. Reports use unique UTC timestamps and are never overwritten.
 The report records the exact source SHA, each step and cleanup. Failed build,
 time limit, low RAM, failed health, failed checks or incomplete cleanup are
 not a PASS. If an interrupted attempt leaves a lock or worktree, inspect
