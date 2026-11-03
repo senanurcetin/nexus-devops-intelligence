@@ -82,6 +82,29 @@ async function getReceipt(
   return { status: response.status, body, receivedAtUtc };
 }
 
+// A foreign local service returning HTTP 200 must not count as NEXUS health.
+// The HTML title is a consistency marker, not a cryptographic identity proof.
+async function probeLocalDashboard(
+  fetchImpl: JarvisFetch, base: string, timeoutMs: number,
+): Promise<{ httpStatus: number | null; identityVerified: boolean }> {
+  let response: Response;
+  try {
+    response = await fetchImpl(base + '/', {
+      signal: AbortSignal.timeout(timeoutMs), redirect: 'error', headers: { Accept: 'text/html' },
+    });
+  } catch { return { httpStatus: null, identityVerified: false }; }
+  let identityVerified = false;
+  try {
+    if (response.status === 200 && /^text\/html(?:\s*;|\s*$)/i.test(response.headers.get('content-type') ?? '')) {
+      const html = await readCapped(response);
+      identityVerified = html !== null && /<title>\s*NEXUS DevOps Intelligence\s*<\/title>/.test(html);
+    } else {
+      await response.body?.cancel();
+    }
+  } catch { identityVerified = false; }
+  return { httpStatus: response.status, identityVerified };
+}
+
 const text = (value: unknown) => JSON.stringify(value, null, 2);
 const reply = (id: unknown, result: unknown) => ({ jsonrpc: '2.0', id, result });
 const failure = (id: unknown, code: number, message: string) =>
@@ -98,12 +121,12 @@ export const JARVIS_TOOLS = [
   {
     name: 'devops_health',
     title: 'NEXUS DevOps health',
-    description: 'Check that the local NEXUS DevOps Intelligence service answers on loopback. Read-only; no GitHub call.',
+    description: 'Verify the loopback service returns HTTP 200 HTML with the expected NEXUS DevOps page title. Read-only; no GitHub call.',
     inputSchema: { type: 'object', properties: {}, additionalProperties: false },
     outputSchema: {
       type: 'object',
-      properties: { ok: { type: 'boolean' }, http_status: { type: ['integer', 'null'] }, target: { type: 'string' } },
-      required: ['ok', 'http_status', 'target'],
+      properties: { ok: { type: 'boolean' }, http_status: { type: ['integer', 'null'] }, identity_verified: { type: 'boolean' }, target: { type: 'string' } },
+      required: ['ok', 'http_status', 'identity_verified', 'target'],
     },
     annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
   },
@@ -187,9 +210,9 @@ export function createJarvisMcpHandler(options: JarvisMcpOptions = {}) {
   }
 
   async function health() {
-    const receipt = await getReceipt(fetchImpl, `${base}/`, timeoutMs, now);
-    const ok = receipt?.status === 200;
-    return toolResult({ ok, http_status: receipt?.status ?? null, target: 'local-loopback-nexus-devops' }, !ok);
+    const { httpStatus, identityVerified } = await probeLocalDashboard(fetchImpl, base, timeoutMs);
+    const ok = httpStatus === 200 && identityVerified;
+    return toolResult({ ok, http_status: httpStatus, identity_verified: identityVerified, target: 'local-loopback-nexus-devops' }, !ok);
   }
 
   /** Process one JSON-RPC message; returns null for notifications. */

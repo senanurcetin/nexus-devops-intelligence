@@ -66,7 +66,7 @@ try {
 
   const health = await call('tools/call', { name: 'devops_health', arguments: {} });
   const h = health.result?.structuredContent;
-  check('devops_health reports the local service healthy', health.result?.isError !== true && h?.ok === true && h?.http_status === 200, JSON.stringify(h));
+  check('devops_health reports the local service healthy', health.result?.isError !== true && h?.ok === true && h?.http_status === 200 && h?.identity_verified === true, JSON.stringify(h));
 
   check('invalid repository name is rejected', rejected(await call('tools/call', { name: 'devops_repo_digest', arguments: { repository: 'not a repo; rm -rf' } })));
   check('extra arguments are rejected', rejected(await call('tools/call', { name: 'devops_repo_digest', arguments: { repository: 'owner/name', url: 'http://example.com' } })));

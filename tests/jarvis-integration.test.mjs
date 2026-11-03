@@ -223,11 +223,43 @@ test('third-party text is sanitised and cannot smuggle control or bidi character
   assert.throws(() => buildJarvisDigest({ repository: '../evil', actions: null, pullRequests: null, now: NOW }));
 });
 
+test('MCP devops_health validates local HTML identity, MIME type, status and body cap', async () => {
+  const good = '<html><head><title>NEXUS DevOps Intelligence</title></head></html>';
+  const cases = [
+    ['valid', new Response(good, { status: 200, headers: { 'content-type': 'text/html; charset=utf-8' } }), true],
+    ['foreign page', new Response('<title>Unrelated service</title>', { status: 200, headers: { 'content-type': 'text/html' } }), false],
+    ['wrong title', new Response('<title>NEXUS DevOps Intelligence - fake</title>', { status: 200, headers: { 'content-type': 'text/html' } }), false],
+    ['wrong MIME type', new Response(good, { status: 200, headers: { 'content-type': 'application/json' } }), false],
+    ['HTTP forbidden', new Response(good, { status: 403, headers: { 'content-type': 'text/html' } }), false],
+    ['too large', new Response(good + 'x'.repeat(1_100_000), { status: 200, headers: { 'content-type': 'text/html' } }), false],
+  ];
+  for (const [label, response, expected] of cases) {
+    const calls = [];
+    const handle = createJarvisMcpHandler({
+      fetchImpl: async (url, init) => { calls.push({ url, init }); return response; }, now: clock,
+    });
+    const reply = await call(handle, 'devops_health', {});
+    const result = payload(reply);
+    assert.equal(result.ok, expected, label);
+    assert.equal(result.identity_verified, expected, label + ' identity_verified');
+    assert.equal(result.http_status, response.status, label);
+    assert.equal(reply.result.isError, !expected, label);
+    assert.equal(calls.length, 1, label);
+    assert.equal(calls[0].url, 'http://127.0.0.1:3000/', label);
+    assert.equal(calls[0].init.redirect, 'error', label);
+    assert.deepEqual(calls[0].init.headers, { Accept: 'text/html' }, label);
+  }
+  const denied = createJarvisMcpHandler({ fetchImpl: async () => { throw new Error('ECONNREFUSED'); } });
+  const unavailable = payload(await call(denied, 'devops_health', {}));
+  assert.deepEqual({ ok: unavailable.ok, http_status: unavailable.http_status, identity_verified: unavailable.identity_verified },
+    { ok: false, http_status: null, identity_verified: false });
+});
+
 test('stdio server answers JSON-RPC over a real loopback HTTP service and rejects non-loopback config', async () => {
   const server = http.createServer((req, res) => {
     const path = new URL(req.url, 'http://x').pathname;
     const body = path === '/api/public-actions' ? actionsBody() : path === '/api/public-prs' ? prsBody() : null;
-    if (path === '/') { res.writeHead(200, { 'content-type': 'text/html' }); res.end('<html></html>'); return; }
+    if (path === '/') { res.writeHead(200, { 'content-type': 'text/html' }); res.end('<html><head><title>NEXUS DevOps Intelligence</title></head></html>'); return; }
     if (!body) { res.writeHead(404, { 'content-type': 'application/json' }); res.end('{}'); return; }
     res.writeHead(200, { 'content-type': 'application/json' }); res.end(JSON.stringify(body));
   });
