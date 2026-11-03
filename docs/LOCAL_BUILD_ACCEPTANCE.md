@@ -52,9 +52,13 @@ The runner then:
 Evidence and logs are stored in
 `C:\NEXUS-AI\runtime\devops-automation\acceptance\`.
 The runner checks the primary Git SHA again after acquiring its lock and
-after creating its worktree; an intervening source change blocks execution.
-It also confirms the temporary TCP port is no longer listening after stopping
-its own server. Reports use unique UTC timestamps and are never overwritten.
+after creating its worktree. It then rechecks both checkout HEADs and both
+working-tree statuses after HTTP/MCP checks and immediately before cleanup.
+A concurrent source edit fails acceptance even if protocol tests pass. The
+temporary TCP port must be released; a Git worktree remove exit status alone
+is not proof of deletion, so directory absence is verified as well. Failure
+to close its own server log also fails cleanup. Reports use unique UTC
+timestamps and are never overwritten.
 The report records the exact source SHA, each step and cleanup. Failed build,
 time limit, low RAM, failed health, failed checks or incomplete cleanup are
 not a PASS. If an interrupted attempt leaves a lock or worktree, inspect

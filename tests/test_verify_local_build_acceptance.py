@@ -207,6 +207,68 @@ class AcceptanceTests(unittest.TestCase):
             self.assertFalse((runtime / "acceptance.lock").exists())
             spawn.assert_not_called()
 
+    def test_source_consistency_checks_both_shas_and_both_dirty_trees(self):
+        isolated = self.repo.parent / "wt" / "acceptance"
+        expected = "abc123"
+        def status_checker(repo, *args):
+            if args == ("rev-parse", "HEAD"):
+                return expected
+            if args == ("status", "--porcelain=v1"):
+                return ""
+            raise AssertionError(args)
+        with mock.patch.object(runner, "checked_git", side_effect=status_checker) as git:
+            self.assertTrue(runner.source_unchanged(self.repo, isolated, expected))
+            self.assertEqual(git.call_count, 4)
+
+    def test_source_consistency_detects_dirty_isolated_tree(self):
+        isolated = self.repo.parent / "wt" / "acceptance"
+        def status_checker(repo, *args):
+            if args == ("rev-parse", "HEAD"):
+                return "abc123"
+            if args == ("status", "--porcelain=v1"):
+                return " M src/index.ts" if repo == isolated else ""
+            raise AssertionError(args)
+        with mock.patch.object(runner, "checked_git", side_effect=status_checker):
+            self.assertFalse(runner.source_unchanged(self.repo, isolated, "abc123"))
+
+    def test_source_consistency_detects_late_commit_change(self):
+        isolated = self.repo.parent / "wt" / "acceptance"
+        def status_checker(repo, *args):
+            if args == ("rev-parse", "HEAD"):
+                return "changed-late" if repo == self.repo else "abc123"
+            return ""
+        with mock.patch.object(runner, "checked_git", side_effect=status_checker):
+            self.assertFalse(runner.source_unchanged(self.repo, isolated, "abc123"))
+
+    def test_git_remove_exit_zero_is_not_proof_of_directory_removal(self):
+        # Simulate a Git remove that claims success but leaves the directory.
+        # The acceptance must fail and must not report clean cleanup.
+        worktree = self.repo.parent / "wt" / "devops-accept-abc123"
+        def checked(repo, *args):
+            if args[:2] == ("worktree", "add"):
+                worktree.mkdir(parents=True)
+                return ""
+            if args == ("rev-parse", "HEAD"):
+                return "abc123"
+            if args == ("status", "--porcelain=v1"):
+                return ""
+            return ""
+        with mock.patch.object(runner, "preflight",
+                               return_value={"state": "ready", "head": "abc123"}), \
+             mock.patch.object(runner, "checked_git", side_effect=checked), \
+             mock.patch.object(runner.subprocess, "run",
+                               return_value=types.SimpleNamespace(returncode=0)), \
+             mock.patch.object(runner, "safe_junction", return_value=False), \
+             mock.patch.object(runner.subprocess, "Popen") as spawn:
+            runtime = self.repo.parent / "runtime"
+            report = runner.run_acceptance(self.repo, runtime, {"head": "abc123"})
+        self.assertEqual(report["state"], "fail")
+        self.assertFalse(report["cleanup"]["isolated_worktree_removed"])
+        self.assertTrue(report["cleanup"]["source_unchanged_before_cleanup"])
+        self.assertTrue(worktree.exists())
+        self.assertFalse((runtime / "acceptance.lock").exists())
+        spawn.assert_not_called()
+
     def test_preexisting_evidence_is_never_overwritten(self):
         runtime = self.repo.parent / "runtime"
         runtime.mkdir()

@@ -28,6 +28,9 @@ test('local acceptance must remain opt-in, isolated and non-deploying', () => {
   assert.match(source, /MIN_START_MB = 4096/);
   assert.match(source, /MIN_RUNNING_MB = 1800/);
   assert.match(source, /dependency_issues\(repo, node\)/);
+  assert.match(source, /source_unchanged\(repo, worktree, head\)/);
+  assert.match(source, /and not worktree\.exists\(\)/);
+  assert.match(source, /source_unchanged_before_cleanup/);
   assert.match(source, /lock\["packages"\]\["node_modules\/next"\]/);
   assert.match(source, /node_version\(node\)/);
   assert.match(source, /RejectRedirect\(\)/);
@@ -48,7 +51,7 @@ test('Python safety regressions validate resource guards without running a serve
   const run = spawnSync(exe, ['-B', suite],
     { cwd: root, encoding: 'utf8', timeout: 30_000, windowsHide: true });
   assert.equal(run.status, 0, run.stdout + '\n' + run.stderr);
-  assert.match(run.stdout + run.stderr, /Ran 30 tests/);
+  assert.match(run.stdout + run.stderr, /Ran 34 tests/);
 });
 
 test('default Python CLI only reports preflight status', t => {

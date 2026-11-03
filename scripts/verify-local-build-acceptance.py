@@ -255,6 +255,15 @@ def probe_root(base: str) -> bool:
         return False
 
 
+def source_unchanged(repo: Path, worktree: Path, head: str) -> bool:
+    # The build must represent precisely the commit it was asked to accept,
+    # even if an unrelated notebook modifies the source during HTTP/MCP tests.
+    return (checked_git(repo, "rev-parse", "HEAD") == head
+            and not checked_git(repo, "status", "--porcelain=v1")
+            and checked_git(worktree, "rev-parse", "HEAD") == head
+            and not checked_git(worktree, "status", "--porcelain=v1"))
+
+
 def run_acceptance(repo: Path, runtime: Path, readiness: dict) -> dict:
     head = readiness["head"]
     worktree = repo.parent / "wt" / ("devops-accept-" + head[:12])
@@ -340,6 +349,9 @@ def run_acceptance(repo: Path, runtime: Path, readiness: dict) -> dict:
             evidence["checks"][label] = record
             if record["exit_code"]:
                 raise ResourceGuard(label + " check failed")
+        if not source_unchanged(repo, worktree, head):
+            raise ResourceGuard("source changed during build or acceptance checks")
+        evidence["checks"]["source_consistency"] = "pass"
         evidence["state"] = "pass"
     except (OSError, subprocess.SubprocessError, ResourceGuard) as exc:
         evidence["error"] = str(exc)[:400]
@@ -352,8 +364,19 @@ def run_acceptance(repo: Path, runtime: Path, readiness: dict) -> dict:
             except Exception:
                 cleanup["owned_server_stopped"] = False
         if server_log is not None:
-            server_log.close()
+            try:
+                server_log.close()
+                cleanup["server_log_closed"] = True
+            except OSError:
+                cleanup["server_log_closed"] = False
         server_stopped = server is None or cleanup.get("owned_server_stopped", False)
+        # Validate the commit once more just before tearing down the worktree.
+        # An error checking Git is a failed proof, never a passing acceptance.
+        if own_worktree:
+            try:
+                cleanup["source_unchanged_before_cleanup"] = source_unchanged(repo, worktree, head)
+            except (OSError, subprocess.SubprocessError):
+                cleanup["source_unchanged_before_cleanup"] = False
         if temporary_port is not None:
             cleanup["temporary_port_closed"] = temporary_port_closed(temporary_port)
         if own_junction:
@@ -367,17 +390,20 @@ def run_acceptance(repo: Path, runtime: Path, readiness: dict) -> dict:
                     cleanup["junction_removed"] = not link.exists()
                 except (OSError, ResourceGuard):
                     cleanup["junction_removed"] = False
-        if own_worktree and not link.exists() and server_stopped:
+        if own_worktree and not os.path.lexists(link) and server_stopped:
             try:
                 removal = subprocess.run(
                     ["git", "-C", str(repo), "worktree", "remove", "--force", str(worktree)],
                     capture_output=True, text=True, timeout=45)
-                cleanup["isolated_worktree_removed"] = removal.returncode == 0
+                cleanup["isolated_worktree_removed"] = (removal.returncode == 0
+                                                        and not worktree.exists())
             except (OSError, subprocess.SubprocessError):
                 cleanup["isolated_worktree_removed"] = False
         else:
             cleanup["isolated_worktree_removed"] = not own_worktree
         cleanup_ok = ((server is None or cleanup.get("owned_server_stopped", False))
+                      and (server_log is None or cleanup.get("server_log_closed", False))
+                      and (not own_worktree or cleanup.get("source_unchanged_before_cleanup", False))
                       and (temporary_port is None or cleanup.get("temporary_port_closed", False))
                       and (not own_junction or cleanup.get("junction_removed", False))
                       and cleanup["isolated_worktree_removed"])
