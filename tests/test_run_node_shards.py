@@ -51,6 +51,12 @@ class RunnerTests(unittest.TestCase):
         self.assertEqual(runner.classify_log(TAP_SKIP.encode(), 0)[0], "PARTIAL")
         self.assertEqual(runner.classify_log(b"PASS arbitrary text", 0)[0], "UNVERIFIED")
 
+    def test_duplicate_or_forged_tap_summary_is_never_accepted(self):
+        misleading = TAP_OK + "ℹ tests 1\nℹ pass 1\nℹ fail 0\n"
+        status, _ = runner.classify_log(misleading.encode(), 0)
+        self.assertEqual(status, "UNVERIFIED")
+        self.assertEqual(runner.classify_log("✔ good\n".encode("utf-8"), 0)[0], "UNVERIFIED")
+
     def test_absent_state_is_hold_with_full_inventory(self):
         state = runner.read_state(self.dir / "state.json", HEAD, self.tests)
         report = runner.evaluate(state)
@@ -135,14 +141,16 @@ class RunnerTests(unittest.TestCase):
                 }
         return Guard
 
-    def run_fake(self, *, available=4000, max_files=1, retry=False):
+    def run_fake(self, *, available=4000, max_files=1, retry=False, only=None):
         guard = self.guard()
         guard.free_ram_mb = lambda: available
         with mock.patch.object(runner, "source_clean", return_value=True), \
              mock.patch.object(runner, "is_elevated", return_value=False), \
              mock.patch.object(runner.shutil, "which", return_value="node.exe"):
-            return runner.execute(self.repo, HEAD, self.dir, max_files,
-                                  2400, 1800, 90, guard, retry_incomplete=retry)
+            with mock.patch.object(runner.time, "sleep"):
+                return runner.execute(self.repo, HEAD, self.dir, max_files,
+                                      2400, 1800, 90, guard, retry_incomplete=retry,
+                                      only_file=only)
 
     def test_one_file_per_call_then_resume_to_full_pass(self):
         first = self.run_fake()
@@ -155,6 +163,53 @@ class RunnerTests(unittest.TestCase):
         self.assertEqual(second["node_tests_gate"], "LOCAL_COMPLETE")
         self.assertFalse(second["release_authorized"])
         self.assertFalse((self.dir / "runner.lock").exists())
+
+    def test_explicit_test_selection_runs_only_its_exact_inventory_path(self):
+        result = self.run_fake(only="tests/b.test.mjs", max_files=2)
+        self.assertEqual(result["selected_test_file"], "tests/b.test.mjs")
+        self.assertEqual(result["files_passed"], 1)
+        state = runner.read_state(self.dir / "state.json", HEAD, self.tests)
+        self.assertEqual(set(state["results"]), {"tests/b.test.mjs"})
+        self.assertEqual(result["node_tests_gate"], "HOLD")
+
+    def test_invalid_or_path_traversing_selection_fails_before_state_creation(self):
+        for selected in ("../secrets.txt", "tests/../a.test.mjs",
+                         r"C:\NEXUS-AI\private.txt", "tests/unknown.test.mjs"):
+            with self.subTest(selection=selected):
+                with mock.patch.object(runner, "source_clean", return_value=True), \
+                     mock.patch.object(runner, "is_elevated", return_value=False):
+                    with self.assertRaisesRegex(RuntimeError, "invalid_test_selection"):
+                        runner.execute(self.repo, HEAD, self.dir, 2, 2400, 1800,
+                                       90, self.guard(), only_file=selected)
+                self.assertFalse(self.dir.exists())
+
+    def test_selection_of_already_passed_test_does_not_reexecute(self):
+        self.run_fake(only="tests/a.test.mjs")
+        with mock.patch.object(runner, "source_clean", return_value=True), \
+             mock.patch.object(runner, "is_elevated", return_value=False), \
+             mock.patch.object(runner.shutil, "which", return_value="node.exe"):
+            guard = self.guard()
+            guard.monitored_process = mock.Mock(side_effect=AssertionError("duplicate test"))
+            with mock.patch.object(runner.time, "sleep"):
+                result = runner.execute(self.repo, HEAD, self.dir, 2, 2400, 1800,
+                                        90, guard, only_file="tests/a.test.mjs")
+        self.assertEqual(result["attempted_this_invocation"], 0)
+        self.assertEqual(result["files_passed"], 1)
+
+    def test_short_lived_ram_spike_never_starts_a_test(self):
+        with mock.patch.object(runner.time, "sleep") as pause:
+            guard = self.guard()
+            with mock.patch.object(guard, "free_ram_mb", side_effect=[2600, 2280]):
+                self.assertEqual(runner.stable_shard_ram_mb(guard, 2400), 2280)
+            pause.assert_called_once_with(1)
+
+    def test_stable_ram_requires_three_checks(self):
+        with mock.patch.object(runner.time, "sleep") as pause:
+            guard = self.guard()
+            with mock.patch.object(guard, "free_ram_mb",
+                                   side_effect=[3100, 2800, 2500]):
+                self.assertEqual(runner.stable_shard_ram_mb(guard, 2400), 2500)
+            self.assertEqual(pause.call_count, 2)
 
     def test_low_ram_does_not_start_foreign_or_owned_test(self):
         with mock.patch.object(runner, "source_clean", return_value=True), \
@@ -195,7 +250,8 @@ class RunnerTests(unittest.TestCase):
         with mock.patch.object(runner, "source_clean", return_value=True), \
              mock.patch.object(runner, "is_elevated", return_value=False), \
              mock.patch.object(runner.shutil, "which", return_value="node.exe"):
-            result = runner.execute(self.repo, HEAD, self.dir, 2, 2400, 1800, 90, guard)
+            with mock.patch.object(runner.time, "sleep"):
+                result = runner.execute(self.repo, HEAD, self.dir, 2, 2400, 1800, 90, guard)
         self.assertEqual(result["files_passed"], 0)
         self.assertEqual(result["node_tests_gate"], "HOLD")
         self.assertIn("tests/a.test.mjs", result["exceptions"])

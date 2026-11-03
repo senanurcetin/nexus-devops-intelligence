@@ -19,6 +19,7 @@ import re
 import shutil
 import subprocess
 import sys
+import time
 
 SHA_RE = re.compile(r"[0-9a-f]{40}\Z")
 MAX_TEST_FILES = 250
@@ -64,6 +65,21 @@ def load_guard(repo: Path):
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
+
+
+def stable_shard_ram_mb(guard, min_start: int) -> int:
+    # One brief available-RAM spike must never authorize a new Node process.
+    first = guard.free_ram_mb()
+    if first < min_start:
+        return first
+    smallest = first
+    for _ in range(2):
+        time.sleep(1)
+        current = guard.free_ram_mb()
+        smallest = min(smallest, current)
+        if current < min_start:
+            break
+    return smallest
 
 
 def expected_log_name(relative: str, attempt: int) -> str:
@@ -118,10 +134,11 @@ def classify_log(raw: bytes, exit_code: int) -> tuple[str, dict]:
     text = raw.decode("utf-8", "replace")
     numbers = {}
     for key in ("tests", "pass", "fail", "cancelled", "skipped", "todo"):
-        match = re.search(r"(?m)^\s*(?:ℹ|#)\s*" + key + r"\s+(\d+)\s*$", text)
-        if match is None:
+        matches = re.findall(r"(?m)^\s*(?:ℹ|#)\s*" + key + r"\s+(\d+)\s*$", text)
+        if len(matches) != 1:
+            # Reject ambiguous TAP summaries, including fabricated lines.
             return "UNVERIFIED", numbers
-        numbers[key] = int(match.group(1))
+        numbers[key] = int(matches[0])
     if exit_code != 0 or numbers["fail"] or numbers["cancelled"]:
         return "FAIL", numbers
     if numbers["tests"] <= 0 or numbers["pass"] + numbers["skipped"] + numbers["todo"] != numbers["tests"]:
@@ -160,7 +177,7 @@ def save_state(path: Path, state: dict) -> None:
 
 def execute(repo: Path, sha: str, state_dir: Path, files_limit: int,
             min_start: int, min_running: int, seconds: int, guard,
-            retry_incomplete: bool = False) -> dict:
+            retry_incomplete: bool = False, only_file: str | None = None) -> dict:
     if sys.platform != "win32":
         raise RuntimeError("Windows_only")
     if is_elevated():
@@ -168,6 +185,8 @@ def execute(repo: Path, sha: str, state_dir: Path, files_limit: int,
     if not source_clean(repo, sha):
         raise RuntimeError("source_changed")
     tests = inventory(repo)
+    if only_file is not None and only_file not in tests:
+        raise RuntimeError("invalid_test_selection")
     if state_dir.is_symlink():
         raise RuntimeError("unsafe_state_directory")
     state_dir.mkdir(parents=True, exist_ok=True)
@@ -179,6 +198,8 @@ def execute(repo: Path, sha: str, state_dir: Path, files_limit: int,
         state = read_state(state_path, sha, tests)
         planned = [p for p in tests if p not in state["results"]
                    or (retry_incomplete and state["results"][p].get("status") != "PASS")]
+        if only_file is not None:
+            planned = [p for p in planned if p == only_file]
         node = shutil.which("node")
         if not node:
             raise RuntimeError("node_unavailable")
@@ -193,7 +214,7 @@ def execute(repo: Path, sha: str, state_dir: Path, files_limit: int,
                 break
             if not source_clean(repo, sha) or inventory(repo) != tests:
                 raise RuntimeError("source_or_test_inventory_changed")
-            free = guard.free_ram_mb()
+            free = stable_shard_ram_mb(guard, min_start)
             if free < min_start:
                 state["last_pause"] = {"reason": "insufficient_ram", "free_ram_mb": free}
                 save_state(state_path, state)
@@ -239,6 +260,7 @@ def execute(repo: Path, sha: str, state_dir: Path, files_limit: int,
                 break
         summary = evaluate(state)
         summary["attempted_this_invocation"] = attempted
+        summary["selected_test_file"] = only_file
         summary["state_path"] = str(state_path)
         return summary
     finally:
@@ -251,6 +273,8 @@ def main() -> int:
     parser.add_argument("--expect-sha", required=True)
     parser.add_argument("--execute", action="store_true")
     parser.add_argument("--retry-incomplete", action="store_true")
+    parser.add_argument("--only-file", type=str, default=None,
+                        help="run only an exact test path from the Git-checked inventory")
     parser.add_argument("--max-files", type=int, default=3)
     parser.add_argument("--min-start-mb", type=int, default=2400)
     parser.add_argument("--min-running-mb", type=int, default=1800)
@@ -268,17 +292,20 @@ def main() -> int:
         if not source_clean(repo, args.expect_sha):
             raise RuntimeError("checkout_sha_or_cleanliness_mismatch")
         files = inventory(repo)
+        if args.only_file is not None and args.only_file not in files:
+            raise RuntimeError("invalid_test_selection")
         path = state_dir / "state.json"
         state = read_state(path, args.expect_sha, files)
         if not args.execute:
             summary = evaluate(state)
-            summary.update({"mode": "read_only", "state_path": str(path), "issues": []})
+            summary.update({"mode": "read_only", "state_path": str(path),
+                            "selected_test_file": args.only_file, "issues": []})
         else:
             guard = load_guard(repo)
             summary = execute(
                 repo, args.expect_sha, state_dir, args.max_files,
                 args.min_start_mb, args.min_running_mb, args.seconds_per_file, guard,
-                retry_incomplete=args.retry_incomplete
+                retry_incomplete=args.retry_incomplete, only_file=args.only_file
             )
             summary["mode"] = "execute"
         print(json.dumps(summary, indent=2, ensure_ascii=False))

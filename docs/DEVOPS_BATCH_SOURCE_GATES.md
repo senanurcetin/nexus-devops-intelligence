@@ -27,11 +27,13 @@ python -B scripts\run-node-shards.py --repo $accepted --expect-sha $sha --execut
 
 
 Each invocation runs at most `--max-files` tests sequentially. The default
-startup guard is **2400 MB free RAM**, and the running-process guard is
-**1800 MB** (two consecutive low readings trigger termination of the
+startup guard is **2400 MB free RAM**, sampled three times over two
+seconds (the lowest reading determines whether the next test can start).
+The running-process guard is **1800 MB** (two consecutive low readings
+trigger termination of the
 runner-owned process tree). The process receives a secret-reduced environment
 and a 768 MB V8 heap cap. Node's test summary and exit code must both match
-a full pass: skipped, TODO, failed or malformed TAP results cannot count as
+a full pass: skipped, TODO, failed, duplicated or malformed TAP results cannot count as
 passed. Default per-file limit is 90 seconds.
 
 State and bounded logs are under
@@ -40,6 +42,14 @@ Git). Successful records are resumable only after each log's hash and TAP
 summary are verified again. The runner uses exclusive lock creation, atomic
 state writes, immutable numbered attempt log paths and never overwrites
 prior runs.
+
+To isolate a single exact file from the accepted 76-file test inventory,
+use the following command when sufficient RAM is available; it never runs
+any other test file or allows path traversal:
+
+```powershell
+python -B scripts\run-node-shards.py --repo $accepted --expect-sha $sha --execute --max-files 1 --only-file tests/check-annotations.test.mjs
+```
 
 To retry an explicitly incomplete test **without overwriting its evidence**:
 
