@@ -68,6 +68,9 @@ export function validateCommunityLedger(ledger, { root = ROOT } = {}) {
     return [...errors, 'ledger must contain exactly six monthly records'];
   }
 
+  const seenShares = new Map();
+  const seenFeedback = new Map();
+
   ledger.months.forEach((entry, index) => {
     const expected = new Date(Date.UTC(2026, 10 + index, 1)).toISOString().slice(0, 7);
     const prefix = `month[${index}]`;
@@ -103,6 +106,14 @@ export function validateCommunityLedger(ledger, { root = ROOT } = {}) {
 
     if (isShared) {
       if (!validHttpsUrl(entry.share_url)) errors.push(`${prefix}: shared content requires an HTTPS share_url`);
+      const canonicalShare = canonicalHttpsUrl(entry.share_url);
+      if (canonicalShare) {
+        if (seenShares.has(canonicalShare)) {
+          errors.push(`${prefix}: share_url is reused across months (first month[${seenShares.get(canonicalShare)}])`);
+        } else {
+          seenShares.set(canonicalShare, index);
+        }
+      }
       if (!validDate(entry.shared_at)) {
         errors.push(`${prefix}: shared content requires a valid shared_at date`);
       } else if (validDate(entry.published_at) && entry.shared_at < entry.published_at) {
@@ -123,6 +134,21 @@ export function validateCommunityLedger(ledger, { root = ROOT } = {}) {
         errors.push(`${prefix}: feedback status requires cited feedback`);
       }
       if (entry.status === 'FEEDBACK_RECORDED') {
+        const withinMonth = new Set();
+        for (const feedbackUrl of entry.feedback_urls) {
+          const canonicalFeedback = canonicalHttpsUrl(feedbackUrl);
+          if (!canonicalFeedback) continue;
+          if (withinMonth.has(canonicalFeedback)) {
+            errors.push(`${prefix}: duplicate feedback URL`);
+          } else {
+            withinMonth.add(canonicalFeedback);
+          }
+          if (seenFeedback.has(canonicalFeedback) && seenFeedback.get(canonicalFeedback) !== index) {
+            errors.push(`${prefix}: feedback URL is reused across months (first month[${seenFeedback.get(canonicalFeedback)}])`);
+          } else {
+            seenFeedback.set(canonicalFeedback, index);
+          }
+        }
         const usedForOtherEvidence = [entry.share_url, entry.source_pr]
           .map(canonicalHttpsUrl).filter(Boolean);
         if (entry.feedback_urls.some(url => usedForOtherEvidence.includes(canonicalHttpsUrl(url)))) {
