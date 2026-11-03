@@ -31,8 +31,11 @@ function providerOf(value) {
 }
 
 function outcomeOfCheck(status, conclusion) {
+  // A completed check requiring human approval has not failed its tests.
+  // Keep it in the actionable/pending bucket, with the original conclusion.
+  if (conclusion === 'action_required') return 'pending';
   if (status !== 'completed') return 'pending';
-  if (['failure', 'timed_out', 'startup_failure', 'action_required'].includes(conclusion)) return 'failure';
+  if (['failure', 'timed_out', 'startup_failure'].includes(conclusion)) return 'failure';
   if (conclusion === 'success') return 'success';
   return 'other';
 }
@@ -63,11 +66,15 @@ export function buildCommitCheckReport({ repository, sha, checks, statuses, now 
   if (verifiedChecks) {
     const data = checks.data;
     if (!checkedInput(data) || !Number.isSafeInteger(data.total_count) || data.total_count < 0 ||
-        !Array.isArray(data.check_runs)) throw new Error('Invalid GitHub checks response.');
+        !Array.isArray(data.check_runs) ||
+        data.total_count < data.check_runs.length) throw new Error('Invalid GitHub checks response.');
+    // Every real GitHub check run has its own immutable head_sha; without it
+    // the run could belong to a different commit despite a valid response URL.
     checksTruncated = data.total_count > Math.min(MAX_ITEMS, data.check_runs.length);
     const ids = new Set();
     for (const run of data.check_runs.slice(0, MAX_ITEMS)) {
       if (!checkedInput(run) || !Number.isSafeInteger(run.id) || run.id < 1 || ids.has(run.id) ||
+          run.head_sha !== sha ||
           typeof run.name !== 'string' || typeof run.status !== 'string' ||
           !(run.conclusion === null || typeof run.conclusion === 'string')) {
         throw new Error('Invalid GitHub check run.');
@@ -78,14 +85,24 @@ export function buildCommitCheckReport({ repository, sha, checks, statuses, now 
       items.push({
         kind: 'check_run', id: run.id, provider, name, outcome: outcomeOfCheck(run.status, run.conclusion),
         reported_status: clean(run.status, 32), reported_conclusion: clean(run.conclusion, 32) || null,
-        source_url: url, inspection_hint: inspectionHint(name),
+        source_url: url,
+        inspection_hint: run.conclusion === 'action_required'
+          ? 'This check needs maintainer approval or another manual action; inspect GitHub before rerunning. No test failure is confirmed.'
+          : inspectionHint(name),
       });
     }
   }
   if (verifiedStatuses) {
     const data = statuses.data;
-    if (!checkedInput(data) || !Array.isArray(data.statuses)) throw new Error('Invalid GitHub commit status response.');
-    statusesTruncated = data.statuses.length >= MAX_ITEMS;
+    // The combined status resource identifies the commit independently of the
+    // requested URL. Do not report a cached/proxied response for another SHA
+    // as evidence about the requested commit.
+    if (!checkedInput(data) || data.sha !== sha ||
+        !Number.isSafeInteger(data.total_count) || data.total_count < 0 ||
+        !Array.isArray(data.statuses) || data.total_count < data.statuses.length) {
+      throw new Error('Invalid GitHub commit status response.');
+    }
+    statusesTruncated = data.total_count > Math.min(MAX_ITEMS, data.statuses.length);
     // GitHub sends statuses newest first; retain only the newest state of each context.
     const contexts = new Set();
     for (const status of data.statuses.slice(0, MAX_ITEMS)) {
@@ -124,6 +141,7 @@ export function buildCommitCheckReport({ repository, sha, checks, statuses, now 
       'Only checks and commit statuses reported to GitHub are visible; provider-native pipeline history is not queried.',
       'Records are observations, not unique pipelines; the same job may appear in both APIs.',
       'No logs or check annotations were read; inspection hints are not verified root-cause diagnoses.',
+      'An action_required check is awaiting manual intervention, not evidence of failing tests.',
       'A missing or incomplete source does not establish that CI passed or that deployment is ready.',
     ],
   };

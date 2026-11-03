@@ -6,6 +6,7 @@ const now = new Date('2026-10-30T10:00:00.000Z');
 function pr(owner, number, author = 'tester') {
   return {
     html_url: `https://github.com/${owner}/widget/pull/${number}`,
+    number,
     repository_url: `https://api.github.com/repos/${owner}/widget`,
     title: `Fix ${number}`,
     user: { login: author },
@@ -18,7 +19,10 @@ function fixture(mergedItems = [], openItems = [], { mergedIncomplete = false, r
     calls.push({ url, opts });
     const isMerged = new URL(url).searchParams.get('q').includes('is:merged');
     if (status && isMerged) return { ok: false, status };
-    const items = isMerged ? mergedItems : openItems;
+    const items = (isMerged ? mergedItems : openItems).map(item => ({
+      state: isMerged ? 'closed' : 'open',
+      ...item,
+    }));
     return { ok: true, json: async () => ({ total_count: isMerged && reportedTotal !== null ? reportedTotal : items.length, incomplete_results: isMerged && mergedIncomplete, items }) };
   };
   return { fetchImpl, calls };
@@ -51,6 +55,37 @@ test('excludes self-owned PRs instead of counting them toward upstream', async (
   assert.equal(result.merged_in_other_owners_repositories.complete, false);
   assert.equal(result.merged_in_other_owners_repositories.observed_valid_external_prs, 0);
 });
+
+for (const query of ['merged', 'open']) {
+  for (const [type, login] of [['number', 42], ['object', {}], ['array', []]]) {
+    test(`a Search hit with a ${type} author login leaves ${query} totals unverifiable without rejecting the audit`, async () => {
+      const hit = pr('upstream', 12, login);
+      const result = await auditUpstreamPRs('tester', {
+        now, fetchImpl: fixture(query === 'merged' ? [hit] : [], query === 'open' ? [hit] : []).fetchImpl,
+      });
+      const part = result[`${query}_in_other_owners_repositories`];
+      assert.equal(part.complete, false);
+      assert.equal(part.confirmed_count, null);
+      assert.equal(part.observed_valid_external_prs, 0);
+      assert.deepEqual(part.prs, []);
+      assert.equal(result[`${query === 'merged' ? 'open' : 'merged'}_in_other_owners_repositories`].complete, true);
+    });
+  }
+}
+
+for (const query of ['merged', 'open']) {
+  test(`a Search hit with contradictory state cannot certify ${query} totals`, async () => {
+    const hit = { ...pr('upstream', 12), state: query === 'merged' ? 'open' : 'closed' };
+    const result = await auditUpstreamPRs('tester', {
+      now, fetchImpl: fixture(query === 'merged' ? [hit] : [], query === 'open' ? [hit] : []).fetchImpl,
+    });
+    const part = result[`${query}_in_other_owners_repositories`];
+    assert.equal(part.complete, false);
+    assert.equal(part.confirmed_count, null);
+    assert.equal(part.observed_valid_external_prs, 0);
+    assert.deepEqual(part.prs, []);
+  });
+}
 
 test('does not certify partial GitHub search or unverifiable PR links', async () => {
   const { fetchImpl } = fixture([pr('upstream', 5)], [], { mergedIncomplete: true });
@@ -152,4 +187,67 @@ test('duplicate same-day cutoff exclusions cannot masquerade as complete results
   assert.equal(result.merged_in_other_owners_repositories.confirmed_count, null);
   assert.equal(result.merged_in_other_owners_repositories.complete, false);
   assert.equal(result.merged_in_other_owners_repositories.excluded_before_exact_window, 1);
+});
+
+
+test('a GitHub Search page over the requested 100-row cap never certifies upstream PR totals', async () => {
+  const overfull = Array.from({ length: 101 }, (_, i) => pr('upstream', i + 1));
+  const result = await auditUpstreamPRs('tester', {
+    now, fetchImpl: fixture(overfull, overfull).fetchImpl,
+  });
+  for (const key of ['merged_in_other_owners_repositories', 'open_in_other_owners_repositories']) {
+    const part = result[key];
+    assert.equal(part.github_reported_matches, 101);
+    assert.equal(part.complete, false, 'nonconforming GitHub page must fail closed');
+    assert.equal(part.confirmed_count, null, 'overfull page is not certified evidence');
+    assert.ok(part.observed_valid_external_prs <= 100, 'audit must inspect no more than the requested page size');
+    assert.ok(part.prs.length <= 100, 'output list is bounded to requested page size');
+  }
+});
+
+test('a Search hit with a PR number contradicting its URL cannot certify merged or open totals', async () => {
+  const forged = pr('upstream', 12);
+  forged.number = 99; // URL identifies #12 while provider object identifies #99.
+  const result = await auditUpstreamPRs('tester', {
+    now, fetchImpl: fixture([forged], [forged]).fetchImpl,
+  });
+  for (const key of ['merged_in_other_owners_repositories', 'open_in_other_owners_repositories']) {
+    assert.equal(result[key].complete, false);
+    assert.equal(result[key].confirmed_count, null);
+    assert.equal(result[key].observed_valid_external_prs, 0);
+    assert.deepEqual(result[key].prs, []);
+  }
+});
+
+test('multi-page Search can observe 101 distinct hits but cannot certify snapshot completeness', async () => {
+  const rows = Array.from({ length: 101 }, (_, i) => pr('upstream', i + 1));
+  const fetchImpl = async (url) => {
+    const params = new URL(url).searchParams;
+    const page = Number(params.get('page'));
+    const items = (page === 1 ? rows.slice(0, 100) : rows.slice(100)).map(item => ({
+      ...item, state: params.get('q').includes('is:merged') ? 'closed' : 'open',
+    }));
+    return {
+      ok: true,
+      json: async () => ({ total_count: 101, incomplete_results: false, items }),
+    };
+  };
+  const result = await auditUpstreamPRs('tester', { now, fetchImpl });
+  for (const key of ['merged_in_other_owners_repositories', 'open_in_other_owners_repositories']) {
+    assert.equal(result[key].pages_read, 2);
+    assert.equal(result[key].observed_valid_external_prs, 101);
+    assert.equal(result[key].complete, false, 'GitHub Search does not guarantee snapshot-stable pagination');
+    assert.equal(result[key].confirmed_count, null, 'multi-page totals are observed, not certified');
+  }
+});
+
+test('a full and conforming 100-row GitHub Search page can still be certified', async () => {
+  const exact = Array.from({ length: 100 }, (_, i) => pr('upstream', i + 1));
+  const result = await auditUpstreamPRs('tester', {
+    now, fetchImpl: fixture(exact, exact).fetchImpl,
+  });
+  assert.equal(result.merged_in_other_owners_repositories.confirmed_count, 100);
+  assert.equal(result.open_in_other_owners_repositories.confirmed_count, 100);
+  assert.equal(result.merged_in_other_owners_repositories.complete, true);
+  assert.equal(result.open_in_other_owners_repositories.complete, true);
 });

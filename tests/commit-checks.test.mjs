@@ -14,12 +14,13 @@ const json = (payload, status = 200, headers = {}) => new Response(JSON.stringif
 const checks = {
   total_count: 3,
   check_runs: [
-    { id: 1, name: 'Tests', status: 'completed', conclusion: 'failure', app: { slug: 'github-actions' } },
-    { id: 2, name: 'Preview', status: 'completed', conclusion: 'success', app: { slug: 'vercel' } },
-    { id: 3, name: 'Compile', status: 'in_progress', conclusion: null, app: { slug: 'github-actions' } },
+    { id: 1, head_sha: sha, name: 'Tests', status: 'completed', conclusion: 'failure', app: { slug: 'github-actions' } },
+    { id: 2, head_sha: sha, name: 'Preview', status: 'completed', conclusion: 'success', app: { slug: 'vercel' } },
+    { id: 3, head_sha: sha, name: 'Compile', status: 'in_progress', conclusion: null, app: { slug: 'github-actions' } },
   ],
 };
 const statuses = {
+  sha, total_count: 3,
   statuses: [
     { context: 'ci/circleci: build', state: 'failure' },
     { context: 'ci/circleci: build', state: 'success' }, // older status should be ignored
@@ -78,8 +79,8 @@ test('completed skipped and cancelled checks are not treated as failures or pend
   const result = buildCommitCheckReport({
     repository, sha, checks: { state: 'verified', data: {
       total_count: 2, check_runs: [
-        { id: 1, name: 'Skipped', status: 'completed', conclusion: 'skipped' },
-        { id: 2, name: 'Cancelled', status: 'completed', conclusion: 'cancelled' },
+        { id: 1, head_sha: sha, name: 'Skipped', status: 'completed', conclusion: 'skipped' },
+        { id: 2, head_sha: sha, name: 'Cancelled', status: 'completed', conclusion: 'cancelled' },
       ],
     } }, statuses: { state: 'unavailable' },
   });
@@ -120,7 +121,7 @@ test('CLI invalid input returns exit 2 without attempting any GitHub call', () =
 
 test('untrusted check names are sanitized and links are always GitHub commit links', () => {
   const result = buildCommitCheckReport({ repository, sha, checks: { state: 'verified', data: {
-    total_count: 1, check_runs: [{ id: 42, name: 'CI\u202e\n' + 'x'.repeat(300), status: 'completed', conclusion: 'failure' }],
+    total_count: 1, check_runs: [{ id: 42, head_sha: sha, name: 'CI\u202e\n' + 'x'.repeat(300), status: 'completed', conclusion: 'failure' }],
   } }, statuses: { state: 'unavailable' } });
   assert.equal(result.attention[0].name.includes('\u202e'), false);
   assert.equal(result.attention[0].name.includes('\n'), false);
@@ -142,4 +143,85 @@ test('private GitHub token is opt-in, never used unless explicitly enabled', asy
   seen.length = 0;
   await collectCommitChecks({ repository, sha, fetcher, token: 'bad\nsecret', allowToken: true });
   assert.deepEqual(seen, [undefined, undefined], 'malformed token must not be forwarded');
+});
+
+
+test('approval-gated GitHub checks need action but are not failed test evidence', () => {
+  const report = buildCommitCheckReport({
+    repository, sha,
+    checks: { state: 'verified', data: {
+      total_count: 1,
+      check_runs: [{
+        id: 21, head_sha: sha, name: 'Test', status: 'completed', conclusion: 'action_required',
+        app: { slug: 'github-actions' },
+      }],
+    } },
+    statuses: { state: 'unavailable' },
+  });
+  assert.deepEqual(report.counts, { failure: 0, pending: 1, success: 0, other: 0 });
+  assert.equal(report.observed_state, 'pending_observed');
+  assert.equal(report.attention.length, 1);
+  assert.equal(report.attention[0].reported_conclusion, 'action_required');
+  assert.match(report.attention[0].inspection_hint, /approval|authorization|action/i);
+  assert.equal(report.attention[0].outcome, 'pending');
+});
+
+test('commit-check sources reject a different or missing immutable commit identity', async () => {
+  const wrong = 'b'.repeat(40);
+  for (const corrupt of [
+    { checks: { ...checks, check_runs: checks.check_runs.map((run, i) =>
+      i === 0 ? { ...run, head_sha: wrong } : run) }, statuses },
+    { checks: { ...checks, check_runs: checks.check_runs.map((run, i) =>
+      i === 0 ? { ...run, head_sha: undefined } : run) }, statuses },
+    { checks, statuses: { ...statuses, sha: wrong } },
+    { checks, statuses: { ...statuses, sha: undefined } },
+  ]) {
+    const result = await collectCommitChecks({
+      repository, sha,
+      fetcher: url => Promise.resolve(json(url.includes('/check-runs?')
+        ? corrupt.checks : corrupt.statuses)),
+    });
+    const checkBad = corrupt.checks !== checks;
+    assert.equal(result.coverage, checkBad ? 'commit_statuses_only' : 'checks_only');
+    assert.equal(result.sources[checkBad ? 'checks' : 'commit_statuses'], 'invalid');
+    assert.equal(result.sources[checkBad ? 'commit_statuses' : 'checks'], 'verified');
+    assert.equal(result.access.mode, 'read_only');
+  }
+});
+
+test('both sources with mismatched SHAs never produce a verified report', async () => {
+  const result = await collectCommitChecks({
+    repository, sha,
+    fetcher: url => Promise.resolve(json(url.includes('/check-runs?')
+      ? { ...checks, check_runs: checks.check_runs.map(run => ({ ...run, head_sha: 'b'.repeat(40) })) }
+      : { ...statuses, sha: 'b'.repeat(40) })),
+  });
+  assert.equal(result.coverage, 'none');
+  assert.equal(result.observed_state, 'no_records_in_sample');
+  assert.deepEqual(result.counts, { failure: 0, pending: 0, success: 0, other: 0 });
+});
+
+test('contradictory GitHub collection counts fail closed independently', async () => {
+  const result = await collectCommitChecks({
+    repository, sha,
+    fetcher: url => Promise.resolve(json(url.includes('/check-runs?')
+      ? { ...checks, total_count: 1 }
+      : { ...statuses, total_count: 1 })),
+  });
+  assert.equal(result.coverage, 'none');
+  assert.equal(result.sources.checks, 'invalid');
+  assert.equal(result.sources.commit_statuses, 'invalid');
+});
+
+test('commit status pagination truncation reflects reported count, not just page size', () => {
+  const exact = buildCommitCheckReport({
+    repository, sha, checks: { state: 'unavailable' },
+    statuses: { state: 'verified', data: { ...statuses, total_count: statuses.statuses.length } },
+  });
+  assert.equal(exact.truncated.commit_statuses, false);
+  const more = buildCommitCheckReport({
+    repository, sha, checks: { state: 'unavailable' },
+    statuses: { state: 'verified', data: { ...statuses, total_count: 103 } },
+  });
+  assert.equal(more.truncated.commit_statuses, true);
 });

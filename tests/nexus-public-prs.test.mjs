@@ -95,3 +95,48 @@ test('rejects repeated PR numbers in the same sample', () => {
   assert.throws(() => summarizePublicPullRequests(repo, [pr(4), pr(4)], [null, null]),
     /Duplicate GitHub pull request number/);
 });
+
+test('PR list and detail head commits must match before any merge assessment', () => {
+  const first = 'a'.repeat(40);
+  const next = 'b'.repeat(40);
+  const base = 'c'.repeat(40);
+  const listed = pr(42, { head: { sha: first }, base: { sha: base } });
+  const consistent = detail(42, { head: { sha: first }, base: { sha: base } });
+  const aligned = summarizePublicPullRequests(repo, [listed], [consistent]);
+  assert.deepEqual(aligned.pull_requests.map(item => item.attention), ['clear']);
+
+  for (const stale of [
+    detail(42, { head: { sha: next }, base: { sha: base } }),
+    detail(42, { head: { sha: first }, base: { sha: next } }),
+    detail(42, { head: { sha: first } }),
+    detail(42, { base: { sha: base } }),
+    detail(42, { head: { sha: 'not-a-sha' }, base: { sha: base } }),
+  ]) {
+    const result = summarizePublicPullRequests(repo, [listed], [stale]);
+    assert.equal(result.pull_requests[0].attention, 'unknown');
+    assert.equal(result.unknown, 1);
+    assert.equal(result.needs_attention, 1);
+    assert.equal(result.conflicts, 0);
+  }
+});
+
+test('stale PR details cannot claim a conflict or approval blocker for a newer revision', () => {
+  const current = pr(77, { head: { sha: 'a'.repeat(40) }, base: { sha: 'c'.repeat(40) } });
+  for (const mergeable_state of ['dirty', 'blocked', 'clean']) {
+    const mismatched = detail(77, {
+      mergeable_state,
+      mergeable: mergeable_state !== 'dirty',
+      head: { sha: 'b'.repeat(40) },
+      base: { sha: 'c'.repeat(40) },
+    });
+    const result = summarizePublicPullRequests(repo, [current], [mismatched]);
+    assert.equal(result.pull_requests[0].attention, 'unknown', mergeable_state);
+    assert.equal(result.needs_attention, 1);
+  }
+});
+
+test('invalid optional base revision in a PR listing fails before trusting merge details', () => {
+  assert.throws(() => summarizePublicPullRequests(repo, [
+    pr(80, { base: { sha: 'not-a-git-id' } }),
+  ], [detail(80)]), /Invalid GitHub pull request/);
+});

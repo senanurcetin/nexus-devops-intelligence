@@ -106,3 +106,99 @@ test('standalone MCP process supports framed stdio even with the dashboard stopp
     if (child.exitCode === null) child.kill();
   }
 });
+
+
+test('concurrent identical commit reads share one upstream query and one budget slot', async () => {
+  let release;
+  const gate = new Promise(resolve => { release = resolve; });
+  let calls = 0;
+  const handle = createCommitChecksMcpHandler({
+    maxRequestsPerHour: 1,
+    now: () => 3_600_000,
+    collect: async () => {
+      calls += 1;
+      await gate;
+      return sample;
+    },
+  });
+  const first = call(handle, 'devops_commit_checks', args);
+  const second = call(handle, 'devops_commit_checks', args);
+  release();
+  const [a, b] = await Promise.all([first, second]);
+  assert.equal(calls, 1, 'one outstanding GitHub read per exact commit');
+  assert.equal(a.result.isError, false);
+  assert.equal(b.result.isError, false, 'coalesced request must not receive budget_exhausted');
+  assert.deepEqual(a.result.structuredContent, sample);
+  assert.deepEqual(b.result.structuredContent, sample);
+  const separate = await call(handle, 'devops_commit_checks', { repository: 'owner/other', sha });
+  assert.equal(JSON.parse(separate.result.content[0].text).error, 'github_request_budget_exhausted');
+  assert.equal(calls, 1);
+});
+
+test('a failed in-flight read does not become reusable successful evidence', async () => {
+  let release;
+  const gate = new Promise(resolve => { release = resolve; });
+  let calls = 0;
+  const handle = createCommitChecksMcpHandler({
+    maxRequestsPerHour: 2,
+    collect: async () => {
+      calls += 1;
+      await gate;
+      throw new Error('synthetic upstream outage');
+    },
+  });
+  const first = call(handle, 'devops_commit_checks', args);
+  const second = call(handle, 'devops_commit_checks', args);
+  release();
+  const [a, b] = await Promise.all([first, second]);
+  assert.equal(calls, 1);
+  assert.equal(a.result.isError, true);
+  assert.equal(b.result.isError, true);
+  assert.equal(JSON.parse(a.result.content[0].text).error, 'github_check_collection_failed');
+  assert.equal(JSON.parse(b.result.content[0].text).error, 'github_check_collection_failed');
+  const retry = await call(handle, 'devops_commit_checks', args);
+  assert.equal(retry.result.isError, true);
+  assert.equal(calls, 2, 'failure cleared in-flight state and allows a separately budgeted retry');
+});
+
+
+test('cached requests with repository letter-case aliases retain the exact requested target', async () => {
+  let called = 0;
+  const handle = createCommitChecksMcpHandler({
+    maxRequestsPerHour: 2,
+    collect: async ({ repository: requested }) => {
+      called++;
+      return { ...sample, repository: requested };
+    },
+  });
+  const first = await call(handle, 'devops_commit_checks', { repository: 'Owner/Example', sha });
+  const second = await call(handle, 'devops_commit_checks', { repository: 'owner/example', sha });
+  assert.equal(first.result.isError, false);
+  assert.equal(second.result.isError, false);
+  assert.equal(first.result.structuredContent.repository, 'Owner/Example');
+  assert.equal(second.result.structuredContent.repository, 'owner/example');
+  assert.equal(called, 2, 'distinct request spellings must not share a response with the wrong repository field');
+});
+
+test('concurrent repository case aliases do not share a mismatched structured result', async () => {
+  let release;
+  const gate = new Promise(resolve => { release = resolve; });
+  let called = 0;
+  const handle = createCommitChecksMcpHandler({
+    maxRequestsPerHour: 2,
+    collect: async ({ repository: requested }) => {
+      called++;
+      await gate;
+      return { ...sample, repository: requested };
+    },
+  });
+  const first = call(handle, 'devops_commit_checks', { repository: 'Owner/Example', sha });
+  const second = call(handle, 'devops_commit_checks', { repository: 'owner/example', sha });
+  release();
+  const [a, b] = await Promise.all([first, second]);
+  assert.equal(a.result.isError, false);
+  assert.equal(b.result.isError, false);
+  assert.equal(a.result.structuredContent.repository, 'Owner/Example');
+  assert.equal(b.result.structuredContent.repository, 'owner/example');
+  assert.equal(called, 2);
+});

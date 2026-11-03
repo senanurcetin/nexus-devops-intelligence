@@ -61,16 +61,21 @@ async function searchPages(login, state, cutoff, fetchImpl, exactWindow = null) 
     }
     pagesRead++;
     if (totalCount === null) totalCount = result.total_count;
-    if (result.total_count !== totalCount || result.incomplete_results !== false) complete = false;
+    if (result.total_count !== totalCount || result.incomplete_results !== false ||
+        result.items.length > PAGE_SIZE) complete = false;
     seenRows += result.items.length;
-    for (const item of result.items) {
+    // A nonconforming provider page is not evidence of complete pagination.
+    // Inspect at most the requested page size even when upstream returns more.
+    for (const item of result.items.slice(0, PAGE_SIZE)) {
       const repo = repoFromApiUrl(item?.repository_url);
       const url = item?.html_url;
       const match = typeof url === 'string' ? /^https:\/\/github\.com\/([^/]+)\/([^/]+)\/pull\/(\d+)$/.exec(url) : null;
       if (!repo || !match || repo.toLowerCase() !== `${match[1]}/${match[2]}`.toLowerCase() ||
           match[1].toLowerCase() === login.toLowerCase() ||
-          item?.user?.login?.toLowerCase() !== login.toLowerCase() ||
-          !item?.pull_request || !Number.isSafeInteger(Number(match[3])) || Number(match[3]) < 1) {
+          typeof item?.user?.login !== 'string' || item.user.login.toLowerCase() !== login.toLowerCase() ||
+          item?.state !== (state === 'merged' ? 'closed' : 'open') ||
+          !item?.pull_request || !Number.isSafeInteger(Number(match[3])) || Number(match[3]) < 1 ||
+          !Number.isSafeInteger(item?.number) || item.number !== Number(match[3])) {
         complete = false;
         continue;
       }
@@ -113,6 +118,9 @@ async function searchPages(login, state, cutoff, fetchImpl, exactWindow = null) 
   // Duplicate, unverifiable and incomplete rows still invalidate confirmation.
   if (totalCount > MAX_PAGES * PAGE_SIZE || seenRows !== totalCount ||
       observed.size + excludedBeforeExactWindow !== seenRows) complete = false;
+  // GitHub Search pagination is not snapshot-isolated. Even unique hits and a
+  // stable reported total cannot prove no PR moved between separate page reads.
+  if (pagesRead > 1) complete = false;
   return {
     github_reported_matches: totalCount,
     observed_valid_external_prs: observed.size,

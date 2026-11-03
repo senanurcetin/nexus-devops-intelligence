@@ -76,3 +76,36 @@ test('completed runs without a conclusion are unknown outcomes, not pending', ()
   assert.equal(r.other_outcome_runs, 1);
   assert.equal(r.failed_runs, 0);
 });
+
+test('completed action_required is waiting for maintainer approval, not a failed workflow', () => {
+  const result = summarizePublicActions(repo, {
+    total_count: 5,
+    workflow_runs: [
+      workflow(1, 'action_required'),
+      workflow(2, 'failure'),
+      workflow(3, 'cancelled'),
+      workflow(4, 'skipped'),
+      { ...workflow(5, null), status: 'in_progress' },
+    ],
+  });
+  assert.equal(result.inspected_runs, 5);
+  assert.equal(result.successful_runs, 0);
+  assert.equal(result.failed_runs, 1);
+  assert.equal(result.pending_runs, 2);
+  assert.equal(result.other_outcome_runs, 2);
+  assert.match(result.scope_note, /action_required runs need human approval/);
+});
+
+test('action_required on a non-completed workflow remains waiting; unknown completions stay other', () => {
+  const result = summarizePublicActions(repo, {
+    total_count: 3,
+    workflow_runs: [
+      { ...workflow(1, 'action_required'), status: 'waiting' },
+      workflow(2, null),
+      workflow(3, 'unknown_future_conclusion'),
+    ],
+  });
+  assert.equal(result.pending_runs, 1);
+  assert.equal(result.other_outcome_runs, 2);
+  assert.equal(result.failed_runs, 0);
+});

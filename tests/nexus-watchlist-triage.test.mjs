@@ -9,9 +9,10 @@ import {
 const now = new Date('2026-10-30T12:00:00.000Z');
 const source = state => ({ state, http_status: state === 'verified' ? 200 : null,
   received_at_utc: state === 'verified' ? '2026-10-30T12:00:00.000Z' : null });
-const inv = (severity, n = 1) => Array.from({ length: n }, (_, i) => ({
-  key: `k${i}`, severity, source_type: 'workflow_run', source_label: 'x', title: 't',
-  reported_signal: 's', next_step: 'n', source_url: `https://github.com/o/r/actions/runs/${i + 1}`,
+const inv = (repository, severity, n = 1, start = 0) => Array.from({ length: n }, (_, i) => ({
+  key: `${severity}-${start + i + 1}`, severity, source_type: 'workflow_run', source_label: 'x', title: 't',
+  reported_signal: 's', next_step: 'n',
+  source_url: `https://github.com/${repository}/actions/runs/${start + i + 1}`,
 }));
 const digest = (repository, state, { high = 0, medium = 0, info = 0, actions = 'verified', prs = 'verified', headline = 'h' } = {}) => ({
   repository,
@@ -20,7 +21,8 @@ const digest = (repository, state, { high = 0, medium = 0, info = 0, actions = '
   access: { mode: 'read_only', write_actions: [], release_authorized: false, merge_approval: false },
   sources: { actions: source(actions), pull_requests: source(prs) },
   posture: { state, headline, coverage: 'both', repository, releaseAuthorized: false },
-  investigations: [...inv('high', high), ...inv('medium', medium), ...inv('info', info)],
+  investigations: [...inv(repository, 'high', high), ...inv(repository, 'medium', medium, high),
+    ...inv(repository, 'info', info, high + medium)],
 });
 
 test('orders by posture, then high count, then total, then name', () => {
@@ -256,7 +258,8 @@ test('skips an invalid first investigation link and retains the next verified Gi
 
   const result = triageWatchlist([{ repository: 'o/good', digest: report }], now);
   assert.equal(result.entries[0].readable, true);
-  assert.equal(result.entries[0].high, 2, 'a malformed link does not alter source-verified investigation counts');
+  assert.equal(result.entries[0].high, 1, 'unverifiable investigation URLs cannot inflate severity counts');
+  assert.match(result.entries[0].note, /1 unverifiable or duplicate investigation/);
   assert.equal(result.entries[0].first_url, 'https://github.com/o/good/actions/runs/2');
   const markdown = watchlistMarkdown(result);
   assert.match(markdown, /https:\/\/github\.com\/o\/good\/actions\/runs\/2/);
@@ -297,4 +300,47 @@ test('watchlist source receipts allow only the same one-minute skew as risk post
   assert.equal(row.readable, true);
   assert.equal(row.high, 1);
   assert.equal(row.first_url, 'https://github.com/o/good/actions/runs/1');
+});
+
+
+test('cross-repository and malformed investigation URLs cannot inflate watchlist priority', () => {
+  const forged = digest('o/forged', 'investigate_observed', { high: 4 });
+  forged.investigations[0].source_url = 'https://github.com/o/other/actions/runs/1';
+  forged.investigations[1].source_url = 'javascript:alert(1)';
+  forged.investigations[2].source_url = 'https://github.com/o/forged/pull/3';
+  forged.investigations[3].source_url = 'https://github.com/o/forged/actions/runs/4?token=bad';
+
+  const real = digest('o/real', 'investigate_observed', { high: 1 });
+  const result = triageWatchlist([
+    { repository: 'o/forged', digest: forged }, { repository: 'o/real', digest: real },
+  ], now);
+  assert.deepEqual(result.entries.map(item => item.repository), ['o/real', 'o/forged']);
+  assert.equal(result.entries[0].high, 1);
+  assert.equal(result.entries[1].high, 0);
+  assert.equal(result.entries[1].first_url, null);
+  assert.match(result.entries[1].note, /4 unverifiable or duplicate investigations excluded/);
+  const markdown = watchlistMarkdown(result);
+  assert.doesNotMatch(markdown, /javascript:|token=bad|o\/other\/actions/);
+});
+
+test('duplicate canonical URLs do not count the same observed workflow twice', () => {
+  const forged = digest('o/dup', 'investigate_observed', { high: 3 });
+  forged.investigations[1].source_url = forged.investigations[0].source_url;
+  const entry = triageWatchlist([{ repository: 'o/dup', digest: forged }], now).entries[0];
+  assert.equal(entry.high, 2);
+  assert.equal(entry.first_url, 'https://github.com/o/dup/actions/runs/1');
+  assert.match(entry.note, /1 unverifiable or duplicate investigation excluded/);
+});
+
+test('one verified source does not legitimise wrong-kind or unverifiable findings', () => {
+  const forged = digest('o/partial', 'investigate_observed',
+    { high: 2, medium: 1, prs: 'unavailable' });
+  forged.investigations[0].source_type = 'pull_request';
+  forged.investigations[0].source_url = 'https://github.com/o/partial/pull/1';
+  forged.investigations[1].source_url = 'https://github.com/o/partial/pull/2';
+  const entry = triageWatchlist([{ repository: 'o/partial', digest: forged }], now).entries[0];
+  assert.deepEqual([entry.high, entry.medium, entry.info], [0, 1, 0]);
+  assert.equal(entry.first_url, 'https://github.com/o/partial/actions/runs/3');
+  assert.match(entry.note, /Only one of the two sources/);
+  assert.match(entry.note, /2 unverifiable or duplicate investigations excluded/);
 });
