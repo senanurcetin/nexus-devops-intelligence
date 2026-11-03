@@ -22,6 +22,26 @@ function validHttpsUrl(value) {
   }
 }
 
+/** Offline shape check only: links are not fetched and third-party authorship is not proven. */
+function isOwnRepositoryOrFileLink(value) {
+  try {
+    const url = new URL(value);
+    const host = url.hostname.toLowerCase();
+    if (host === 'raw.githubusercontent.com') return true;
+    if (host !== 'github.com') return false;
+    const path = url.pathname.toLowerCase();
+    return /^\/senanurcetin\/nexus-devops-intelligence(?:\/|$)/.test(path) ||
+      /^\/[^/]+\/[^/]+\/(?:blob|tree)(?:\/|$)/.test(path);
+  } catch {
+    return false;
+  }
+}
+
+function canonicalHttpsUrl(value) {
+  if (!validHttpsUrl(value)) return null;
+  return new URL(value).href;
+}
+
 function checkedArtifact(path, root) {
   if (typeof path !== 'string' || !/^docs\/CODEX_[A-Za-z0-9_]+\.md$/.test(path)) {
     return 'artifact must be a repository-relative docs/CODEX_*.md file';
@@ -83,9 +103,12 @@ export function validateCommunityLedger(ledger, { root = ROOT } = {}) {
 
     if (isShared) {
       if (!validHttpsUrl(entry.share_url)) errors.push(`${prefix}: shared content requires an HTTPS share_url`);
-      if (!validDate(entry.shared_at)) errors.push(`${prefix}: shared content requires a valid shared_at date`);
-      if (typeof entry.share_url === 'string' &&
-          /^https:\/\/(?:raw\.githubusercontent\.com|github\.com\/[^/]+\/[^/]+\/(?:blob|tree)\/)/.test(entry.share_url)) {
+      if (!validDate(entry.shared_at)) {
+        errors.push(`${prefix}: shared content requires a valid shared_at date`);
+      } else if (validDate(entry.published_at) && entry.shared_at < entry.published_at) {
+        errors.push(`${prefix}: shared_at cannot precede published_at`);
+      }
+      if (isOwnRepositoryOrFileLink(entry.share_url)) {
         errors.push(`${prefix}: a repository file URL does not prove external community sharing`);
       }
     } else if (entry.share_url != null || entry.shared_at != null) {
@@ -98,6 +121,13 @@ export function validateCommunityLedger(ledger, { root = ROOT } = {}) {
       if (entry.feedback_urls.some(url => !validHttpsUrl(url))) errors.push(`${prefix}: feedback URL must be HTTPS`);
       if (entry.status === 'FEEDBACK_RECORDED' && entry.feedback_urls.length === 0) {
         errors.push(`${prefix}: feedback status requires cited feedback`);
+      }
+      if (entry.status === 'FEEDBACK_RECORDED') {
+        const usedForOtherEvidence = [entry.share_url, entry.source_pr]
+          .map(canonicalHttpsUrl).filter(Boolean);
+        if (entry.feedback_urls.some(url => usedForOtherEvidence.includes(canonicalHttpsUrl(url)))) {
+          errors.push(`${prefix}: feedback URL must differ from the shared post or source PR`);
+        }
       }
       if (entry.status !== 'FEEDBACK_RECORDED' && entry.feedback_urls.length > 0) {
         errors.push(`${prefix}: promote to FEEDBACK_RECORDED before recording feedback links`);
