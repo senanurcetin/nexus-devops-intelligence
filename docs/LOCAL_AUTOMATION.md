@@ -37,3 +37,11 @@ Nothing is sent anywhere; read `STATUS.md` or `alerts.jsonl`.
 - Lease renewal is an explicit owner action (`New-DevopsLease.ps1`, at most 24 h). The Health task only warns.
 - The Gate is local evidence. It is not a production deployment check.
 - Child processes run at BelowNormal priority with a hard timeout and only the process started by the script is ever stopped.
+
+## Manual, resource-guarded production acceptance
+
+For a fresh production build and JARVIS MCP loopback acceptance, use the
+**opt-in** [local build acceptance runner](LOCAL_BUILD_ACCEPTANCE.md). Its
+default mode is a read-only resource/commit preflight; it never schedules a
+task, and requires at least 4 GB free RAM before any isolated build.
+This manual acceptance is separate from the Health/Watch/Gate schedules.
