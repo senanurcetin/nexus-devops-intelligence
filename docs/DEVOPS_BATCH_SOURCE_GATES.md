@@ -39,9 +39,11 @@ passed. Default per-file limit is 90 seconds.
 State and bounded logs are under
 `C:\NEXUS-AI\runtime\devops-automation\node-shards-<sha12>` (outside
 Git). Successful records are resumable only after each log's hash and TAP
-summary are verified again. The runner uses exclusive lock creation, atomic
-state writes, immutable numbered attempt log paths and never overwrites
-prior runs.
+summary are verified again. Failed, partial and interrupted log records are
+also hash-checked before resume. Logs are read with a strict 4 MB limit
+(including error paths), and invalid/symlink log files are refused. The
+runner uses exclusive lock creation, atomic state writes, immutable numbered
+attempt log paths and never overwrites prior runs.
 
 To isolate a single exact file from the accepted 76-file test inventory,
 use the following command when sufficient RAM is available; it never runs

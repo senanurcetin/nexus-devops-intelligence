@@ -19,6 +19,7 @@ import re
 import shutil
 import subprocess
 import sys
+import stat
 import time
 
 SHA_RE = re.compile(r"[0-9a-f]{40}\Z")
@@ -88,24 +89,43 @@ def expected_log_name(relative: str, attempt: int) -> str:
     return sha256(relative.encode("utf-8"))[:16] + "-attempt-" + str(attempt) + ".log"
 
 
+def read_bounded_log(path: Path) -> bytes:
+    # Never load a growing/oversized process log unbounded into RAM.
+    metadata = path.lstat()
+    if not stat.S_ISREG(metadata.st_mode) or not 0 < metadata.st_size <= MAX_LOG_BYTES:
+        raise RuntimeError("unsafe_test_log")
+    with path.open("rb") as stream:
+        raw = stream.read(MAX_LOG_BYTES + 1)
+    if not 0 < len(raw) <= MAX_LOG_BYTES:
+        raise RuntimeError("oversized_or_empty_test_log")
+    return raw
+
+
 def validate_completed_logs(state_path: Path, state: dict) -> None:
+    allowed = {"PASS", "FAIL", "BLOCKED", "UNVERIFIED", "PARTIAL"}
     for relative, record in state["results"].items():
-        if not isinstance(record, dict):
+        if not isinstance(record, dict) or record.get("status") not in allowed:
             raise RuntimeError("invalid_test_result")
-        if record.get("status") != "PASS":
-            continue
         attempt = record.get("attempt")
-        if type(attempt) is not int or record.get("log") != expected_log_name(relative, attempt):
-            raise RuntimeError("invalid_completed_log_reference")
-        log = state_path.parent / record["log"]
-        if log.is_symlink() or not log.is_file() or not 0 < log.stat().st_size <= MAX_LOG_BYTES:
-            raise RuntimeError("unsafe_completed_log")
-        data = log.read_bytes()
-        if sha256(data) != record.get("log_sha256"):
-            raise RuntimeError("completed_log_hash_mismatch")
-        classification, counts = classify_log(data, record.get("exit_code"))
-        if classification != "PASS" or counts != record.get("counts"):
-            raise RuntimeError("completed_log_not_verified")
+        if type(attempt) is not int or not 1 <= attempt <= 9999:
+            raise RuntimeError("invalid_test_attempt")
+        logged = record.get("log")
+        if logged is None:
+            if record["status"] != "BLOCKED" or record.get("log_sha256") is not None:
+                raise RuntimeError("missing_result_log")
+            continue
+        if logged != expected_log_name(relative, attempt):
+            raise RuntimeError("invalid_test_log_reference")
+        try:
+            raw = read_bounded_log(state_path.parent / logged)
+        except OSError as exc:
+            raise RuntimeError("unreadable_result_log") from exc
+        if sha256(raw) != record.get("log_sha256"):
+            raise RuntimeError("test_log_hash_mismatch")
+        if record["status"] == "PASS":
+            classification, counts = classify_log(raw, record.get("exit_code"))
+            if classification != "PASS" or counts != record.get("counts"):
+                raise RuntimeError("completed_log_not_verified")
 
 
 def read_state(path: Path, sha: str, tests: dict[str, str]) -> dict:
@@ -222,7 +242,7 @@ def execute(repo: Path, sha: str, state_dir: Path, files_limit: int,
             previous = state["results"].get(rel, {})
             attempt = previous.get("attempt", 0) + 1
             target = state_dir / expected_log_name(rel, attempt)
-            if target.exists():
+            if os.path.lexists(target):
                 raise RuntimeError("existing_test_log_refusing_overwrite")
             # The resource monitor opens the log itself. The lock prevents
             # two copies of the runner writing a shared session.
@@ -232,9 +252,7 @@ def execute(repo: Path, sha: str, state_dir: Path, files_limit: int,
                     [node, "--import", "tsx", "--test", "--test-concurrency=1", rel],
                     repo, env, target, seconds, min_ram=min_running
                 )
-                raw = target.read_bytes()
-                if len(raw) > MAX_LOG_BYTES:
-                    raise RuntimeError("test_log_exceeds_limit")
+                raw = read_bounded_log(target)
                 status, counts = classify_log(raw, run["exit_code"])
                 entry = {
                     "attempt": attempt, "status": status, "exit_code": run["exit_code"],
@@ -243,10 +261,14 @@ def execute(repo: Path, sha: str, state_dir: Path, files_limit: int,
                     "lowest_free_ram_mb": run["lowest_free_ram_mb"],
                 }
             except (OSError, ValueError, RuntimeError, guard.ResourceGuard) as exc:
-                raw = target.read_bytes() if target.exists() else b""
+                # Never follow symlinks or read oversized logs in error paths.
+                try:
+                    raw = read_bounded_log(target)
+                except (OSError, RuntimeError):
+                    raw = b""
                 entry = {
                     "attempt": attempt, "status": "BLOCKED", "reason": type(exc).__name__,
-                    "log": target.name if target.exists() else None,
+                    "log": target.name if raw else None,
                     "log_sha256": sha256(raw) if raw else None,
                 }
             # No PASS may be recorded if another source changes during a test.

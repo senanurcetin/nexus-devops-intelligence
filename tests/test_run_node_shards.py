@@ -98,6 +98,52 @@ class RunnerTests(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, "hash_mismatch"):
             runner.read_state(self.dir / "state.json", HEAD, self.tests)
 
+    def test_tampered_partial_log_blocks_resume_too(self):
+        self.dir.mkdir()
+        rel = "tests/a.test.mjs"
+        name = runner.expected_log_name(rel, 1)
+        log = self.dir / name
+        log.write_bytes(b"interrupted process output")
+        state = runner.read_state(self.dir / "state.json", HEAD, self.tests)
+        state["results"][rel] = {
+            "status": "BLOCKED", "attempt": 1, "log": name,
+            "log_sha256": runner.sha256(log.read_bytes())
+        }
+        runner.save_state(self.dir / "state.json", state)
+        self.assertEqual(runner.read_state(self.dir / "state.json", HEAD, self.tests)["results"][rel]["status"], "BLOCKED")
+        log.write_text("forged partial data")
+        with self.assertRaisesRegex(RuntimeError, "test_log_hash_mismatch"):
+            runner.read_state(self.dir / "state.json", HEAD, self.tests)
+
+    def test_forged_status_cannot_be_converted_to_accepted(self):
+        self.dir.mkdir()
+        state = runner.read_state(self.dir / "state.json", HEAD, self.tests)
+        state["results"]["tests/a.test.mjs"] = {"status": "NEVER_RAN", "attempt": 1}
+        runner.save_state(self.dir / "state.json", state)
+        with self.assertRaisesRegex(RuntimeError, "invalid_test_result"):
+            runner.read_state(self.dir / "state.json", HEAD, self.tests)
+
+    def test_bounded_log_read_refuses_size_excess_before_reading(self):
+        log = self.root / "large.log"
+        log.write_bytes(b"12345678901234567")
+        with mock.patch.object(runner, "MAX_LOG_BYTES", 16):
+            with self.assertRaisesRegex(RuntimeError, "unsafe_test_log"):
+                runner.read_bounded_log(log)
+
+    def test_broken_log_symlink_is_not_an_available_test_log(self):
+        self.dir.mkdir()
+        rel = "tests/a.test.mjs"
+        name = runner.expected_log_name(rel, 1)
+        link = self.dir / name
+        try:
+            link.symlink_to(self.root / "missing.log")
+        except OSError:
+            self.skipTest("symlink creation requires Windows developer mode")
+        self.assertTrue(runner.os.path.lexists(link))
+        self.assertFalse(link.exists())
+        with self.assertRaisesRegex(RuntimeError, "unsafe_test_log"):
+            runner.read_bounded_log(link)
+
     def test_symlink_state_rejected_where_supported(self):
         self.dir.mkdir()
         private = self.dir / "elsewhere.json"

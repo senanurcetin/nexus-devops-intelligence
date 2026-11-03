@@ -34,7 +34,8 @@ test('batch tools cannot turn source test evidence into release authorization', 
   assert.match(shard, /stable_shard_ram_mb\(guard, min_start\)/);
   assert.match(shard, /time\.sleep\(1\)/);
   assert.match(shard, /min_ram=min_running/);
-  assert.match(shard, /completed_log_hash_mismatch/);
+  assert.match(shard, /test_log_hash_mismatch/);
+  assert.match(shard, /def read_bounded_log\(path: Path\)/);
   assert.match(shard, /runner\.lock/);
   assert.match(shard, /--test-concurrency=1/);
   assert.match(shard, /parser\.add_argument\("--only-file"/);
@@ -71,6 +72,6 @@ test('offline safety regressions cover resume, evidence tampering and 3 release 
       { cwd: root, encoding: 'utf8', timeout: 30000, windowsHide: true });
     assert.equal(result.status, 0, filename + '\n' + result.stdout + '\n' + result.stderr);
     assert.match(result.stderr + result.stdout,
-      filename.includes('node_shards') ? /Ran 18 tests/ : /Ran 7 tests/);
+      filename.includes('node_shards') ? /Ran 22 tests/ : /Ran 7 tests/);
   }
 });
