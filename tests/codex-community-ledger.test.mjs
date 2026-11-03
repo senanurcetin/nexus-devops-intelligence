@@ -126,3 +126,68 @@ test('feedback must cite a distinct response, not the source PR or original shar
   feedback.months[0].feedback_urls = ['https://example.org/community/reply/1'];
   assert.deepEqual(check(feedback), []);
 });
+
+test('a single externally shared post cannot count as two separate monthly contributions', () => {
+  const data = copy();
+  const nov = data.months[0];
+  nov.status = 'EXTERNALLY_SHARED';
+  nov.share_url = 'https://example.org/community/single-post';
+  nov.shared_at = '2026-11-03';
+  const dec = data.months[1];
+  dec.status = 'EXTERNALLY_SHARED';
+  dec.artifact = nov.artifact;
+  dec.published_at = '2026-12-01';
+  dec.source_pr = nov.source_pr;
+  dec.share_url = nov.share_url;
+  dec.shared_at = '2026-12-02';
+  assert.match(check(data).join(' '), /share_url is reused across months/);
+});
+
+test('independent feedback cannot reuse the same response across monthly records', () => {
+  const data = copy();
+  const nov = data.months[0];
+  nov.status = 'FEEDBACK_RECORDED';
+  nov.share_url = 'https://example.org/community/nov-post';
+  nov.shared_at = '2026-11-03';
+  nov.feedback_urls = ['https://example.org/community/reply-123'];
+  const dec = data.months[1];
+  dec.status = 'FEEDBACK_RECORDED';
+  dec.artifact = nov.artifact;
+  dec.published_at = '2026-12-01';
+  dec.source_pr = nov.source_pr;
+  dec.share_url = 'https://example.org/community/dec-post';
+  dec.shared_at = '2026-12-02';
+  dec.feedback_urls = [nov.feedback_urls[0]];
+  assert.match(check(data).join(' '), /feedback URL is reused across months/);
+});
+
+test('duplicated feedback links in one monthly record cannot inflate evidence', () => {
+  const data = copy();
+  const nov = data.months[0];
+  nov.status = 'FEEDBACK_RECORDED';
+  nov.share_url = 'https://example.org/community/nov-post';
+  nov.shared_at = '2026-11-03';
+  nov.feedback_urls = [
+    'https://example.org/community/reply-123',
+    'https://example.org:443/community/reply-123'
+  ];
+  assert.match(check(data).join(' '), /duplicate feedback URL/);
+});
+
+test('two monthly contributions with distinct external posts and feedback are allowed', () => {
+  const data = copy();
+  const nov = data.months[0];
+  nov.status = 'FEEDBACK_RECORDED';
+  nov.share_url = 'https://example.org/community/nov-post';
+  nov.shared_at = '2026-11-03';
+  nov.feedback_urls = ['https://example.org/community/nov-reply'];
+  const dec = data.months[1];
+  dec.status = 'FEEDBACK_RECORDED';
+  dec.artifact = nov.artifact;
+  dec.published_at = '2026-12-01';
+  dec.source_pr = nov.source_pr;
+  dec.share_url = 'https://example.org/community/dec-post';
+  dec.shared_at = '2026-12-02';
+  dec.feedback_urls = ['https://example.org/community/dec-reply'];
+  assert.deepEqual(check(data), []);
+});
