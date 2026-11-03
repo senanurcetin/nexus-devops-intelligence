@@ -1,7 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
-import { dirname, isAbsolute, relative, resolve, sep } from 'node:path';
+import { existsSync, mkdtempSync, readFileSync, readdirSync, realpathSync, rmSync, statSync, symlinkSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 // These are public navigation entry points, not a claim that every legacy doc
@@ -53,11 +54,23 @@ function markdownTargets(markdown) {
   return targets;
 }
 
-function linkProblems(documentPath, markdown, exists = existsSync) {
+function linkProblems(documentPath, markdown, exists = existsSync, canonicalize = realpathSync) {
   const failures = [];
+  const canonicalRoot = canonicalize(ROOT);
   const fileDir = dirname(resolve(ROOT, documentPath));
   for (const href of markdownTargets(markdown)) {
-    if (href.startsWith('#') || /^https?:\/\//i.test(href) || /^mailto:/i.test(href)) continue;
+    if (href.startsWith('#') || /^mailto:/i.test(href)) continue;
+    if (/^https?:\/\//i.test(href)) {
+      try {
+        const url = new URL(href);
+        if (url.username || url.password) {
+          failures.push({ documentPath, href: '[redacted credential-bearing URL]', reason: 'embedded URL credentials' });
+        }
+      } catch {
+        failures.push({ documentPath, href: '[malformed external URL]', reason: 'malformed external URL' });
+      }
+      continue;
+    }
     if (href.startsWith('//') || /^[A-Za-z][A-Za-z0-9+.-]*:/.test(href)) {
       failures.push({ documentPath, href, reason: 'unsupported or unsafe URL scheme' });
       continue;
@@ -82,6 +95,16 @@ function linkProblems(documentPath, markdown, exists = existsSync) {
     if (!exists(resolved)) {
       failures.push({ documentPath, href, reason: 'target file not found' });
       continue;
+    }
+    try {
+      // A lexically safe path can still be a symlink outside this repository.
+      const realTarget = canonicalize(resolved);
+      const realInside = relative(canonicalRoot, realTarget);
+      if (realInside === '..' || realInside.startsWith('..' + sep) || isAbsolute(realInside)) {
+        failures.push({ documentPath, href, reason: 'target resolves outside repository' });
+      }
+    } catch {
+      failures.push({ documentPath, href, reason: 'unreadable local target' });
     }
   }
   return failures;
@@ -139,4 +162,63 @@ test('unsafe link schemes and malformed percent encoding fail closed', () => {
   const problems = linkProblems('README.md', text);
   assert.deepEqual(problems.map(item => item.reason),
     ['unsupported or unsafe URL scheme', 'unsupported or unsafe URL scheme', 'malformed percent encoding']);
+});
+
+test('local links cannot escape repository boundaries through resolved symlinks', () => {
+  const lexicalTarget = resolve(ROOT, 'CONTRIBUTING.md');
+  const fakeRealpath = input => input === lexicalTarget
+    ? resolve(ROOT, '..', 'outside-private.md') : input;
+  const problems = linkProblems('README.md', '[linked](CONTRIBUTING.md)', () => true, fakeRealpath);
+  assert.deepEqual(problems.map(problem => problem.reason), ['target resolves outside repository']);
+});
+
+test('safe canonical local paths remain valid when actual resolved paths stay inside', () => {
+  const problems = linkProblems('README.md', '[local](CONTRIBUTING.md)', () => true,
+    input => input);
+  assert.deepEqual(problems, []);
+});
+
+test('external Markdown links containing credentials or malformed hosts fail closed', () => {
+  const text = [
+    '[userinfo](https://someone@github.com/example/repo)',
+    '[password](https://somebody:secret@github.com/example/repo)',
+    '[invalid](https://%ZZ)',
+    '[safe](https://github.com/example/repo)',
+  ].join(' ');
+  assert.deepEqual(linkProblems('README.md', text).map(problem => problem.reason),
+    ['embedded URL credentials', 'embedded URL credentials', 'malformed external URL']);
+});
+
+test('credential-bearing external link diagnostics never echo the credential string', () => {
+  const problems = linkProblems('README.md',
+    '[unsafe](https://publicuser:distinctive-test-password@github.com/example/repo)');
+  assert.equal(problems.length, 1);
+  assert.equal(problems[0].reason, 'embedded URL credentials');
+  assert.equal(JSON.stringify(problems).includes('distinctive-test-password'), false);
+});
+
+test('real on-disk symlinks outside the project are blocked where supported', t => {
+
+  const externalRoot = mkdtempSync(join(tmpdir(), 'codex-realpath-fixture-'));
+  const localRoot = mkdtempSync(resolve(ROOT, 'docs/.codex-realpath-'));
+  try {
+    const externalFile = resolve(externalRoot, 'outside.md');
+    const localLink = resolve(localRoot, 'linked.md');
+    writeFileSync(externalFile, '# synthetic fixture');
+    try {
+      symlinkSync(externalFile, localLink, 'file');
+    } catch (error) {
+      if (error?.code === 'EPERM' || error?.code === 'EACCES') {
+        t.skip('OS policy prevents local symlink creation');
+        return;
+      }
+      throw error;
+    }
+    const href = relative(ROOT, localLink).split(sep).join('/');
+    assert.deepEqual(linkProblems('README.md', `[escaped](${href})`).map(x => x.reason),
+      ['target resolves outside repository']);
+  } finally {
+    rmSync(localRoot, { recursive: true, force: true });
+    rmSync(externalRoot, { recursive: true, force: true });
+  }
 });
