@@ -91,3 +91,38 @@ test('unknown status and missing topic are rejected', () => {
   assert.match(errors, /unsupported status/);
   assert.match(errors, /topic is missing/);
 });
+
+test('external sharing cannot predate the cited published guide', () => {
+  const shared = copy();
+  shared.months[0].status = 'EXTERNALLY_SHARED';
+  shared.months[0].share_url = 'https://example.org/community/post/1';
+  shared.months[0].shared_at = '2026-11-01';
+  assert.match(check(shared).join(' '), /cannot precede published_at/);
+  shared.months[0].shared_at = '2026-11-03';
+  assert.deepEqual(check(shared), []);
+});
+
+test('own-repository URLs and case variants are not external sharing evidence', () => {
+  const shared = copy();
+  shared.months[0].status = 'EXTERNALLY_SHARED';
+  shared.months[0].shared_at = '2026-11-03';
+  shared.months[0].share_url = 'https://GITHUB.com/SenanurCetin/NEXUS-DevOps-Intelligence/issues/144';
+  assert.match(check(shared).join(' '), /does not prove external community sharing/);
+  shared.months[0].share_url = 'https://RAW.GITHUBUSERCONTENT.COM/senanurcetin/nexus-devops-intelligence/main/docs/CODEX_GUIDE.md';
+  assert.match(check(shared).join(' '), /does not prove external community sharing/);
+  shared.months[0].share_url = 'https://github.com/another-owner/another-repo/discussions/123';
+  assert.deepEqual(check(shared), []);
+});
+
+test('feedback must cite a distinct response, not the source PR or original shared post', () => {
+  const feedback = copy();
+  feedback.months[0].status = 'FEEDBACK_RECORDED';
+  feedback.months[0].share_url = 'https://example.org/community/post/1';
+  feedback.months[0].shared_at = '2026-11-03';
+  feedback.months[0].feedback_urls = [feedback.months[0].share_url];
+  assert.match(check(feedback).join(' '), /must differ from the shared post or source PR/);
+  feedback.months[0].feedback_urls = [feedback.months[0].source_pr];
+  assert.match(check(feedback).join(' '), /must differ from the shared post or source PR/);
+  feedback.months[0].feedback_urls = ['https://example.org/community/reply/1'];
+  assert.deepEqual(check(feedback), []);
+});
