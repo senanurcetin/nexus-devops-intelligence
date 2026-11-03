@@ -10,7 +10,7 @@ OpenAI's public [Codex Ambassadors guidance](https://developers.openai.com/commu
 - `EXTERNALLY_SHARED`: a real publicly accessible share link and date are recorded; we do not invent social posts.
 - `FEEDBACK_RECORDED`: a direct public reaction or review link exists. A self-written PR comment is **not** independent audience feedback.
 
-Planned months do not count as published. The machine-readable [ledger](codex-community-ledger.json) is validated offline with `node scripts/verify-codex-community-ledger.mjs`; a schema/fixture failure should block an inaccurate promotion.
+Planned months do not count as published. The machine-readable [ledger](codex-community-ledger.json) is validated offline with `node scripts/verify-codex-community-ledger.mjs`; a schema/fixture failure should block an inaccurate promotion. The validator checks URL shape, chronology and duplicate evidence **without visiting URLs or authenticating independent contributors**; human verification is still required.
 
 | Month / Ay | Planned topic | Current evidence level | Outstanding next step |
 | --- | --- | --- | --- |
@@ -25,8 +25,8 @@ Planned months do not count as published. The machine-readable [ledger](codex-co
 
 1. For each month, keep one record in the ledger. Do **not** imply an official program term starts in November; update dates if formal acceptance later defines different terms.
 2. A repository guide is marked `PUBLISHED_IN_REPO` only once it is actually public. A draft in a local or PR branch does not satisfy publication.
-3. Mark `EXTERNALLY_SHARED` only with a real `https://` post/event URL and an actual share date. A GitHub document permalink by itself is not an external community post.
-4. Only mark `FEEDBACK_RECORDED` when at least one real feedback URL supports it. Store citations, not guessed impressions, audience sizes or follower counts.
+3. Mark `EXTERNALLY_SHARED` only with a real `https://` post/event URL and an actual share date **on or after the guide's publication**. A file permalink or a URL within this source repository is not an external community post. GitHub links from other repositories require human review to confirm a real external audience.
+4. Only mark `FEEDBACK_RECORDED` when at least one real **distinct response/review URL** supports it; reusing the source PR or original sharing URL is not independent feedback. Store citations, not guessed impressions, audience sizes or follower counts.
 5. Log exact source PR, authoring provenance (Codex CLI versus GPT-6 ChatGPT assistance), code/test SHA and CI status in the associated material.
 6. Avoid disclosing private Drive video links, personal application identifiers, private submissions or unverified acceptance status.
 7. Update user-facing content after major releases based on current official documentation; keep historical software versions and outcomes anchored to dated commits.
