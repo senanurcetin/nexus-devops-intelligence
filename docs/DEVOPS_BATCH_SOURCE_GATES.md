@@ -73,11 +73,29 @@ At the time of the initial evidence manifest, local-source status is
 fixtures). Self-hosted is **3/13** and production **3/18**; all three remain
 HOLD. Source claims are self-reported local records, not signed attestations.
 
-## 3. Regression tests
+## 3. Offline dependency lockfile metadata check
+
+```powershell
+python -B scripts\inspect-lockfile-offline.py --repo $accepted --expect-sha $sha
+```
+
+Reads only package metadata and Git status at the exact expected commit.
+Checks lockfile v3, root dependencies and devDependencies consistency,
+HTTPS npm registry URL identity, and SHA-512 *metadata* syntax for each
+locked package. Rejects duplicate JSON keys, malformed lock entries and
+unexpected registries. This performs **no** package download, digest
+verification against package tarballs, npm vulnerability database lookup,
+or external network access. A metadata PASS never promotes the independent
+`npm_audit` release gate: it remains NOT_RUN until real vulnerability
+evidence is available and independently checked. Always
+`release_authorized: false`.
+
+## 4. Regression tests
 
 ```powershell
 python -B tests\test_run_node_shards.py
 python -B tests\test_inspect_source_readiness.py
+python -B tests\test_inspect_lockfile_offline.py
 node --test tests\devops-source-gates-batch.test.mjs
 ```
 
