@@ -54,6 +54,22 @@ def free_ram_mb() -> int:
     return int(data.ullAvailPhys // 1048576)
 
 
+def stable_starting_ram_mb() -> int:
+    # Running many independent notebooks can briefly free >4 GB between
+    # bursts. Require that capacity persists before any build is eligible.
+    first = free_ram_mb()
+    if first < MIN_START_MB:
+        return first
+    minimum = first
+    for _ in range(2):
+        time.sleep(2)
+        available = free_ram_mb()
+        minimum = min(minimum, available)
+        if available < MIN_START_MB:
+            break
+    return minimum
+
+
 def safe_junction(path: Path) -> bool:
     try:
         info = os.lstat(path)
@@ -123,7 +139,7 @@ def preflight(repo: Path) -> dict:
         result["issues"].append("Windows-only runner")
         return result
     try:
-        result["free_ram_mb"] = free_ram_mb()
+        result["free_ram_mb"] = stable_starting_ram_mb()
         result["free_disk_gb"] = round(shutil.disk_usage(repo).free / (1024 ** 3), 1)
         if not (repo / ".git").is_dir():
             result["issues"].append("requires the primary Git checkout, not a worktree")

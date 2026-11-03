@@ -5,6 +5,7 @@ import importlib.util
 import io
 import json
 import os
+import shutil
 import socket
 import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -53,12 +54,35 @@ class AcceptanceTests(unittest.TestCase):
         self.addCleanup(context.close)
         context.enter_context(mock.patch.object(runner.sys, "platform", "win32"))
         context.enter_context(mock.patch.object(runner, "free_ram_mb", return_value=ram))
+        context.enter_context(mock.patch.object(runner.time, "sleep"))
         context.enter_context(mock.patch.object(runner.shutil, "disk_usage",
                                return_value=types.SimpleNamespace(free=14 * 1024 ** 3)))
         context.enter_context(mock.patch.object(runner.shutil, "which", return_value="node.exe"))
         context.enter_context(mock.patch.object(runner, "node_version", return_value=(24, 13, 0)))
         context.enter_context(mock.patch.object(runner, "checked_git",
             side_effect=lambda _repo, *args: "abc123" if args[0] == "rev-parse" else changed))
+
+    def test_ram_spike_does_not_authorize_a_build(self):
+        with mock.patch.object(runner, "free_ram_mb", side_effect=[4500, 3400]) as measure, \
+             mock.patch.object(runner.time, "sleep") as pause:
+            self.assertEqual(runner.stable_starting_ram_mb(), 3400)
+        self.assertEqual(measure.call_count, 2)
+        pause.assert_called_once_with(2)
+
+    def test_stable_ram_requires_three_measurements(self):
+        with mock.patch.object(runner, "free_ram_mb",
+                               side_effect=[4800, 4600, 4350]) as measure, \
+             mock.patch.object(runner.time, "sleep") as pause:
+            self.assertEqual(runner.stable_starting_ram_mb(), 4350)
+        self.assertEqual(measure.call_count, 3)
+        self.assertEqual(pause.call_count, 2)
+
+    def test_already_low_ram_exits_without_delay(self):
+        with mock.patch.object(runner, "free_ram_mb", return_value=1800) as measure, \
+             mock.patch.object(runner.time, "sleep") as pause:
+            self.assertEqual(runner.stable_starting_ram_mb(), 1800)
+        measure.assert_called_once()
+        pause.assert_not_called()
 
     def test_low_ram_fails_preflight(self):
         self.setup_ready(ram=1800)
@@ -268,6 +292,107 @@ class AcceptanceTests(unittest.TestCase):
         self.assertTrue(worktree.exists())
         self.assertFalse((runtime / "acceptance.lock").exists())
         spawn.assert_not_called()
+
+    def simulate_full_acceptance(self, change_after_checks=False):
+        # Run the complete acceptance state machine with synthetic Git,
+        # build and server adapters. Nothing gets built or listens on TCP.
+        head = "abc123"
+        runtime = self.repo.parent / "runtime"
+        isolated = self.repo.parent / "wt" / ("devops-accept-" + head[:12])
+        isolated.parent.mkdir()
+        link = isolated / "node_modules"
+        calls = {"run": [], "monitored": [], "spawned": 0, "stopped": 0}
+        class SimulatedServer:
+            pid = 12456
+            _handle = 0
+            def poll(self):
+                return None
+
+        def git(repo, *args):
+            if args[:2] == ("worktree", "add"):
+                isolated.mkdir()
+                return ""
+            if args == ("rev-parse", "HEAD"):
+                return head
+            if args == ("status", "--porcelain=v1"):
+                return ""
+            raise AssertionError("unexpected Git operation: " + repr(args))
+
+        def system(args, **kwargs):
+            calls["run"].append(list(args))
+            if args[0].lower().startswith("powershell"):
+                link.mkdir()
+                return types.SimpleNamespace(returncode=0)
+            if args[0] == "git" and "remove" in args:
+                shutil.rmtree(isolated)
+                return types.SimpleNamespace(returncode=0)
+            raise AssertionError("unexpected process: " + repr(args))
+
+        def monitored(args, cwd, env, log, timeout, min_ram=runner.MIN_RUNNING_MB):
+            calls["monitored"].append(args[-1])
+            if args[-1] == "build":
+                (isolated / ".next").mkdir()
+                (isolated / ".next" / "BUILD_ID").write_text("synthetic", encoding="ascii")
+            log.write_text("synthetic non-network command", encoding="utf-8")
+            return {"exit_code": 0, "lowest_free_ram_mb": 5000, "log": str(log)}
+
+        def spawn(args, **kwargs):
+            calls["spawned"] += 1
+            self.assertEqual(args[-4:], ["-H", "127.0.0.1", "-p", "49152"])
+            return SimulatedServer()
+
+        def stopped(process):
+            calls["stopped"] += 1
+        # If sources change after all protocol checks, the final consistency
+        # check and cleanup proof both fail, despite synthetic checks passing.
+        consistency = (lambda *_: not change_after_checks)
+        with mock.patch.object(runner, "preflight", return_value={"state": "ready", "head": head}), \
+             mock.patch.object(runner, "checked_git", side_effect=git), \
+             mock.patch.object(runner.subprocess, "run", side_effect=system), \
+             mock.patch.object(runner.subprocess, "Popen", side_effect=spawn), \
+             mock.patch.object(runner, "safe_junction", side_effect=lambda path: path == link and link.is_dir()), \
+             mock.patch.object(runner, "monitored_process", side_effect=monitored), \
+             mock.patch.object(runner, "free_ram_mb", return_value=5000), \
+             mock.patch.object(runner.shutil, "which", return_value="node.exe"), \
+             mock.patch.object(runner, "select_port", return_value=49152), \
+             mock.patch.object(runner, "probe_root", return_value=True), \
+             mock.patch.object(runner, "temporary_port_closed", return_value=True), \
+             mock.patch.object(runner, "terminate_tree", side_effect=stopped), \
+             mock.patch.object(runner, "source_unchanged", side_effect=consistency):
+            result = runner.run_acceptance(self.repo, runtime, {"head": head})
+        return result, runtime, isolated, calls
+
+    def test_simulated_complete_acceptance_passes_and_cleans_every_owned_resource(self):
+        result, runtime, isolated, calls = self.simulate_full_acceptance()
+        self.assertEqual(result["state"], "pass")
+        self.assertEqual(result["checks"]["source_consistency"], "pass")
+        self.assertEqual(result["checks"]["http_root"], "pass")
+        self.assertEqual(result["checks"]["build"]["exit_code"], 0)
+        self.assertEqual(result["checks"]["http_negative"]["exit_code"], 0)
+        self.assertEqual(result["checks"]["jarvis_mcp"]["exit_code"], 0)
+        self.assertEqual(result["cleanup"]["source_unchanged_before_cleanup"], True)
+        self.assertEqual(result["cleanup"]["isolated_worktree_removed"], True)
+        self.assertEqual(result["cleanup"]["server_log_closed"], True)
+        self.assertEqual(result["cleanup"]["temporary_port_closed"], True)
+        self.assertEqual(calls["spawned"], 1)
+        self.assertEqual(calls["stopped"], 1)
+        self.assertEqual(len(calls["monitored"]), 3)
+        self.assertFalse(isolated.exists())
+        self.assertFalse((runtime / "acceptance.lock").exists())
+        reports = list(runtime.glob("acceptance-*.json"))
+        self.assertEqual(len(reports), 1)
+        self.assertEqual(json.loads(reports[0].read_text(encoding="utf-8")), result)
+
+    def test_simulated_successful_protocol_tests_cannot_override_late_source_change(self):
+        result, runtime, isolated, calls = self.simulate_full_acceptance(change_after_checks=True)
+        self.assertEqual(result["state"], "fail")
+        self.assertIn("source changed", result["error"])
+        self.assertFalse(result["cleanup"]["source_unchanged_before_cleanup"])
+        self.assertTrue(result["cleanup"]["isolated_worktree_removed"])
+        self.assertEqual(calls["spawned"], 1)
+        self.assertEqual(calls["stopped"], 1)
+        self.assertFalse(isolated.exists())
+        self.assertFalse((runtime / "acceptance.lock").exists())
 
     def test_preexisting_evidence_is_never_overwritten(self):
         runtime = self.repo.parent / "runtime"

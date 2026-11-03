@@ -23,6 +23,10 @@ python -B scripts\verify-local-build-acceptance.py --execute
 
 Before execution it requires a clean **primary** Git checkout, installed
 Next.js dependencies, **at least 4096 MB free RAM and 8 GB free disk**.
+A short-lived RAM spike is not sufficient: when the first RAM reading reaches
+4096 MB, preflight samples two more times over four seconds and uses the
+lowest value. It repeats the same check after acquiring the acceptance lock.
+If the first reading is already too low, preflight fails without waiting.
 It also verifies that the installed Next.js version exactly matches the pinned
 versions in package.json and package-lock.json (lockfile v3), and that
 the available Node.js meets the declared minimum engine. Missing or
@@ -71,6 +75,12 @@ tests themselves are deliberately limited to loopback and negative API
 inputs. Do not treat tests run as SYSTEM as standard-user acceptance.
 
 ## Regression tests
+
+The offline Python suite also exercises a fully simulated successful
+acceptance and a late-source-change failure, including report persistence,
+server shutdown, junction cleanup and temporary Git worktree removal. These
+simulations spawn no Next.js build or real service; they do **not** establish
+production runtime acceptance.
 
 ```powershell
 python -B tests\test_verify_local_build_acceptance.py
