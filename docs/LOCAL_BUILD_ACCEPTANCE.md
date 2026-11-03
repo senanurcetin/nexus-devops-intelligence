@@ -23,6 +23,12 @@ python -B scripts\verify-local-build-acceptance.py --execute
 
 Before execution it requires a clean **primary** Git checkout, installed
 Next.js dependencies, **at least 4096 MB free RAM and 8 GB free disk**.
+It also verifies that the installed Next.js version exactly matches the pinned
+versions in package.json and package-lock.json (lockfile v3), and that
+the available Node.js meets the declared minimum engine. Missing or
+inconsistent dependency metadata blocks acceptance; no package manager
+is invoked. This checks the Next.js runtime version, **not** the integrity
+of every installed transitive package or the provenance of the build.
 Runtime free RAM must remain above 1800 MB. An existing worktree or lock
 with the intended name causes a refusal, not a destructive overwrite.
 

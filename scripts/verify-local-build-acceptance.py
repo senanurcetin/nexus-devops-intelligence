@@ -11,6 +11,7 @@ import argparse
 import ctypes
 import datetime as dt
 import json
+import re
 import os
 from pathlib import Path
 import shutil
@@ -68,6 +69,53 @@ def checked_git(repo: Path, *args: str) -> str:
     return result.stdout.strip()
 
 
+def node_version(node: str) -> tuple[int, int, int]:
+    result = subprocess.run([node, "--version"], capture_output=True,
+                            text=True, timeout=10, check=True)
+    match = re.fullmatch(r"v(\d+)\.(\d+)\.(\d+)", result.stdout.strip())
+    if not match:
+        raise ResourceGuard("Node.js version is not verifiable")
+    return tuple(int(part) for part in match.groups())
+
+
+def dependency_issues(repo: Path, node: str) -> list[str]:
+    # A CLI file's presence alone cannot establish which version will build.
+    try:
+        package = json.loads((repo / "package.json").read_text(encoding="utf-8"))
+        lock = json.loads((repo / "package-lock.json").read_text(encoding="utf-8"))
+        installed = json.loads((repo / "node_modules" / "next" / "package.json").read_text(encoding="utf-8"))
+    except (OSError, ValueError, TypeError):
+        return ["local dependency metadata unavailable or invalid"]
+
+    issues = []
+    try:
+        requested = package["dependencies"]["next"]
+        locked_root = lock["packages"][""]["dependencies"]["next"]
+        locked_next = lock["packages"]["node_modules/next"]["version"]
+        actual = installed["version"]
+        lock_version = lock["lockfileVersion"]
+        engine = package["engines"]["node"]
+        # This local workflow only accepts an explicit minimum engine and
+        # an exactly locked Next.js version; no package manager or network lookup.
+        if not all(isinstance(v, str) and re.fullmatch(r"\d+\.\d+\.\d+", v)
+                   for v in (requested, locked_root, locked_next, actual)):
+            issues.append("Next.js version metadata is not pinned")
+        elif len({requested, locked_root, locked_next, actual}) != 1:
+            issues.append("installed Next.js differs from package and lockfile")
+        if lock_version != 3:
+            issues.append("unsupported package-lock version")
+        minimum = re.fullmatch(r">=(\d+)\.(\d+)\.(\d+)", engine) if isinstance(engine, str) else None
+        if minimum is None:
+            issues.append("Node.js engine requirement is not verifiable")
+        else:
+            current = node_version(node)
+            if current < tuple(int(part) for part in minimum.groups()):
+                issues.append("installed Node.js is below project engine requirement")
+    except (KeyError, TypeError, AttributeError, OSError, subprocess.SubprocessError, ResourceGuard):
+        issues.append("local dependency or Node.js version could not be verified")
+    return issues
+
+
 def preflight(repo: Path) -> dict:
     result = {"state": "blocked", "repo": str(repo), "head": None,
               "free_ram_mb": None, "free_disk_gb": None, "issues": []}
@@ -85,8 +133,11 @@ def preflight(repo: Path) -> dict:
             result["issues"].append("primary checkout has changes")
         if not (repo / "node_modules" / "next" / "dist" / "bin" / "next").is_file():
             result["issues"].append("local Next.js dependencies are missing")
-        if not shutil.which("node"):
+        node = shutil.which("node")
+        if not node:
             result["issues"].append("node is missing from PATH")
+        else:
+            result["issues"].extend(dependency_issues(repo, node))
         if result["free_ram_mb"] < MIN_START_MB:
             result["issues"].append("available RAM below %d MB" % MIN_START_MB)
         if result["free_disk_gb"] < MIN_DISK_GB:

@@ -3,6 +3,7 @@ import contextlib
 import datetime as dt
 import importlib.util
 import io
+import json
 import os
 import socket
 import threading
@@ -29,6 +30,23 @@ class AcceptanceTests(unittest.TestCase):
         binary = self.repo / "node_modules" / "next" / "dist" / "bin" / "next"
         binary.parent.mkdir(parents=True)
         binary.write_text("", encoding="utf-8")
+        self.package = self.repo / "package.json"
+        self.lock = self.repo / "package-lock.json"
+        self.installed_next = self.repo / "node_modules" / "next" / "package.json"
+        self.write_json(self.package, {
+            "dependencies": {"next": "15.5.28"}, "engines": {"node": ">=22.16.0"}
+        })
+        self.write_json(self.lock, {
+            "lockfileVersion": 3,
+            "packages": {
+                "": {"dependencies": {"next": "15.5.28"}},
+                "node_modules/next": {"version": "15.5.28"},
+            }
+        })
+        self.write_json(self.installed_next, {"version": "15.5.28"})
+
+    def write_json(self, file: Path, payload: dict):
+        file.write_text(json.dumps(payload), encoding="utf-8")
 
     def setup_ready(self, ram=5000, changed=""):
         context = contextlib.ExitStack()
@@ -38,6 +56,7 @@ class AcceptanceTests(unittest.TestCase):
         context.enter_context(mock.patch.object(runner.shutil, "disk_usage",
                                return_value=types.SimpleNamespace(free=14 * 1024 ** 3)))
         context.enter_context(mock.patch.object(runner.shutil, "which", return_value="node.exe"))
+        context.enter_context(mock.patch.object(runner, "node_version", return_value=(24, 13, 0)))
         context.enter_context(mock.patch.object(runner, "checked_git",
             side_effect=lambda _repo, *args: "abc123" if args[0] == "rev-parse" else changed))
 
@@ -62,6 +81,65 @@ class AcceptanceTests(unittest.TestCase):
         (self.repo / ".git").rmdir()
         (self.repo / ".git").write_text("gitdir: sample", encoding="utf-8")
         self.assertEqual(runner.preflight(self.repo)["state"], "blocked")
+
+    def test_installed_next_mismatch_blocks_preflight(self):
+        self.setup_ready()
+        self.write_json(self.installed_next, {"version": "15.5.27"})
+        issues = runner.preflight(self.repo)["issues"]
+        self.assertIn("installed Next.js differs from package and lockfile", issues)
+
+    def test_missing_lockfile_blocks_preflight(self):
+        self.setup_ready()
+        self.lock.unlink()
+        self.assertEqual(runner.preflight(self.repo)["state"], "blocked")
+        self.assertIn("local dependency metadata unavailable or invalid",
+                      runner.preflight(self.repo)["issues"])
+
+    def test_lockfile_next_mismatch_blocks_preflight(self):
+        self.setup_ready()
+        self.write_json(self.lock, {
+            "lockfileVersion": 3,
+            "packages": {
+                "": {"dependencies": {"next": "15.5.28"}},
+                "node_modules/next": {"version": "15.5.26"},
+            },
+        })
+        self.assertEqual(runner.preflight(self.repo)["state"], "blocked")
+
+    def test_unpinned_next_version_fails_closed(self):
+        self.setup_ready()
+        self.write_json(self.package, {
+            "dependencies": {"next": "^15.5.28"}, "engines": {"node": ">=22.16.0"}
+        })
+        issues = runner.preflight(self.repo)["issues"]
+        self.assertIn("Next.js version metadata is not pinned", issues)
+
+    def test_unsupported_lockfile_schema_is_blocked(self):
+        self.setup_ready()
+        self.write_json(self.lock, {"lockfileVersion": 2, "packages": {
+            "": {"dependencies": {"next": "15.5.28"}},
+            "node_modules/next": {"version": "15.5.28"},
+        }})
+        self.assertIn("unsupported package-lock version", runner.preflight(self.repo)["issues"])
+
+    def test_node_below_engine_requirement_blocks_preflight(self):
+        self.setup_ready()
+        with mock.patch.object(runner, "node_version", return_value=(20, 19, 0)):
+            issues = runner.preflight(self.repo)["issues"]
+        self.assertIn("installed Node.js is below project engine requirement", issues)
+
+    def test_unverifiable_engine_requirement_blocks_preflight(self):
+        self.setup_ready()
+        self.write_json(self.package, {
+            "dependencies": {"next": "15.5.28"}, "engines": {"node": "^22.16.0"}
+        })
+        self.assertIn("Node.js engine requirement is not verifiable", runner.preflight(self.repo)["issues"])
+
+    def test_node_cli_invalid_version_is_rejected(self):
+        fake = types.SimpleNamespace(stdout="node missing", returncode=0)
+        with mock.patch.object(runner.subprocess, "run", return_value=fake):
+            with self.assertRaises(runner.ResourceGuard):
+                runner.node_version("node.exe")
 
     def test_missing_dependency_is_blocked(self):
         self.setup_ready()
