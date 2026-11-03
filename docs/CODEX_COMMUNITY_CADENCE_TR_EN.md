@@ -30,6 +30,7 @@ Planned months do not count as published. The machine-readable [ledger](codex-co
 5. Log exact source PR, authoring provenance (Codex CLI versus GPT-6 ChatGPT assistance), code/test SHA and CI status in the associated material.
 6. Avoid disclosing private Drive video links, personal application identifiers, private submissions or unverified acceptance status.
 7. Update user-facing content after major releases based on current official documentation; keep historical software versions and outcomes anchored to dated commits.
+8. Do not count the **same canonical external post URL twice across months** or reuse the **same feedback URL within/across months**. Each monthly claim needs independently distinguishable evidence; a repost requires its own public URL. URL normalization checks are offline and cannot prove audience identity or reach.
 
 ## For maintainers / Bakımcılar için
 
