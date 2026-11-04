@@ -8,31 +8,7 @@
 
 **What it is not:** it never writes to GitHub, needs no token or GitHub App install, and reads no private repositories.
 
-### Quick start (dashboard)
-
-Requires Node.js 22.16+.
-
-```bash
-git clone https://github.com/senanurcetin/nexus-devops-intelligence.git
-cd nexus-devops-intelligence
-npm ci
-npm run dev
-# open http://localhost:3000 and enter owner/repo
-```
-
-### Quick start (commit-checks CLI)
-
-```bash
-node scripts/jarvis-commit-checks.mjs owner/repo FULL_COMMIT_SHA
-node scripts/jarvis-commit-checks.mjs --json owner/repo FULL_COMMIT_SHA
-```
-
-Exit codes: `0` no failing record in the available sample, `1` at least one failing record, `2` usage/validation error, `3` no verified source.
-
-Anonymous GitHub API requests are rate-limited by GitHub (60 requests/hour per IP), so large or repeated audits can return partial results.
-
-
-### Quick start (GitHub Action)
+### Quick start (GitHub Action) — [Marketplace](https://github.com/marketplace/actions/nexus-commit-checks)
 
 Summarize the checks and commit statuses on a commit inside any workflow. The action only sends GET requests to `api.github.com`, needs no `npm install`, and writes a table to the job summary.
 
@@ -67,6 +43,30 @@ Outputs: `coverage`, `failure-count`, `pending-count`, `success-count`. When the
 > | Provider | Outcome | Check | Next step |
 > | --- | --- | --- | --- |
 > | other | failure | [CodeQL](https://github.com/senanurcetin/nexus-devops-intelligence/commit/2397f4ba10001e3126760ba8b033cad43658b261/checks) | Open the original check or commit-status details; this summary does not include logs. |
+
+### Quick start (commit-checks CLI)
+
+```bash
+node scripts/jarvis-commit-checks.mjs owner/repo FULL_COMMIT_SHA
+node scripts/jarvis-commit-checks.mjs --json owner/repo FULL_COMMIT_SHA
+```
+
+Exit codes: `0` no failing record in the available sample, `1` at least one failing record, `2` usage/validation error, `3` no verified source.
+
+Anonymous GitHub API requests are rate-limited by GitHub (60 requests/hour per IP), so large or repeated audits can return partial results.
+
+
+### Quick start (dashboard)
+
+Requires Node.js 22.16+.
+
+```bash
+git clone https://github.com/senanurcetin/nexus-devops-intelligence.git
+cd nexus-devops-intelligence
+npm ci
+npm run dev
+# open http://localhost:3000 and enter owner/repo
+```
 
 ### Support
 
