@@ -1,5 +1,42 @@
 # NEXUS DevOps Intelligence
 
+## At a glance
+
+**What it is:** a read-only GitHub API integration for public repositories. It samples recent GitHub Actions runs and open pull requests, and reports the check/status records for one exact commit SHA — with source links and explicit unknown/partial states instead of guesses.
+
+**What it is not:** it never writes to GitHub, needs no token or GitHub App install, and reads no private repositories.
+
+### Quick start (dashboard)
+
+Requires Node.js 22.16+.
+
+```bash
+git clone https://github.com/senanurcetin/nexus-devops-intelligence.git
+cd nexus-devops-intelligence
+npm ci
+npm run dev
+# open http://localhost:3000 and enter owner/repo
+```
+
+### Quick start (commit-checks CLI)
+
+```bash
+node scripts/jarvis-commit-checks.mjs owner/repo FULL_COMMIT_SHA
+node scripts/jarvis-commit-checks.mjs --json owner/repo FULL_COMMIT_SHA
+```
+
+Exit codes: `0` no failing record in the available sample, `1` at least one failing record, `2` usage/validation error, `3` no verified source.
+
+Anonymous GitHub API requests are rate-limited by GitHub (60 requests/hour per IP), so large or repeated audits can return partial results.
+
+### Support
+
+- Questions and bugs: [open an issue](https://github.com/senanurcetin/nexus-devops-intelligence/issues/new/choose) or email senanur.cetin.work@gmail.com.
+- Security reports: follow [SECURITY.md](SECURITY.md) — never post tokens or private CI logs in public issues.
+- Contributing: [CONTRIBUTING.md](CONTRIBUTING.md). Self-hosted Docker candidate (not yet accepted): [docs/COMMUNITY_SELF_HOSTED.md](docs/COMMUNITY_SELF_HOSTED.md).
+
+The detailed, dated release and QA history follows below.
+
 > **Technical review first (2 November 2026):** This repository contains a **read-only GitHub Actions and PR investigation MVP**, a proposed local Community installation and a substantial archive of dated QA/release work. Navigate by question: [current source features](#current-source-scope--public-read-only-mvp) · [run locally](#run-locally) · [Community installation candidate](docs/COMMUNITY_SELF_HOSTED.md) · [release requirements](docs/COMMUNITY_RELEASE_CHECKLIST.md) · [remediation plan](docs/NEXUS_MASTER_REMEDIATION_PLAN_2026-10-14.md).
 >
 > **Interpretation:** dates and commit hashes matter. A test result on an old revision, an SSO-protected Preview marked READY, or a Docker configuration merged into main does **not** prove today’s live deployment, cross-instance Redis safety, accessibility acceptance, Windows/Ubuntu runtime acceptance, or commercial readiness. The public MIT Community source must not be represented as a licensed Pro product. This overview adds **no new release or deployment assertion**.
