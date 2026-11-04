@@ -24,6 +24,7 @@ import {
 import { assessRepositoryRiskPosture } from '@/lib/nexus-risk-posture';
 import { buildRepositoryShareUrl, canonicalRepositoryPageUrl, readRepositoryLink, normalizeRepositoryInput } from '@/lib/nexus-repository-link';
 import { isPublicPrVerification, type PublicPrVerification } from '@/lib/nexus-pr-evidence';
+import { isPublicCommitChecks, type PublicCommitChecks } from '@/lib/nexus-commit-checks-guard';
 import { isPublicRunEvidence, type PublicRunEvidence } from '@/lib/nexus-workflow-run-evidence';
 import { isPublicWorkflowTrend, type PublicWorkflowTrend } from '@/lib/nexus-workflow-trends';
 
@@ -69,6 +70,10 @@ export default function NexusDeveloperPreview() {
   const [prEvidenceOpen, setPrEvidenceOpen] = useState(false);
   const [prEvidenceLoading, setPrEvidenceLoading] = useState(false);
   const prEvidenceController = useRef<AbortController | null>(null);
+  const [commitChecks, setCommitChecks] = useState<Panel<PublicCommitChecks>>(emptyPanel);
+  const [commitChecksKey, setCommitChecksKey] = useState<string | null>(null);
+  const [commitChecksLoading, setCommitChecksLoading] = useState(false);
+  const commitChecksController = useRef<AbortController | null>(null);
   const [runEvidence, setRunEvidence] = useState<Panel<PublicRunEvidence>>(emptyPanel);
   const [runEvidenceKey, setRunEvidenceKey] = useState<string | null>(null);
   const [runEvidenceOpen, setRunEvidenceOpen] = useState(false);
@@ -121,6 +126,11 @@ export default function NexusDeveloperPreview() {
       setRunEvidenceLoading(false);
     }
     if (kind === 'prs') {
+      commitChecksController.current?.abort();
+      commitChecksController.current = null;
+      setCommitChecks(emptyPanel());
+      setCommitChecksKey(null);
+      setCommitChecksLoading(false);
       prEvidenceController.current?.abort();
       prEvidenceController.current = null;
       setPrEvidence(emptyPanel());
@@ -453,6 +463,11 @@ export default function NexusDeveloperPreview() {
       setPrEvidenceOpen(!prEvidenceOpen);
       return;
     }
+    commitChecksController.current?.abort();
+    commitChecksController.current = null;
+    setCommitChecks(emptyPanel());
+    setCommitChecksKey(null);
+    setCommitChecksLoading(false);
     prEvidenceController.current?.abort();
     const controller = new AbortController();
     prEvidenceController.current = controller;
@@ -472,6 +487,34 @@ export default function NexusDeveloperPreview() {
     }).finally(() => {
       if (prEvidenceController.current === controller && !controller.signal.aborted) {
         setPrEvidenceLoading(false);
+      }
+    });
+  }
+
+  function inspectCommitChecks(number: number) {
+    // Never automatic: requires the PR evidence for this exact PR to be loaded first,
+    // and uses that evidence's head SHA (no free-form SHA input).
+    const sha = prEvidence.data?.head_sha.toLowerCase();
+    if (!sha || prEvidenceKey !== selectedRepo + ':' + number || commitChecksLoading) return;
+    const key = selectedRepo + ':' + sha;
+    commitChecksController.current?.abort();
+    const controller = new AbortController();
+    commitChecksController.current = controller;
+    setCommitChecksKey(key);
+    setCommitChecks(emptyPanel());
+    setCommitChecksLoading(true);
+    const query = new URLSearchParams({ repository: selectedRepo, sha });
+    void readPublicPanel<PublicCommitChecks>(
+      '/api/public-commit-checks?' + query.toString(),
+      controller.signal, fetch,
+      (data): data is PublicCommitChecks => isPublicCommitChecks(data, selectedRepo, sha),
+    ).then(result => {
+      if (commitChecksController.current === controller && !controller.signal.aborted) {
+        setCommitChecks(result);
+      }
+    }).finally(() => {
+      if (commitChecksController.current === controller && !controller.signal.aborted) {
+        setCommitChecksLoading(false);
       }
     });
   }
@@ -1456,6 +1499,52 @@ export default function NexusDeveloperPreview() {
                             </p>}
                           </div>
                           <p className="text-xs leading-5 text-slate-400">{prEvidence.data.scope_note}</p>
+                          <div className="border-t border-slate-700/50 pt-3">
+                            <button type="button" disabled={commitChecksLoading}
+                              onClick={() => inspectCommitChecks(pr.number)}
+                              className="nexus-devops-pr-verify-btn inline-flex min-h-10 items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold">
+                              <ShieldCheck aria-hidden="true" className="h-4 w-4" />
+                              Show checks and statuses for this exact head commit
+                            </button>
+                            <p className="mt-2 text-xs text-slate-400">
+                              On demand only: 2 additional anonymous GitHub GETs plus one NEXUS origin
+                              rate-limit decision. May be unavailable on hosted previews.
+                            </p>
+                            <div role="region" aria-label={'Commit checks for PR #' + pr.number} className="mt-2">
+                              {commitChecksLoading && <p role="status" className="text-xs text-slate-300">
+                                Loading checks and commit statuses for this commit…
+                              </p>}
+                              {commitChecks.error && <p role="alert" className="text-xs text-rose-300">
+                                {commitChecks.error} <a href={'https://github.com/' + selectedRepo + '/commit/' + prEvidence.data.head_sha.toLowerCase() + '/checks'}
+                                  target="_blank" rel="noopener noreferrer" className="underline">Verify directly on GitHub</a>.
+                              </p>}
+                              {commitChecks.data && commitChecksKey === selectedRepo + ':' + prEvidence.data.head_sha.toLowerCase() && (
+                                <div className="space-y-2">
+                                  <p className="text-xs text-slate-300">
+                                    Coverage: {commitChecks.data.coverage.replace(/_/g, ' ')}
+                                    {' · '}checks {commitChecks.data.sources.checks.replace(/_/g, ' ')}
+                                    {' · '}statuses {commitChecks.data.sources.commit_statuses.replace(/_/g, ' ')}.
+                                    {' '}{commitChecks.data.counts.failure} failing, {commitChecks.data.counts.pending} pending,
+                                    {' '}{commitChecks.data.counts.success} passing, {commitChecks.data.counts.other} other
+                                    {commitChecks.data.truncated.checks || commitChecks.data.truncated.commit_statuses
+                                      ? ' (sample truncated; more records exist)' : ''}.
+                                  </p>
+                                  <ul className="space-y-1">
+                                    {commitChecks.data.items.map((item, index) => (
+                                      <li key={item.kind + ':' + index} className="text-xs text-slate-300">
+                                        <span className="font-medium text-slate-100">{item.name}</span>
+                                        {' · '}{item.provider}{' · '}{item.outcome}
+                                      </li>
+                                    ))}
+                                  </ul>
+                                  {commitChecks.data.items.length === 0 && <p className="text-xs text-slate-400">
+                                    No records in this sample. This does not prove checks passed.
+                                  </p>}
+                                  <p className="text-xs leading-5 text-slate-400">{commitChecks.data.limitations.join(' ')}</p>
+                                </div>
+                              )}
+                            </div>
+                          </div>
                           <a className="inline-flex min-h-10 items-center text-xs font-semibold text-[#a6d3fa] hover:underline"
                             href={pr.html_url} target="_blank" rel="noopener noreferrer">
                             Check latest status on GitHub <ArrowUpRight aria-hidden="true" className="ml-1 h-4 w-4" />

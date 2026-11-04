@@ -86,6 +86,11 @@ const PUBLIC_ERRORS = new Set([
   'GitHub returned invalid workflow trend data.',
   'GitHub returned invalid pull request list data.',
   'GitHub returned invalid pull request status data.',
+  'Use a valid public repository and full commit SHA.',
+  'Commit or repository was not found.',
+  'GitHub rate limit reached. Please retry later.',
+  'GitHub commit check data could not be verified.',
+  'Commit checks are not enabled on this deployment.',
   ...['workflow history', 'pull requests', 'pull request details', 'pull request verification', 'workflow run verification', 'workflow job evidence', 'workflow trend sample'].flatMap(subject => [
     `Public repository or ${subject} not found.`,
     `GitHub ${subject} request timed out.`,
