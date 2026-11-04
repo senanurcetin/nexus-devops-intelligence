@@ -2,7 +2,7 @@
 
 ## 0.2.0 — 4 November 2026 — commit-checks Action and CLI
 
-**Release scope:** the `action.yml` GitHub Action and the `nexus-commit-checks` CLI only. The Docker Community installer stays **UNRELEASED / NO-GO** until issue #81 passes; this tag is not a Docker, Preview or Production release.
+**Scope:** this release covers the `action.yml` GitHub Action ([Marketplace](https://github.com/marketplace/actions/nexus-commit-checks)) and the `nexus-commit-checks` CLI. The self-hosted dashboard and Docker setup are not part of this release; their acceptance is tracked in issue #81.
 
 - Added a composite GitHub Action (`action.yml`) that summarizes the GitHub Checks and commit statuses for one exact SHA, writes a job-summary table and exposes `coverage`, `failure-count`, `pending-count` and `success-count` outputs. It needs no `npm install` and only sends GET requests to `api.github.com`.
 - Added an `nexus-commit-checks` `bin` entry and `npm run commit-checks` for the existing CLI.
