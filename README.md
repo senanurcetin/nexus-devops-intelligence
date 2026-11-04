@@ -42,7 +42,7 @@ permissions:
 
 steps:
   - id: nexus
-    uses: senanurcetin/nexus-devops-intelligence@main  # pin to a release tag once one is published
+    uses: senanurcetin/nexus-devops-intelligence@v0.2.0
     with:
       repository: owner/repo        # default: the current repository
       sha: ${{ github.sha }}        # default: PR head SHA, else github.sha

@@ -1,6 +1,10 @@
 # NEXUS Community — version and installation acceptance
 
-**Status — 18 October 2026: UNRELEASED / NO-GO.** The source manifests currently declare `0.1.0`, but a manifest value is **not** a Git tag, GitHub Release, tested Docker image, or approved installer. No Community release has been published. Draft [PR #80](https://github.com/senanurcetin/nexus-devops-intelligence/pull/80) and [OS acceptance issue #81](https://github.com/senanurcetin/nexus-devops-intelligence/issues/81) remain open. Hosted Vercel Preview/Production approvals are separate.
+**Status — 18 October 2026: UNRELEASED / NO-GO.** The source manifests declare `0.2.0` for the separate Action/CLI release track (below), but a manifest value is **not** a Git tag, GitHub Release, tested Docker image, or approved installer. No Community release has been published. Draft [PR #80](https://github.com/senanurcetin/nexus-devops-intelligence/pull/80) and [OS acceptance issue #81](https://github.com/senanurcetin/nexus-devops-intelligence/issues/81) remain open. Hosted Vercel Preview/Production approvals are separate.
+
+## Action/CLI release track (added 4 November 2026)
+
+The `action.yml` GitHub Action and the `nexus-commit-checks` CLI are released separately from the Docker Community installer. A tag such as `v0.2.0` covers **only** these two surfaces. Required gates on the exact full 40-character tagged commit: green GitHub Actions for `npm test`, typecheck and production build, CodeQL, and the composite-action self-test. The Docker installer, hosted Preview and Production remain governed by the rest of this document and stay UNRELEASED / NO-GO until their own gates pass.
 
 ## Version identity — fail closed
 
