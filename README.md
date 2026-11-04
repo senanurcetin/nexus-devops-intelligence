@@ -1,5 +1,7 @@
 # NEXUS DevOps Intelligence
 
+[![Node quality](https://github.com/senanurcetin/nexus-devops-intelligence/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/senanurcetin/nexus-devops-intelligence/actions/workflows/ci.yml) [![CodeQL](https://github.com/senanurcetin/nexus-devops-intelligence/actions/workflows/codeql.yml/badge.svg?branch=main)](https://github.com/senanurcetin/nexus-devops-intelligence/actions/workflows/codeql.yml) [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/senanurcetin/nexus-devops-intelligence/badge)](https://scorecard.dev/viewer/?uri=github.com/senanurcetin/nexus-devops-intelligence) [![Release](https://img.shields.io/github/v/release/senanurcetin/nexus-devops-intelligence)](https://github.com/senanurcetin/nexus-devops-intelligence/releases/latest) [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
 ## At a glance
 
 **What it is:** a read-only GitHub API integration for public repositories. It samples recent GitHub Actions runs and open pull requests, and reports the check/status records for one exact commit SHA — with source links and explicit unknown/partial states instead of guesses.
@@ -51,6 +53,20 @@ steps:
 ```
 
 Outputs: `coverage`, `failure-count`, `pending-count`, `success-count`. When the action targets the commit its own workflow is running on, that workflow appears as pending.
+
+**Example job summary** — real output for commit [`2397f4b`](https://github.com/senanurcetin/nexus-devops-intelligence/commit/2397f4ba10001e3126760ba8b033cad43658b261) of this repository, where CodeQL failed (with `fail-on-failure: "true"` the step exits 1):
+
+> ### NEXUS commit checks
+>
+> `senanurcetin/nexus-devops-intelligence@2397f4ba1000` · coverage: **both_sources**
+>
+> | Failing | Pending | Passing |
+> | --- | --- | --- |
+> | 1 | 0 | 3 |
+>
+> | Provider | Outcome | Check | Next step |
+> | --- | --- | --- | --- |
+> | other | failure | [CodeQL](https://github.com/senanurcetin/nexus-devops-intelligence/commit/2397f4ba10001e3126760ba8b033cad43658b261/checks) | Open the original check or commit-status details; this summary does not include logs. |
 
 ### Support
 
