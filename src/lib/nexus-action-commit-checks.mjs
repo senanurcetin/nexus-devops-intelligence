@@ -3,6 +3,11 @@
 import { appendFileSync } from 'node:fs';
 import { collectCommitChecks, validateCommitTarget } from './nexus-commit-checks.mjs';
 
+// Escape Markdown table-cell metacharacters; backslash first so later escapes stay intact.
+export function cell(value) {
+  return String(value).replace(/[\r\n]+/g, ' ').replace(/[\\|[\]`*_<>]/g, c => '\\' + c);
+}
+
 export function formatSummary(repository, sha, result) {
   const lines = [
     '### NEXUS commit checks',
@@ -16,9 +21,9 @@ export function formatSummary(repository, sha, result) {
   if (result.attention.length > 0) {
     lines.push('', '| Provider | Outcome | Check | Next step |', '| --- | --- | --- | --- |');
     for (const item of result.attention) {
-      const name = item.name.replace(/\|/g, '\\|');
-      lines.push('| ' + item.provider + ' | ' + item.outcome + ' | [' + name + '](' + item.source_url + ') | ' +
-        item.inspection_hint + ' |');
+      const url = encodeURI(item.source_url).replace(/[()]/g, c => '%' + c.charCodeAt(0).toString(16).toUpperCase());
+      lines.push('| ' + cell(item.provider) + ' | ' + cell(item.outcome) + ' | [' + cell(item.name) + '](' + url + ') | ' +
+        cell(item.inspection_hint) + ' |');
     }
   }
   if (result.coverage === 'none') lines.push('', 'No verified source was available; no CI outcome can be inferred.');

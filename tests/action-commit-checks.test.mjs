@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { existsSync, mkdtempSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { formatSummary, runAction } from '../src/lib/nexus-action-commit-checks.mjs';
+import { cell, formatSummary, runAction } from '../src/lib/nexus-action-commit-checks.mjs';
 
 const SHA = 'a'.repeat(40);
 
@@ -54,6 +54,11 @@ test('rejects invalid targets before any request', async () => {
   let called = false;
   await assert.rejects(runAction(env({ INPUT_SHA: 'main' }), async () => { called = true; }));
   assert.equal(called, false);
+});
+
+test('cell escapes backslashes before other Markdown metacharacters', () => {
+  assert.equal(cell('a\\|b'), 'a\\\\\\|b');
+  assert.equal(cell('[x](y)\nz'), '\\[x\\](y) z');
 });
 
 test('summary explains when no source could be verified', () => {
