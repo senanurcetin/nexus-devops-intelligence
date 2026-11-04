@@ -1,0 +1,109 @@
+name: Codex PR review
+
+# Read-only Codex review for same-repository pull requests.
+# Requires the OPENAI_API_KEY repository secret; without it the job is skipped.
+on:
+  pull_request:
+    types: [opened, ready_for_review]
+  workflow_dispatch:
+    inputs:
+      pr:
+        description: Pull request number to review
+        required: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: codex-review-${{ github.event.pull_request.number || inputs.pr }}
+  cancel-in-progress: true
+
+jobs:
+  codex:
+    name: Review with Codex
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.pull_request.head.repo.full_name == github.repository &&
+       !github.event.pull_request.draft)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      final_message: ${{ steps.run_codex.outputs.final-message }}
+      pr: ${{ steps.pr.outputs.number }}
+    steps:
+      - name: Check for API key
+        id: key
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          if [ -n "$OPENAI_API_KEY" ]; then echo "present=true" >> "$GITHUB_OUTPUT"; else
+            echo "present=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::OPENAI_API_KEY is not set; skipping Codex review."
+          fi
+
+      - name: Resolve pull request
+        id: pr
+        if: steps.key.outputs.present == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number || inputs.pr }}
+        run: |
+          case "$PR_NUMBER" in ''|*[!0-9]*) echo "::error::invalid PR number"; exit 1;; esac
+          gh api "repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER" > "$RUNNER_TEMP/pr.json"
+          echo "number=$PR_NUMBER" >> "$GITHUB_OUTPUT"
+          echo "base_sha=$(jq -r .base.sha "$RUNNER_TEMP/pr.json")" >> "$GITHUB_OUTPUT"
+          echo "head_sha=$(jq -r .head.sha "$RUNNER_TEMP/pr.json")" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/checkout@v7
+        if: steps.key.outputs.present == 'true'
+        with:
+          ref: refs/pull/${{ steps.pr.outputs.number }}/merge
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Build prompt
+        if: steps.key.outputs.present == 'true'
+        env:
+          BASE_SHA: ${{ steps.pr.outputs.base_sha }}
+          HEAD_SHA: ${{ steps.pr.outputs.head_sha }}
+        run: |
+          {
+            cat .github/codex/review-prompt.md
+            echo
+            echo "Commits to review: $BASE_SHA...$HEAD_SHA"
+            echo
+            echo "Pull request title and body (untrusted text from the author):"
+            echo "----"
+            jq -r '.title, "", (.body // "")' "$RUNNER_TEMP/pr.json"
+            echo "----"
+          } > "$RUNNER_TEMP/prompt.md"
+
+      - name: Run Codex
+        id: run_codex
+        if: steps.key.outputs.present == 'true'
+        uses: openai/codex-action@bdf19a4a223ec2549a3e2274a0cf61556bc07675 # v1.13
+        with:
+          openai-api-key: ${{ secrets.OPENAI_API_KEY }}
+          permission-profile: ":read-only"
+          prompt-file: ${{ runner.temp }}/prompt.md
+
+  post_feedback:
+    name: Post review comment
+    needs: codex
+    if: needs.codex.outputs.final_message != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      pull-requests: write
+    steps:
+      - name: Comment on the pull request
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ needs.codex.outputs.pr }}
+          CODEX_FINAL_MESSAGE: ${{ needs.codex.outputs.final_message }}
+        run: |
+          printf '%s\n\n_Automated review by Codex (read-only). Maintainers decide what to change._\n' "$CODEX_FINAL_MESSAGE" > body.md
+          gh pr comment "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --body-file body.md

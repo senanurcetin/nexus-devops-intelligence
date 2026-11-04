@@ -28,6 +28,15 @@ For Docker packaging, consult [merged PR #80](https://github.com/senanurcetin/ne
 - Include a truthful AI-assistance disclosure where applicable: tools used, which material they helped create and what the human contributor actually reviewed/tested. Maintain copyright/licensing authority and substantive human responsibility.
 - Do not post unrelated trigger commits, request reviewer attention without a concrete need, alter the MIT license, widen public network access or change billing/deployment on a routine code PR.
 
+## Automated Codex review
+
+Same-repository pull requests get a read-only review comment from [Codex](https://github.com/openai/codex-action) via [`.github/workflows/codex-review.yml`](.github/workflows/codex-review.yml). The prompt is in [`.github/codex/review-prompt.md`](.github/codex/review-prompt.md).
+
+- Codex runs with the `:read-only` permission profile and a read-only token; only the separate comment job can write, and only a PR comment.
+- Fork PRs are not reviewed automatically, because secrets are not available to them. Maintainers can run the workflow manually with the PR number.
+- The job is skipped when the `OPENAI_API_KEY` repository secret is not set.
+- Codex comments are suggestions. A human maintainer still reviews and decides every change.
+
 ## Privacy and security
 
 **Never** post tokens, private repo URLs, protected build logs, actual end-user data, credentials, customer evidence, private installation details or unredacted security exploit details in public issues, diffs or release notes. Prefer synthetic public-data examples. Use [SECURITY.md](SECURITY.md) for **private** vulnerability reporting.
