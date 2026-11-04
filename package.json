@@ -4,6 +4,9 @@
   "private": true,
   "license": "MIT",
   "description": "Independent, read-only GitHub CI and pull request intelligence dashboard",
+  "bin": {
+    "nexus-commit-checks": "scripts/jarvis-commit-checks.mjs"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -29,7 +32,8 @@
     "jarvis:localcheck": "node --import tsx scripts/jarvis-localcheck.mjs",
     "jarvis:verify": "node scripts/verify-jarvis-mcp.mjs",
     "jarvis:commit-checks": "node scripts/jarvis-commit-checks.mjs",
-    "jarvis:commit-checks:mcp": "node scripts/jarvis-commit-checks-mcp.mjs"
+    "jarvis:commit-checks:mcp": "node scripts/jarvis-commit-checks-mcp.mjs",
+    "commit-checks": "node scripts/jarvis-commit-checks.mjs"
   },
   "dependencies": {
     "lucide-react": "^0.475.0",

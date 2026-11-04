@@ -1,0 +1,29 @@
+name: Action self-test
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  checks: read
+  statuses: read
+
+jobs:
+  self-test:
+    name: Run the composite action on this commit
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - id: nexus
+        uses: ./
+        with:
+          fail-on-failure: "false"
+      - name: Outputs are populated
+        run: |
+          test -n "${{ steps.nexus.outputs.coverage }}"
+          echo "coverage=${{ steps.nexus.outputs.coverage }} failing=${{ steps.nexus.outputs.failure-count }}"

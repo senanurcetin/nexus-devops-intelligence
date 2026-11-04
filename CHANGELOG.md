@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased — 4 November 2026 — Installable commit-checks Action
+
+- Added a composite GitHub Action (`action.yml`) that summarizes the GitHub Checks and commit statuses for one exact SHA, writes a job-summary table and exposes `coverage`, `failure-count`, `pending-count` and `success-count` outputs. It needs no `npm install` and only sends GET requests to `api.github.com`.
+- Added an `nexus-commit-checks` `bin` entry and `npm run commit-checks` for the existing CLI.
+- Added Dependabot (npm and GitHub Actions), a CodeQL workflow and an action self-test workflow.
+- Moved the dated release/QA history from README.md verbatim to `docs/STATUS_HISTORY.md`; README now starts with the three quick starts.
+
 ## Unreleased — 18 October 2026 — Community Docker candidate (PR #80, merged 28 October 2026)
 
 **Release state: NO-GO / not tagged.** The repository's `0.1.0` package metadata is not a public Community release; hosted Vercel Preview/Production continue to have separate authorization and older deployment sources. The current candidate must not be advertised as a verified Windows/Ubuntu installer.
