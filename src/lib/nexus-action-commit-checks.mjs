@@ -18,6 +18,9 @@ export function formatSummary(repository, sha, result) {
     '| --- | --- | --- |',
     '| ' + result.counts.failure + ' | ' + result.counts.pending + ' | ' + result.counts.success + ' |',
   ];
+  if (result.truncated?.checks || result.truncated?.commit_statuses) {
+    lines.push('', 'The GitHub sample was truncated. Counts may be incomplete.');
+  }
   if (result.attention.length > 0) {
     lines.push('', '| Provider | Outcome | Check | Next step |', '| --- | --- | --- | --- |');
     for (const item of result.attention) {

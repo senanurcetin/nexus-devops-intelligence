@@ -64,3 +64,20 @@ test('cell escapes backslashes before other Markdown metacharacters', () => {
 test('summary explains when no source could be verified', () => {
   assert.match(formatSummary('octo/repo', SHA, report({}, [], 'none')), /no CI outcome can be inferred/);
 });
+
+test('summary warns once when either GitHub source was truncated', () => {
+  const warning = /The GitHub sample was truncated\. Counts may be incomplete\./g;
+  for (const truncated of [
+    { checks: true, commit_statuses: false },
+    { checks: false, commit_statuses: true },
+    { checks: true, commit_statuses: true },
+  ]) {
+    const summary = formatSummary('octo/repo', SHA, { ...report({}), truncated });
+    assert.equal(Array.from(summary.matchAll(warning)).length, 1, JSON.stringify(truncated));
+  }
+});
+
+test('summary omits the truncation warning when neither source was truncated', () => {
+  const result = { ...report({}), truncated: { checks: false, commit_statuses: false } };
+  assert.doesNotMatch(formatSummary('octo/repo', SHA, result), /Counts may be incomplete/);
+});
