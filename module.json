@@ -1,0 +1,66 @@
+{
+  "id": "nexus.devops",
+  "name": "NEXUS DevOps Intelligence",
+  "gap_request": "NG-19",
+  "summary": "Read-only CI/PR digests of ONE public GitHub repository, plus default-OFF approval-gated write actions and a daily health card.",
+  "access": {
+    "mode": "read_only_by_default",
+    "write_actions_default": "off",
+    "release_authorized": false,
+    "merge_approval": false,
+    "data_class": "public",
+    "write_actions": [
+      {
+        "name": "rerun_workflow",
+        "description": "Re-run only the failed jobs of one workflow run",
+        "github": "POST /repos/{owner}/{repo}/actions/runs/{run_id}/rerun-failed-jobs",
+        "params": ["repository", "run_id"],
+        "requires_approval_token": true
+      },
+      {
+        "name": "open_issue",
+        "description": "Open one issue",
+        "github": "POST /repos/{owner}/{repo}/issues",
+        "params": ["repository", "title", "body?", "labels?"],
+        "requires_approval_token": true
+      },
+      {
+        "name": "label_pr",
+        "description": "Add labels to one pull request",
+        "github": "POST /repos/{owner}/{repo}/issues/{pr_number}/labels",
+        "params": ["repository", "pr_number", "labels"],
+        "requires_approval_token": true
+      }
+    ],
+    "write_gates": [
+      "NEXUS_DEVOPS_WRITE_ACTIONS=1",
+      "NEXUS_DEVOPS_WRITE_ALLOW lists the action",
+      "NEXUS_DEVOPS_WRITE_REPOS lists the repository",
+      "NEXUS_DEVOPS_GITHUB_WRITE_TOKEN set",
+      "valid single-use approval token (nxa1, HMAC-SHA256, payload-hash bound)"
+    ]
+  },
+  "approval_token": {
+    "format": "nxa1.<base64url(claims JSON)>.<hex HMAC-SHA256 over 'nxa1.<base64url>'>",
+    "claims": ["v=1", "jti", "rid", "act", "ph", "iat", "exp"],
+    "payload_hash": "sha256 of jarvis canonical_json({action, params}) == nexus_jarvis.approvals.store.payload_hash",
+    "max_ttl_seconds": 900,
+    "secret_env": "NEXUS_DEVOPS_APPROVAL_SECRET"
+  },
+  "schemas": {
+    "health_card": "nexus.devops.health-card/v1"
+  },
+  "surfaces": {
+    "cli": [
+      "npm run devops:health",
+      "npm run devops:write-action -- plan|run <action> <params-json>"
+    ]
+  },
+  "health_sources": {
+    "NEXUS_DEVOPS_HEALTH_ORACLE_HEARTBEAT": "file or URL; JSON {ts} or ISO line or file mtime",
+    "NEXUS_DEVOPS_HEALTH_KAGGLE_QUOTA": "file or URL; JSON {gpu_hours_used, gpu_hours_limit?}",
+    "NEXUS_DEVOPS_HEALTH_PROVIDER_QUOTA": "file or URL; JSON {providers:[{name,used,limit}]}",
+    "NEXUS_DEVOPS_HEALTH_NEON_USAGE": "file or URL; JSON {storage_gb_used, compute_hours_used, limits optional}",
+    "missing_source": "reported as status unknown, never a guess"
+  }
+}
