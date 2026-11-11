@@ -1,13 +1,31 @@
 #!/usr/bin/env node
 // Standalone read-only JARVIS bridge. No NEXUS service or paid provider API needed.
 // node scripts/jarvis-commit-checks.mjs --json owner/repo <full-commit-sha>
+import { readFileSync } from 'node:fs';
 import { collectCommitChecks, validateCommitTarget } from '../src/lib/nexus-commit-checks.mjs';
 
+const usage = 'Usage: node scripts/jarvis-commit-checks.mjs [--json] owner/repo FULL_COMMIT_SHA';
 const args = process.argv.slice(2);
 const json = args.includes('--json');
 const rest = args.filter(a => a !== '--json');
-if (rest.length !== 2) {
-  process.stderr.write('Usage: node scripts/jarvis-commit-checks.mjs [--json] owner/repo FULL_COMMIT_SHA\n');
+if (args.length === 1 && ['--help', '-h'].includes(args[0])) {
+  process.stdout.write([
+    usage,
+    '',
+    '  --help, -h  Show this help.',
+    '  --version   Show the package version.',
+    '',
+    'Exit codes for a commit check:',
+    '  0  No failing record in the available sample.',
+    '  1  At least one failing record was observed.',
+    '  2  Usage or validation error.',
+    '  3  No verified source was available.',
+  ].join('\n') + '\n');
+} else if (args.length === 1 && args[0] === '--version') {
+  const { version } = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
+  process.stdout.write(version + '\n');
+} else if (rest.length !== 2) {
+  process.stderr.write(usage + '\n');
   process.exitCode = 2;
 } else {
   try {

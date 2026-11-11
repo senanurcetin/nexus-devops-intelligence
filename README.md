@@ -47,11 +47,13 @@ Outputs: `coverage`, `failure-count`, `pending-count`, `success-count`. When the
 ### Quick start (commit-checks CLI)
 
 ```bash
+node scripts/jarvis-commit-checks.mjs --help  # or -h
+node scripts/jarvis-commit-checks.mjs --version
 node scripts/jarvis-commit-checks.mjs owner/repo FULL_COMMIT_SHA
 node scripts/jarvis-commit-checks.mjs --json owner/repo FULL_COMMIT_SHA
 ```
 
-Exit codes: `0` no failing record in the available sample, `1` at least one failing record, `2` usage/validation error, `3` no verified source.
+Both informational flags exit `0` without contacting GitHub. For commit checks, `0` means no failing record in the available sample, `1` means at least one failing record, `2` means a usage or validation error, and `3` means no verified source.
 
 Anonymous GitHub API requests are rate-limited by GitHub (60 requests/hour per IP), so large or repeated audits can return partial results.
 

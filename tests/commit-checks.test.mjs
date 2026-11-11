@@ -1,12 +1,37 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
+import { readFileSync } from 'node:fs';
 import {
   collectCommitChecks, buildCommitCheckReport, validateCommitTarget,
 } from '../src/lib/nexus-commit-checks.mjs';
 
 const repository = 'owner/example';
 const sha = 'a'.repeat(40);
+
+for (const flag of ['--help', '-h']) {
+  test(`CLI ${flag} prints usage and exit codes without a commit target`, () => {
+    const result = spawnSync(process.execPath, ['scripts/jarvis-commit-checks.mjs', flag], { encoding: 'utf8' });
+    assert.equal(result.status, 0, result.stderr);
+    assert.equal(result.stderr, '');
+    assert.match(result.stdout, /Usage:.*owner\/repo FULL_COMMIT_SHA/);
+    assert.match(result.stdout, /--version/);
+    for (const [code, description] of [
+      [0, 'no failing record'], [1, 'at least one failing record'],
+      [2, 'usage or validation error'], [3, 'no verified source'],
+    ]) {
+      assert.match(result.stdout, new RegExp(`^  ${code}  .*${description}`, 'mi'));
+    }
+  });
+}
+
+test('CLI --version prints the package version without a commit target', () => {
+  const { version } = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
+  const result = spawnSync(process.execPath, ['scripts/jarvis-commit-checks.mjs', '--version'], { encoding: 'utf8' });
+  assert.equal(result.status, 0, result.stderr);
+  assert.equal(result.stderr, '');
+  assert.equal(result.stdout.trim(), version);
+});
 const json = (payload, status = 200, headers = {}) => new Response(JSON.stringify(payload), {
   status, headers: { 'Content-Type': 'application/json', ...headers },
 });
