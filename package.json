@@ -31,7 +31,9 @@
     "jarvis:commit-checks": "node scripts/jarvis-commit-checks.mjs",
     "jarvis:commit-checks:mcp": "node scripts/jarvis-commit-checks-mcp.mjs",
     "jarvis:check-annotations": "node scripts/jarvis-check-annotations.mjs",
-    "jarvis:workflow-steps": "node --import tsx scripts/jarvis-workflow-steps.mjs"
+    "jarvis:workflow-steps": "node --import tsx scripts/jarvis-workflow-steps.mjs",
+    "devops:health": "node --import tsx scripts/devops-health-card.mjs",
+    "devops:write-action": "node --import tsx scripts/devops-write-action.mjs"
   },
   "dependencies": {
     "lucide-react": "^0.475.0",

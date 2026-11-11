@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased — 11 November 2026 — NG-19 write actions + health card (branch feat/devops-ng19, not merged, not deployed)
+
+- Added default-OFF, approval-gated write actions (`rerun_workflow`, `open_issue`, `label_pr`) declared in `module.json`; each needs a single-use HMAC `nxa1` approval token bound to the action and the Jarvis `payload_hash`. See [docs/DEVOPS_WRITE_ACTIONS.md](docs/DEVOPS_WRITE_ACTIONS.md).
+- Added the daily health card (`npm run devops:health`): Actions, open PRs, stale branches and optional Oracle A1 / Kaggle / provider-quota / Neon sources; missing source = `unknown`.
+- Added [free-hosting deployment instructions](docs/FREE_HOSTING_DEPLOY_TRUNK.md) (instructions only; nothing deployed).
+
+
 ## Unreleased — 18 October 2026 — Community Docker candidate (PR #80, merged 28 October 2026)
 
 **Release state: NO-GO / not tagged.** The repository's `0.1.0` package metadata is not a public Community release; hosted Vercel Preview/Production continue to have separate authorization and older deployment sources. The current candidate must not be advertised as a verified Windows/Ubuntu installer.
