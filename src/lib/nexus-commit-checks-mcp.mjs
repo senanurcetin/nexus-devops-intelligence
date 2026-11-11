@@ -68,7 +68,7 @@ export function createCommitChecksMcpHandler({
       return success(id, {
         protocolVersion: SUPPORTED.has(asked) ? asked : VERSION,
         capabilities: { tools: {} },
-        serverInfo: { name: 'nexus-devops-commit-checks', version: '0.2.0' },
+        serverInfo: { name: 'nexus-devops-commit-checks', version: '0.3.0' },
       });
     }
     if (method === 'ping') return success(id, {});

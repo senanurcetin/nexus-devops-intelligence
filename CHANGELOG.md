@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.3.0 — unreleased — truncation warning and CLI help
+
+**Scope:** the `action.yml` GitHub Action and the `nexus-commit-checks` CLI, as in 0.2.0. The self-hosted dashboard and Docker setup are still not part of this release track.
+
+- The Action's job summary now says when GitHub returned a truncated sample of check runs or commit statuses, so the counts are not read as complete (#171, PR #184).
+- The CLI accepts `--help` / `-h` and `--version`. Both exit `0` without contacting GitHub; `--help` lists the exit codes (#170, PR #185).
+- The commit-checks MCP server reports the package version `0.3.0`.
+
 ## 0.2.0 — 4 November 2026 — commit-checks Action and CLI
 
 **Scope:** this release covers the `action.yml` GitHub Action ([Marketplace](https://github.com/marketplace/actions/nexus-commit-checks)) and the `nexus-commit-checks` CLI. The self-hosted dashboard and Docker setup are not part of this release; their acceptance is tracked in issue #81.
