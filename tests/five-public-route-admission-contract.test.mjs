@@ -7,6 +7,10 @@ import { GET as verifyGET } from '../src/app/api/public-pr-verification/route.ts
 import { GET as evidenceGET } from '../src/app/api/public-workflow-evidence/route.ts';
 import { GET as trendsGET } from '../src/app/api/public-workflow-trends/route.ts';
 
+function lastCompletedUtcDay() {
+  return new Date(Date.now() - 86_400_000).toISOString().slice(0, 10);
+}
+
 const origin = 'http://127.0.0.1:3000';
 const repository = 'owner/example';
 const query = 'repository=owner%2Fexample';
@@ -15,9 +19,9 @@ const routes = [
   {path:'/api/public-prs', GET:prsGET, valid:query},
   {path:'/api/public-pr-verification', GET:verifyGET, valid:query+'&number=12'},
   {path:'/api/public-workflow-evidence', GET:evidenceGET, valid:query+'&id=123'},
-  // Intentionally invalid date is fine for the Redis rejection cases, but
-  // on the 2026-10-14 acceptance checkpoint this is a completed UTC day.
-  {path:'/api/public-workflow-trends', GET:trendsGET, valid:query+'&end=2026-10-12'},
+  // The route only accepts an end date within the last 30 completed UTC days,
+  // so derive the most recent completed day instead of hard-coding a date.
+  {path:'/api/public-workflow-trends', GET:trendsGET, valid:query+'&end='+lastCompletedUtcDay()},
 ];
 const testIp = '203.0.113.83';
 const envNames = ['VERCEL','UPSTASH_REDIS_REST_URL','UPSTASH_REDIS_REST_TOKEN'];
