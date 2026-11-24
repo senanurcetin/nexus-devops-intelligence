@@ -72,9 +72,47 @@ npm run dev
 
 ### Support
 
-- Questions and bugs: [open an issue](https://github.com/senanurcetin/nexus-devops-intelligence/issues/new/choose) or email senanur.cetin.work@gmail.com.
+- Questions: [GitHub Discussions](https://github.com/senanurcetin/nexus-devops-intelligence/discussions). Bugs: [open an issue](https://github.com/senanurcetin/nexus-devops-intelligence/issues/new/choose). Full guide: [SUPPORT.md](SUPPORT.md).
+- Direct contact: senanur.cetin.work@gmail.com.
 - Security reports: follow [SECURITY.md](SECURITY.md) — never post tokens or private CI logs in public issues.
 - Contributing: [CONTRIBUTING.md](CONTRIBUTING.md). Self-hosted Docker candidate (not yet accepted): [docs/COMMUNITY_SELF_HOSTED.md](docs/COMMUNITY_SELF_HOSTED.md).
+
+## GitHub integration
+
+NEXUS DevOps Intelligence is a **read-only integration with the GitHub REST API**
+(`https://api.github.com`, API version `2022-11-28`). It never sends `POST`,
+`PATCH`, `PUT` or `DELETE` requests and uses no GraphQL mutations.
+
+| Surface | GitHub REST endpoints (all `GET`) |
+| --- | --- |
+| GitHub Action / `nexus-commit-checks` CLI | `/repos/{owner}/{repo}/commits/{sha}/check-runs`, `/repos/{owner}/{repo}/commits/{sha}/status` |
+| Dashboard: Actions sample, trends, failed-run detail | `/repos/{owner}/{repo}/actions/runs`, `/repos/{owner}/{repo}/actions/runs/{id}/attempts/{n}/jobs` |
+| Dashboard: open PR sample and PR verification | `/repos/{owner}/{repo}/pulls`, `/repos/{owner}/{repo}/pulls/{number}`, `/repos/{owner}/{repo}/pulls/{number}/reviews`, `/repos/{owner}/{repo}/commits/{sha}/check-runs` |
+| Maintainer audit scripts (`scripts/oss-*.mjs`) | `/repos/{owner}/{repo}`, `/users/{username}`, `/search/issues` |
+
+**Authentication model**
+
+- The dashboard and its [HTTP API](#http-api) call GitHub **anonymously**. The web
+  routes never read a token, even if one is set on the server.
+- The GitHub Action uses the workflow's `GITHUB_TOKEN` by default (pass
+  `token: ""` to run anonymously). The token is sent only as a `Bearer` header to
+  `api.github.com`, only for the two read requests above, and never logged.
+- The CLI uses `NEXUS_GITHUB_TOKEN` only when `NEXUS_DEVOPS_ALLOW_GITHUB_TOKEN=1`
+  is also set. No GitHub App or OAuth App installation is needed.
+
+**Scopes and permissions:** read-only. In a workflow, `permissions: checks: read`
+plus `statuses: read` (or the default `contents: read` on public repositories)
+is enough. The project requests no write scope and stores no credentials.
+
+**Rate limits:** GitHub allows 60 anonymous requests per hour per IP and 1,000
+per hour per repository for `GITHUB_TOKEN`. The integration keeps request counts
+bounded (at most six upstream requests per PR-sample cache miss, two per commit
+check, one page per list call, no automatic pagination), caches web responses
+for two minutes, honours `Retry-After` and `x-ratelimit-remaining`, and reports
+HTTP 403/429 as an explicit `rate_limited` state instead of partial data.
+
+**Support:** see [SUPPORT.md](SUPPORT.md) — GitHub Discussions for questions,
+GitHub Issues for bugs, and [SECURITY.md](SECURITY.md) for vulnerabilities.
 
 ## Current source scope — public read-only MVP
 

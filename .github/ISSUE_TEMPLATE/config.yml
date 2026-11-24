@@ -6,3 +6,6 @@ contact_links:
   - name: Contributor guide and project support
     url: https://github.com/senanurcetin/nexus-devops-intelligence/blob/main/CONTRIBUTING.md
     about: Read installation, scope and source-verification guidance before proposing a change.
+  - name: Ask a question or get setup help
+    url: https://github.com/senanurcetin/nexus-devops-intelligence/discussions
+    about: Use GitHub Discussions for questions; see SUPPORT.md for all support channels.
